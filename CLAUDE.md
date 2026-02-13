@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Data Center Infrastructure Map — a Next.js 16 web application for visualizing data center infrastructure. Currently in early development (starter kit scaffold).
+Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data center infrastructure management and visualization. Currently in early development (starter kit scaffold). See [ROADMAP.md](./ROADMAP.md) for the complete project vision, technical strategy, and implementation phases.
 
 ## Commands
 
@@ -49,6 +49,13 @@ Data Center Infrastructure Map — a Next.js 16 web application for visualizing 
 - Style: new-york | Base color: neutral | CSS variables: enabled
 - Must install components before importing: `npx shadcn@latest add <component> -y`
 - Use correct Radix UI props: `onOpenChange` (not `onClose`), `onCheckedChange` (not `onChange`), `onValueChange` (not `onSelect`)
+
+## Documentation Index
+
+- **[ROADMAP.md](./ROADMAP.md)** — Project vision, technical stack decisions, data models, implementation roadmap, and risk analysis (Korean)
+- **[CLAUDE.md](./CLAUDE.md)** (this file) — Technical architecture and development guidance (English)
+- **[.claude/rules/pitfalls.md](./.claude/rules/pitfalls.md)** — Common bug patterns and prevention checklists
+- **[.claude/rules/development-workflow.md](./.claude/rules/development-workflow.md)** — Feature development procedures
 
 ## Pitfalls Reference
 
