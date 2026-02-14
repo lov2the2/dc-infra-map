@@ -1,0 +1,22 @@
+services:
+    postgres:
+        image: timescale/timescaledb:2.17.2-pg17
+        container_name: dcim-postgres
+        restart: unless-stopped
+        ports:
+            - "5432:5432"
+        environment:
+            POSTGRES_DB: dcim
+            POSTGRES_USER: dcim
+            POSTGRES_PASSWORD: dcim_local_password
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+            - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U dcim -d dcim"]
+            interval: 5s
+            timeout: 5s
+            retries: 5
+
+volumes:
+    pgdata:

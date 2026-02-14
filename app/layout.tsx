@@ -4,6 +4,7 @@ import "./globals.css";
 
 import { SITE_CONFIG } from "@/config/site";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { SessionProvider } from "@/components/providers/session-provider";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 
@@ -32,13 +33,15 @@ export default function RootLayout({
             <body
                 className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
-                <ThemeProvider>
-                    <div className="relative flex min-h-svh flex-col">
-                        <SiteHeader />
-                        <main className="flex-1">{children}</main>
-                        <SiteFooter />
-                    </div>
-                </ThemeProvider>
+                <SessionProvider>
+                    <ThemeProvider>
+                        <div className="relative flex min-h-svh flex-col">
+                            <SiteHeader />
+                            <main className="flex-1">{children}</main>
+                            <SiteFooter />
+                        </div>
+                    </ThemeProvider>
+                </SessionProvider>
             </body>
         </html>
     );
