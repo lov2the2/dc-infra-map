@@ -3,4 +3,6 @@ export * from "./auth";
 export * from "./core";
 export * from "./devices";
 export * from "./audit";
+export * from "./access";
+export * from "./power";
 export * from "./relations";

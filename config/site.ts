@@ -14,6 +14,8 @@ export const NAV_LINKS: NavLink[] = [
     { label: "Sites", href: "/sites" },
     { label: "Devices", href: "/devices" },
     { label: "Tenants", href: "/tenants" },
+    { label: "Access", href: "/access" },
+    { label: "Power", href: "/power" },
 ];
 
 export const CTA_LINKS = {
