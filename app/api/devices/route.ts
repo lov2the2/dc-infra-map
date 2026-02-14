@@ -3,7 +3,9 @@ import { eq, isNull, and, ilike } from "drizzle-orm";
 import { db } from "@/db";
 import { devices } from "@/db/schema";
 import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError } from "@/lib/api";
+import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { logAudit } from "@/lib/audit";
+import { deviceCreateSchema } from "@/lib/validators/device";
 
 export async function GET(req: NextRequest) {
     try {
@@ -12,11 +14,13 @@ export async function GET(req: NextRequest) {
 
         const { searchParams } = new URL(req.url);
         const rackId = searchParams.get("rackId");
+        const tenantId = searchParams.get("tenantId");
         const status = searchParams.get("status");
         const search = searchParams.get("search");
 
         const conditions = [isNull(devices.deletedAt)];
         if (rackId) conditions.push(eq(devices.rackId, rackId));
+        if (tenantId) conditions.push(eq(devices.tenantId, tenantId));
         if (status) conditions.push(eq(devices.status, status as "active"));
         if (search) conditions.push(ilike(devices.name, `%${search}%`));
 
@@ -38,7 +42,13 @@ export async function POST(req: NextRequest) {
         if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
 
         const body = await req.json();
-        const [device] = await db.insert(devices).values(body).returning();
+        const parsed = deviceCreateSchema.safeParse(body);
+        if (!parsed.success) return validationErrorResponse(parsed.error);
+
+        const { reason, ...data } = parsed.data;
+        const [device] = await db.insert(devices).values(data).returning();
+
+        await logAudit(session.user.id, "create", "devices", device.id, null, device as Record<string, unknown>, reason);
 
         return successResponse(device, 201);
     } catch (error) {

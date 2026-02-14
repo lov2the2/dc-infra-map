@@ -11,5 +11,6 @@ export const auditLogs = pgTable("audit_logs", {
     recordId: text("record_id").notNull(),
     changesBefore: jsonb("changes_before").$type<Record<string, unknown>>(),
     changesAfter: jsonb("changes_after").$type<Record<string, unknown>>(),
+    reason: text("reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });

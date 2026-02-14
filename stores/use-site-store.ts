@@ -1,16 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
-
-interface Site {
-    id: string;
-    name: string;
-    slug: string;
-    status: string;
-    regionId: string | null;
-    tenantId: string | null;
-    facility: string | null;
-    address: string | null;
-}
+import type { Site } from "@/types/entities";
 
 interface SiteState {
     sites: Site[];
