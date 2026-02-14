@@ -1,116 +1,73 @@
-# Phase 0: DCIM Foundation 구현 결과
+# DCIM 구현 진행 상황
 
-> **작성일**: 2026-02-14
-> **목적**: ROADMAP.md Phase 0 요구사항에 따른 DB, ORM, Auth, State Management 기반 구축
-
----
-
-## 설치된 패키지
-
-### Production
-
-| 패키지 | 용도 |
-| --- | --- |
-| `drizzle-orm` + `postgres` | PostgreSQL ORM + 드라이버 |
-| `next-auth@beta` (v5) | 인증 (Credentials + JWT) |
-| `@auth/drizzle-adapter` | Auth.js ↔ Drizzle 연동 |
-| `zustand` + `immer` | 클라이언트 상태 관리 |
-| `bcryptjs` | 비밀번호 해싱 (12 rounds) |
-| `zod` | 스키마 검증 (Phase 1+ 확장용) |
-
-### Dev
-
-| 패키지 | 용도 |
-| --- | --- |
-| `drizzle-kit` | 마이그레이션 및 스키마 관리 |
-| `@types/bcryptjs` | 타입 정의 |
-| `tsx` | TypeScript 스크립트 실행 (seed 등) |
+> **프로젝트**: DC Infra Map (데이터센터 인프라 관리 시스템)
+> **기술 스택 및 전체 로드맵**: [ROADMAP.md](../ROADMAP.md) 참조
+> **최종 업데이트**: 2026-02-14
 
 ---
 
-## 생성된 파일 (27개)
+## Phase 진행 현황
 
-### 인프라 (5개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `docker-compose.yml` | PostgreSQL 17 + TimescaleDB 2.17.2 |
-| `scripts/init-db.sql` | timescaledb + uuid-ossp 확장 활성화 |
-| `.env.example` | 환경변수 템플릿 |
-| `.env.local` | 로컬 개발용 환경변수 (gitignore 대상) |
-| `drizzle.config.ts` | Drizzle Kit 설정 |
-
-### 데이터베이스 스키마 (8개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `db/index.ts` | Drizzle 인스턴스 생성 |
-| `db/schema/index.ts` | 모든 스키마 모듈 re-export |
-| `db/schema/enums.ts` | deviceStatus, siteStatus, rackType, deviceFace, userRole |
-| `db/schema/auth.ts` | users, accounts, sessions, verificationTokens |
-| `db/schema/core.ts` | manufacturers, tenants, regions, sites, locations, racks |
-| `db/schema/devices.ts` | deviceTypes, devices |
-| `db/schema/audit.ts` | auditLogs (JSONB changes_before/after) |
-| `db/schema/relations.ts` | 모든 릴레이션 중앙 관리 (순환 참조 방지) |
-
-### 시드 데이터 (1개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `db/seed.ts` | 한국 DC 샘플 데이터 (가산 IDC, 판교 IDC, 10개 랙, 17개 디바이스) |
-
-### 인증 (5개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `auth.ts` | NextAuth 설정 (Credentials + DrizzleAdapter + JWT) |
-| `middleware.ts` | 보호 라우트, 미인증 → /login 리다이렉트 |
-| `types/next-auth.d.ts` | Session 타입 확장 (id, role) |
-| `components/providers/session-provider.tsx` | 클라이언트 SessionProvider 래퍼 |
-| `app/api/auth/[...nextauth]/route.ts` | Auth.js 라우트 핸들러 |
-
-### Zustand 스토어 (3개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `stores/use-site-store.ts` | 활성 사이트 선택, 사이트 캐시 |
-| `stores/use-rack-store.ts` | 랙 선택, 랙 캐시 |
-| `stores/use-device-store.ts` | 디바이스 필터 (status, tenant, type, search) |
-
-### API 라우트 (7개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `lib/api.ts` | successResponse, errorResponse, handleApiError 헬퍼 |
-| `app/api/sites/route.ts` | GET (목록), POST (생성) |
-| `app/api/sites/[id]/route.ts` | GET, PATCH, DELETE (soft) |
-| `app/api/racks/route.ts` | GET (목록, locationId 필터), POST |
-| `app/api/racks/[id]/route.ts` | GET, PATCH, DELETE (soft) |
-| `app/api/devices/route.ts` | GET (목록, rackId/status/search 필터), POST |
-| `app/api/devices/[id]/route.ts` | GET, PATCH, DELETE (soft) |
-
-### 페이지 (3개)
-
-| 파일 | 설명 |
-| --- | --- |
-| `app/(auth)/login/page.tsx` | 로그인 폼 (Suspense 경계 포함) |
-| `app/(auth)/layout.tsx` | 인증 라우트 그룹 레이아웃 |
-| `app/dashboard/page.tsx` | 로그인 후 대시보드 플레이스홀더 |
+| Phase | 이름 | 상태 | 완료일 |
+| --- | --- | --- | --- |
+| 0 | 기반 구축 | **완료** | 2026-02-14 |
+| 1 | 상면 관리 MVP | 대기 | - |
+| 2 | 입출입 및 전력 관리 | 대기 | - |
+| 3 | 네트워크 및 선번장 | 대기 | - |
+| 4 | 리포트 및 내보내기 | 대기 | - |
+| 5 | 고도화 | 대기 | - |
 
 ---
 
-## 수정된 파일 (2개)
+## Phase 0: 기반 구축 — 완료
 
-| 파일 | 변경 내용 |
-| --- | --- |
-| `app/layout.tsx` | SessionProvider 래핑 추가 |
-| `package.json` | db:generate, db:push, db:migrate, db:studio, db:seed 스크립트 추가 |
+### 구현 항목
 
----
+- [x] PostgreSQL 17 + TimescaleDB 2.17.2 (Docker Compose)
+- [x] Drizzle ORM 스키마 (Region, Site, Location, Rack, DeviceType, Device, Manufacturer, Tenant)
+- [x] Auth.js v5 Credentials Provider + JWT 전략
+- [x] Zustand 스토어 (site, rack, device)
+- [x] API 라우트 (`/api/sites`, `/api/racks`, `/api/devices`) — CRUD + soft delete
+- [x] 시드 데이터 (가산 IDC, 판교 IDC, 10개 랙, 17개 디바이스)
 
-## 스키마 구조
+### 프로젝트 구조
 
+```text
+dc-infra-map/
+├── app/
+│   ├── (auth)/login/page.tsx      # 로그인 폼
+│   ├── api/
+│   │   ├── auth/[...nextauth]/    # Auth.js 핸들러
+│   │   ├── sites/                 # GET, POST, PATCH, DELETE
+│   │   ├── racks/                 # GET, POST, PATCH, DELETE
+│   │   └── devices/               # GET, POST, PATCH, DELETE
+│   ├── dashboard/page.tsx         # 대시보드 플레이스홀더
+│   └── layout.tsx                 # SessionProvider + ThemeProvider
+├── auth.ts                        # NextAuth 설정
+├── middleware.ts                   # 인증 미들웨어
+├── db/
+│   ├── index.ts                   # Drizzle 인스턴스
+│   ├── schema/
+│   │   ├── enums.ts               # deviceStatus, siteStatus, rackType 등
+│   │   ├── auth.ts                # users, accounts, sessions
+│   │   ├── core.ts                # regions, sites, locations, racks, manufacturers, tenants
+│   │   ├── devices.ts             # deviceTypes, devices
+│   │   ├── audit.ts               # auditLogs
+│   │   └── relations.ts           # 모든 릴레이션 (순환 참조 방지)
+│   └── seed.ts                    # 한국 DC 샘플 데이터
+├── stores/
+│   ├── use-site-store.ts          # 사이트 선택/캐시
+│   ├── use-rack-store.ts          # 랙 선택/캐시
+│   └── use-device-store.ts        # 디바이스 필터
+├── lib/api.ts                     # API 응답 헬퍼
+├── docker-compose.yml             # PostgreSQL + TimescaleDB
+├── drizzle.config.ts              # Drizzle Kit 설정
+└── scripts/init-db.sql            # DB 확장 활성화
 ```
+
+### 스키마 구조
+
+```text
 Region → Site → Location → Rack → Device
                                     ↑
 Manufacturer → DeviceType ──────────┘
@@ -118,78 +75,160 @@ Tenant ──→ (sites, locations, racks, devices)
 AuditLog ──→ User
 ```
 
-### 핵심 테이블
-
-- **Core**: regions, sites, locations, racks, manufacturers, tenants
-- **Devices**: deviceTypes, devices
-- **Auth**: users, accounts, sessions, verificationTokens
-- **Audit**: auditLogs
-
----
-
-## 설계 결정 사항
+### 설계 결정
 
 | 결정 | 선택 | 이유 |
 | --- | --- | --- |
-| ID 타입 | text + crypto.randomUUID() | Auth.js adapter가 text ID 요구 |
+| ID 타입 | `text` + `crypto.randomUUID()` | Auth.js adapter가 text ID 요구 |
 | 세션 전략 | JWT | Credentials + DrizzleAdapter 조합에 필수 |
-| 소프트 삭제 | deletedAt 컬럼 | 감사 추적 보존 |
-| 타임스탬프 | withTimezone: true | KST 타임존 안전성 |
+| 소프트 삭제 | `deletedAt` 컬럼 | 감사 추적 보존 |
+| 타임스탬프 | `withTimezone: true` | KST 타임존 안전성 |
 | 비밀번호 | bcryptjs (12 rounds) | 순수 JS, 네이티브 의존성 없음 |
-| 릴레이션 | 별도 파일 | 순환 참조 방지 |
-| JSONB 필드 | customFields, interfaceTemplates | Phase 3+ 확장성 |
+| 릴레이션 | 별도 파일 (`relations.ts`) | 순환 참조 방지 |
+| JSONB 필드 | `customFields`, `interfaceTemplates` | Phase 3+ 확장용 |
 
----
-
-## 실행 방법
+### 실행 방법
 
 ```bash
-# 1. PostgreSQL + TimescaleDB 시작
-docker compose up -d
-
-# 2. 스키마 적용
-npm run db:push
-
-# 3. 샘플 데이터 삽입
-npm run db:seed
-
-# 4. 개발 서버 시작
-npm run dev
+docker compose up -d    # DB 시작
+npm run db:push         # 스키마 적용
+npm run db:seed         # 샘플 데이터
+npm run dev             # 개발 서버
 ```
 
-### 로그인 정보
+**로그인**: `admin@dcim.local` / `admin1234` → <http://localhost:3000/login>
 
-- **URL**: <http://localhost:3000/login>
-- **이메일**: `admin@dcim.local`
-- **비밀번호**: `admin1234`
+### 알려진 이슈
+
+- Next.js 16에서 `middleware` convention deprecated 경고 → 향후 `proxy` convention 마이그레이션 필요
+- `.env.local`은 `.gitignore` 대상 → `.env.example` 참고하여 생성
 
 ---
 
-## 빌드 검증 결과
+## Phase 1: 상면 관리 MVP — 대기
 
+> ROADMAP.md Phase 1 참조 (4주, 랙 시각화 + 자산 관리)
+
+### 1-1. 랙 시각화 (2주)
+
+- [ ] 랙 엘리베이션 뷰 컴포넌트 (42U 그리드, 전면/후면)
+- [ ] @dnd-kit 커스텀 충돌 감지 (U-slot 기반 배치 검증)
+- [ ] 가변 높이 장비 드래그 앤 드롭 (1U, 2U, 4U)
+- [ ] 랙 간 장비 이동 (드래그로 다른 랙으로 이동)
+- [ ] 상면 도면 뷰 (플로어 레이아웃 — 랙 배치도)
+
+### 1-2. 자산 관리 (2주)
+
+- [ ] 장비 CRUD (서버, 네트워크, 스토리지 구분)
+- [ ] 고객사 태깅 시스템 (Tenant 엔티티 + 필터링)
+- [ ] 자산 상태 관리 (planned → staged → active → decommissioned)
+- [ ] 변경 이력 로그 (JSONB 스냅샷 + 사유 기록)
+- [ ] 장비 검색/필터 (고객사별, 장비 유형별, 상태별)
+
+### Phase 1 예상 신규 패키지
+
+```text
+@dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities
 ```
-✓ Compiled successfully
-✓ TypeScript — 에러 없음
-✓ Static pages — 9/9 생성 완료
-✓ API routes — sites, racks, devices 정상 등록
+
+### Phase 1 예상 신규 파일
+
+```text
+components/rack/           # 랙 엘리베이션 뷰, U-slot 그리드
+components/floor-plan/     # 상면 도면 뷰
+components/device/         # 장비 카드, 상세 패널
+stores/use-drag-store.ts   # 드래그 앤 드롭 상태
+app/sites/[id]/            # 사이트 상세 → 로케이션 목록
+app/racks/[id]/            # 랙 상세 → 엘리베이션 뷰
 ```
 
-### 라우트 목록
+---
 
-| 라우트 | 유형 |
+## Phase 2: 입출입 및 전력 관리 — 대기
+
+> ROADMAP.md Phase 2 참조 (4주, 입출입 + 전력 모니터링)
+
+### 2-1. 입출입 관리 (2주)
+
+- [ ] 인력 입출입 기록 (방문자, 작업자)
+- [ ] 장비 반출입 기록 (입고/출고 워크플로우)
+- [ ] 입출입 이력 조회 및 리포트
+
+### 2-2. 전력 모니터링 (2주)
+
+- [ ] PowerPanel, PowerFeed, PowerPort, PowerOutlet 스키마
+- [ ] 전력 데이터 수집 API (`POST /api/power/readings`)
+- [ ] TimescaleDB hypertable + 압축 정책 설정
+- [ ] SSE 기반 실시간 전력 대시보드
+- [ ] 랙별 전압/전류 현황 표시
+- [ ] 전력 용량 대비 사용률 시각화
+
+### Phase 2 예상 스키마 추가
+
+```text
+db/schema/power.ts     # powerPanels, powerFeeds, powerPorts, powerOutlets, powerReadings
+db/schema/access.ts    # accessLogs, visitors, equipmentTransfers
+```
+
+---
+
+## Phase 3: 네트워크 및 선번장 — 대기
+
+> ROADMAP.md Phase 3 참조 (4주, 케이블 관리 시스템)
+
+### 3-1. 선번장 (3주)
+
+- [ ] Cable, Interface, FrontPort, RearPort, ConsolePort 스키마
+- [ ] 케이블 연결 CRUD (양 끝 터미네이션 정의)
+- [ ] 경로 추적 (서버 NIC → 패치패널 → 스위치 포트)
+- [ ] 선번장 테이블 뷰 (엑셀 유사 형태)
+- [ ] 네트워크 대역폭 정보 (인터페이스 타입별 속도)
+
+### 3-2. 네트워크 토폴로지 (1주)
+
+- [ ] 장비 간 연결 다이어그램
+- [ ] 스위치 포트 사용률 표시
+
+### Phase 3 예상 스키마 추가
+
+```text
+db/schema/cables.ts    # cables, interfaces, frontPorts, rearPorts, consolePorts
+```
+
+---
+
+## Phase 4: 리포트 및 내보내기 — 대기
+
+> ROADMAP.md Phase 4 참조 (3주, 엔터프라이즈 출력)
+
+- [ ] Excel 내보내기 (ExcelJS) — 상면 도면, 자산 목록, 전력 리포트, 선번장
+- [ ] XML 내보내기 (fast-xml-parser) — 도면 데이터 교환, 자산 목록
+- [ ] 정기 리포트 스케줄링 (cron + 이메일)
+- [ ] CSV 일괄 가져오기 (기존 데이터 마이그레이션)
+
+### Phase 4 예상 신규 패키지
+
+```text
+exceljs, fast-xml-parser
+```
+
+---
+
+## Phase 5: 고도화 — 대기
+
+> ROADMAP.md Phase 5 참조 (지속적)
+
+- [ ] RBAC 세분화 + LDAP/AD 연동
+- [ ] 전력 수집 서비스 Go 분리 (초당 100+ 쓰기 시)
+- [ ] 전력 임계값/자산 보증 만료/랙 용량 알림
+- [ ] 멀티 사이트 대시보드
+
+---
+
+## 문서 가이드
+
+| 문서 | 용도 |
 | --- | --- |
-| `/` | Static |
-| `/login` | Static |
-| `/dashboard` | Dynamic (서버 렌더링) |
-| `/api/auth/[...nextauth]` | Dynamic |
-| `/api/sites`, `/api/sites/[id]` | Dynamic |
-| `/api/racks`, `/api/racks/[id]` | Dynamic |
-| `/api/devices`, `/api/devices/[id]` | Dynamic |
-
----
-
-## 참고 사항
-
-- Next.js 16에서 `middleware` convention deprecated 경고 발생 → 향후 `proxy` convention 마이그레이션 필요
-- `.env.local`은 `.gitignore` 대상이므로 팀원은 `.env.example`을 참고하여 생성 필요
-- 시드 스크립트는 `onConflictDoNothing`으로 멱등성 보장
+| [ROADMAP.md](../ROADMAP.md) | 기술 스택 결정, 데이터 모델, 리스크 분석 (불변 참조) |
+| [이 문서](./phase-0-summary.md) | 구현 진행 상황, Phase별 체크리스트, 구조 변경 이력 |
+| [CLAUDE.md](../CLAUDE.md) | 개발자 컨텍스트, 아키텍처 가이드 |
