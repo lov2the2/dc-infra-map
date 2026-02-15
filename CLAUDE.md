@@ -19,6 +19,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - **Tailwind CSS 4** with `@custom-variant dark (&:is(.dark, .dark *))` for dark mode
 - **shadcn/ui** (new-york style, RSC-enabled, Lucide icons)
 - **next-themes** for dark/light theme switching (class-based, system default)
+- **exceljs** for Excel (.xlsx) file generation
+- **fast-xml-parser** for XML export
 
 ## Architecture
 
@@ -30,10 +32,13 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `types/index.ts` — Shared TypeScript interfaces
 - `types/cable.ts` — Cable, interface, and port type definitions
 - `lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
+- `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav)
 - `components/theme/` — Theme provider and toggle
+- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
+- `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result)
 - `components/topology/` — Network topology visualization
 
 **Database schema** (`db/schema/`):
@@ -49,12 +54,16 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/rear-ports` — Rear port CRUD
 - `/api/cables` — Cable CRUD
 - `/api/cables/trace/[id]` — Cable path tracing
+- `/api/export/{racks,devices,cables,access,power}` — Excel export endpoints
+- `/api/export/xml/{racks,devices}` — XML export endpoints
+- `/api/import/{devices,cables}` — CSV import endpoints
+- `/api/import/templates/[type]` — CSV template downloads
 
 **State management**:
 
 - `stores/use-cable-store.ts` — Cable management Zustand store
 
-**Pages**: `/cables` (cable management), `/topology` (network topology)
+**Pages**: `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports)
 
 **Path alias**: `@/*` maps to project root.
 
@@ -68,7 +77,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 ## shadcn/ui
 
-- Installed components: button, card, checkbox, dropdown-menu, sheet
+- Installed components: alert, badge, breadcrumb, button, card, checkbox, command, dialog, dropdown-menu, form, input, label, popover, progress, scroll-area, select, separator, sheet, skeleton, table, tabs, textarea, tooltip
 - Style: new-york | Base color: neutral | CSS variables: enabled
 - Must install components before importing: `npx shadcn@latest add <component> -y`
 - Use correct Radix UI props: `onOpenChange` (not `onClose`), `onCheckedChange` (not `onChange`), `onValueChange` (not `onSelect`)

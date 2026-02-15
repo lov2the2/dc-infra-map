@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/common/page-header";
 import { DeviceFilters } from "@/components/devices/device-filters";
 import { DeviceTable } from "@/components/devices/device-table";
+import { ExportButton } from "@/components/common/export-button";
 import type { DeviceWithRelations } from "@/types/entities";
 
 export default async function DevicesPage({
@@ -43,12 +44,15 @@ export default async function DevicesPage({
                     { label: "Devices" },
                 ]}
                 action={
-                    <Button asChild>
-                        <Link href="/devices/new">
-                            <Plus className="mr-2 h-4 w-4" />
-                            New Device
-                        </Link>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <ExportButton formats={["xlsx", "xml"]} baseEndpoint="/api/export/devices" />
+                        <Button asChild>
+                            <Link href="/devices/new">
+                                <Plus className="mr-2 h-4 w-4" />
+                                New Device
+                            </Link>
+                        </Button>
+                    </div>
                 }
             />
             <DeviceFilters />

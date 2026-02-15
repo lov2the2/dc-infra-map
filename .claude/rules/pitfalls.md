@@ -51,7 +51,7 @@
 
 **Currently Installed Components** (check `components/ui/`):
 
-- button, card, checkbox, dropdown-menu, sheet
+- alert, badge, breadcrumb, button, card, checkbox, command, dialog, dropdown-menu, form, input, label, popover, progress, scroll-area, select, separator, sheet, skeleton, table, tabs, textarea, tooltip
 
 ---
 

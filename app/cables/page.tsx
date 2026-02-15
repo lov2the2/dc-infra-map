@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/common/page-header";
 import { CableFilters } from "@/components/cables/cable-filters";
 import { CableTable } from "@/components/cables/cable-table";
 import { CableForm } from "@/components/cables/cable-form";
+import { ExportButton } from "@/components/common/export-button";
 import type { CableWithTenant } from "@/types/cable";
 
 export default async function CablesPage({
@@ -36,7 +37,12 @@ export default async function CablesPage({
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Cables" },
                 ]}
-                action={<CableForm />}
+                action={
+                    <div className="flex items-center gap-2">
+                        <ExportButton formats={["xlsx"]} baseEndpoint="/api/export/cables" />
+                        <CableForm />
+                    </div>
+                }
             />
             <CableFilters />
             <CableTable cables={result as CableWithTenant[]} />
