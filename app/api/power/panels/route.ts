@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { powerPanels } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 import { logAudit } from "@/lib/audit";
 import { powerPanelCreateSchema } from "@/lib/validators/power";
 
@@ -11,6 +12,7 @@ export async function GET(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "power_config", "read")) return errorResponse("Forbidden", 403);
 
         const { searchParams } = new URL(req.url);
         const siteId = searchParams.get("siteId");
@@ -34,7 +36,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "power_config", "create")) return errorResponse("Forbidden", 403);
 
         const body = await req.json();
         const parsed = powerPanelCreateSchema.safeParse(body);

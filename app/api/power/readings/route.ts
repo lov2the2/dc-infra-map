@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 import { powerReadingBatchSchema } from "@/lib/validators/power";
 import { generateMockReading } from "@/lib/power/mock-generator";
 
@@ -8,7 +9,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "power_readings", "create")) return errorResponse("Forbidden", 403);
 
         const body = await req.json();
         const parsed = powerReadingBatchSchema.safeParse(body);

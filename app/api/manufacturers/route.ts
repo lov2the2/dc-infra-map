@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { manufacturers } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 
 export async function GET() {
     try {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "devices", "create")) return errorResponse("Forbidden", 403);
 
         const body = await req.json();
         if (!body.name || !body.slug) {

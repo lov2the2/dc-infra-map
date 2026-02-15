@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { devices, deviceTypes, racks } from "@/db/schema";
 import { auth } from "@/auth";
 import { errorResponse, handleApiError, successResponse } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 import { logAudit } from "@/lib/audit";
 import { parseCsv, validateRows } from "@/lib/export/csv-import";
 
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "devices", "create")) return errorResponse("Forbidden", 403);
 
         const { searchParams } = new URL(req.url);
         const confirm = searchParams.get("confirm") === "true";

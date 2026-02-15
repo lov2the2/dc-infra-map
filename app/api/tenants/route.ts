@@ -6,11 +6,13 @@ import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { tenantCreateSchema } from "@/lib/validators/tenant";
+import { checkPermission } from "@/lib/auth/rbac";
 
 export async function GET() {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "sites", "read")) return errorResponse("Forbidden", 403);
 
         const result = await db.query.tenants.findMany({
             where: isNull(tenants.deletedAt),
@@ -26,7 +28,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "sites", "create")) return errorResponse("Forbidden", 403);
 
         const body = await req.json();
         const parsed = tenantCreateSchema.safeParse(body);

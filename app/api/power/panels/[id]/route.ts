@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { powerPanels } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 import { logAudit } from "@/lib/audit";
 import { powerPanelUpdateSchema } from "@/lib/validators/power";
 
@@ -31,7 +32,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "power_config", "update")) return errorResponse("Forbidden", 403);
 
         const { id } = await context.params;
         const body = await req.json();
@@ -59,7 +60,7 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role !== "admin") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "power_config", "delete")) return errorResponse("Forbidden", 403);
 
         const { id } = await context.params;
         const existing = await db.query.powerPanels.findFirst({ where: eq(powerPanels.id, id) });

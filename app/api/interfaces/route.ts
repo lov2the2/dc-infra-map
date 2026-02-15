@@ -4,6 +4,7 @@ import { db } from "@/db";
 import { interfaces } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { checkPermission } from "@/lib/auth/rbac";
 import { logAudit } from "@/lib/audit";
 import { interfaceCreateSchema } from "@/lib/validators/cable";
 
@@ -11,6 +12,7 @@ export async function GET(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "cables", "read")) return errorResponse("Forbidden", 403);
 
         const { searchParams } = new URL(req.url);
         const deviceId = searchParams.get("deviceId");
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "cables", "create")) return errorResponse("Forbidden", 403);
 
         const body = await req.json();
         const parsed = interfaceCreateSchema.safeParse(body);

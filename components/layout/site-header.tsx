@@ -3,6 +3,7 @@ import Link from "next/link";
 import { NAV_LINKS, SITE_CONFIG } from "@/config/site";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { MobileNav } from "@/components/layout/mobile-nav";
+import { UserNav } from "@/components/layout/user-nav";
 
 export function SiteHeader() {
     return (
@@ -35,8 +36,9 @@ export function SiteHeader() {
                         )
                     )}
                 </nav>
-                <div className="ml-auto hidden md:flex items-center">
+                <div className="ml-auto hidden md:flex items-center gap-2">
                     <ThemeToggle />
+                    <UserNav />
                 </div>
             </div>
         </header>

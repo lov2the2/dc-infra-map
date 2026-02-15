@@ -18,6 +18,15 @@ export default auth((req) => {
         loginUrl.searchParams.set("callbackUrl", pathname);
         return Response.redirect(loginUrl);
     }
+
+    // Admin-only routes
+    if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+        const role = req.auth?.user?.role;
+        if (role !== "admin") {
+            const forbiddenUrl = new URL("/dashboard", req.nextUrl.origin);
+            return Response.redirect(forbiddenUrl);
+        }
+    }
 });
 
 export const config = {

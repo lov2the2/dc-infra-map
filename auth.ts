@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
+import { logLoginEvent } from "@/lib/audit";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
     adapter: DrizzleAdapter(db),
@@ -62,6 +63,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 session.user.role = token.role as string;
             }
             return session;
+        },
+    },
+    events: {
+        async signIn({ user }) {
+            try {
+                await logLoginEvent(user.id ?? null, true);
+            } catch {
+                // Non-blocking: don't fail login if audit logging fails
+            }
         },
     },
 });

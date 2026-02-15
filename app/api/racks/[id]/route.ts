@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { rackUpdateSchema } from "@/lib/validators/rack";
+import { checkPermission } from "@/lib/auth/rbac";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -13,6 +14,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "racks", "read")) return errorResponse("Forbidden", 403);
 
         const { id } = await context.params;
         const rack = await db.query.racks.findFirst({
@@ -38,7 +40,7 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role === "viewer") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "racks", "update")) return errorResponse("Forbidden", 403);
 
         const { id } = await context.params;
         const body = await req.json();
@@ -68,7 +70,7 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
-        if (session.user.role !== "admin") return errorResponse("Forbidden", 403);
+        if (!checkPermission(session.user.role, "racks", "delete")) return errorResponse("Forbidden", 403);
 
         const { id } = await context.params;
         const existing = await db.query.racks.findFirst({ where: eq(racks.id, id) });
