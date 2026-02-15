@@ -33,6 +33,14 @@ export const userRoleEnum = pgEnum("user_role", [
     "admin",
     "operator",
     "viewer",
+    "tenant_viewer",
+]);
+
+export const auditActionTypeEnum = pgEnum("audit_action_type", [
+    "login",
+    "api_call",
+    "asset_view",
+    "export",
 ]);
 
 export const accessTypeEnum = pgEnum("access_type", [
