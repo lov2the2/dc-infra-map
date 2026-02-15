@@ -51,7 +51,7 @@
 
 **Currently Installed Components** (check `components/ui/`):
 
-- button, card, dropdown-menu, sheet
+- button, card, checkbox, dropdown-menu, sheet
 
 ---
 

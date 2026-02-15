@@ -66,3 +66,19 @@ export const powerPortTypeEnum = pgEnum("power_port_type", [
 export const powerOutletTypeEnum = pgEnum("power_outlet_type", [
     "iec_c13", "iec_c19", "nema_l6_30", "nema_l6_20",
 ]);
+
+export const cableTypeEnum = pgEnum("cable_type", [
+    "cat5e", "cat6", "cat6a", "fiber-om3", "fiber-om4", "fiber-sm", "dac", "power", "console",
+]);
+
+export const cableStatusEnum = pgEnum("cable_status", [
+    "connected", "planned", "decommissioned",
+]);
+
+export const interfaceTypeEnum = pgEnum("interface_type", [
+    "rj45-1g", "rj45-10g", "sfp-1g", "sfp+-10g", "sfp28-25g", "qsfp+-40g", "qsfp28-100g", "console", "power",
+]);
+
+export const portSideEnum = pgEnum("port_side", [
+    "front", "rear",
+]);

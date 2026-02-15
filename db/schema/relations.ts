@@ -12,6 +12,7 @@ import { deviceTypes, devices } from "./devices";
 import { auditLogs } from "./audit";
 import { accessLogs, equipmentMovements } from "./access";
 import { powerPanels, powerFeeds, powerPorts, powerOutlets } from "./power";
+import { interfaces, consolePorts, rearPorts, frontPorts, cables } from "./cables";
 
 // Auth relations
 export const usersRelations = relations(users, ({ many }) => ({
@@ -45,6 +46,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
     locations: many(locations),
     racks: many(racks),
     devices: many(devices),
+    cables: many(cables),
 }));
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({
@@ -115,6 +117,10 @@ export const devicesRelations = relations(devices, ({ one, many }) => ({
         references: [tenants.id],
     }),
     powerPorts: many(powerPorts),
+    interfaces: many(interfaces),
+    consolePorts: many(consolePorts),
+    frontPorts: many(frontPorts),
+    rearPorts: many(rearPorts),
 }));
 
 // Audit relations
@@ -203,5 +209,46 @@ export const powerOutletsRelations = relations(powerOutlets, ({ one }) => ({
     panel: one(powerPanels, {
         fields: [powerOutlets.panelId],
         references: [powerPanels.id],
+    }),
+}));
+
+// Cable relations
+export const interfacesRelations = relations(interfaces, ({ one }) => ({
+    device: one(devices, {
+        fields: [interfaces.deviceId],
+        references: [devices.id],
+    }),
+}));
+
+export const consolePortsRelations = relations(consolePorts, ({ one }) => ({
+    device: one(devices, {
+        fields: [consolePorts.deviceId],
+        references: [devices.id],
+    }),
+}));
+
+export const rearPortsRelations = relations(rearPorts, ({ one, many }) => ({
+    device: one(devices, {
+        fields: [rearPorts.deviceId],
+        references: [devices.id],
+    }),
+    frontPorts: many(frontPorts),
+}));
+
+export const frontPortsRelations = relations(frontPorts, ({ one }) => ({
+    device: one(devices, {
+        fields: [frontPorts.deviceId],
+        references: [devices.id],
+    }),
+    rearPort: one(rearPorts, {
+        fields: [frontPorts.rearPortId],
+        references: [rearPorts.id],
+    }),
+}));
+
+export const cablesRelations = relations(cables, ({ one }) => ({
+    tenant: one(tenants, {
+        fields: [cables.tenantId],
+        references: [tenants.id],
     }),
 }));

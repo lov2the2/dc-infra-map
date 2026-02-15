@@ -28,10 +28,33 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 - `config/site.ts` — Centralized site metadata, nav links, CTA links, footer config
 - `types/index.ts` — Shared TypeScript interfaces
+- `types/cable.ts` — Cable, interface, and port type definitions
 - `lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav)
 - `components/theme/` — Theme provider and toggle
+- `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
+- `components/topology/` — Network topology visualization
+
+**Database schema** (`db/schema/`):
+
+- `cables.ts` — Tables: `interfaces`, `consolePorts`, `rearPorts`, `frontPorts`, `cables`
+- `enums.ts` — Enums include: `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`
+
+**API routes**:
+
+- `/api/interfaces` — Interface CRUD
+- `/api/console-ports` — Console port CRUD
+- `/api/front-ports` — Front port CRUD
+- `/api/rear-ports` — Rear port CRUD
+- `/api/cables` — Cable CRUD
+- `/api/cables/trace/[id]` — Cable path tracing
+
+**State management**:
+
+- `stores/use-cable-store.ts` — Cable management Zustand store
+
+**Pages**: `/cables` (cable management), `/topology` (network topology)
 
 **Path alias**: `@/*` maps to project root.
 
@@ -45,7 +68,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 ## shadcn/ui
 
-- Installed components: button, card, dropdown-menu, sheet
+- Installed components: button, card, checkbox, dropdown-menu, sheet
 - Style: new-york | Base color: neutral | CSS variables: enabled
 - Must install components before importing: `npx shadcn@latest add <component> -y`
 - Use correct Radix UI props: `onOpenChange` (not `onClose`), `onCheckedChange` (not `onChange`), `onValueChange` (not `onSelect`)
