@@ -32,11 +32,14 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `types/index.ts` — Shared TypeScript interfaces
 - `types/cable.ts` — Cable, interface, and port type definitions
 - `lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
+- `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
+- `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
-- `components/layout/` — Site-wide layout components (header, footer, mobile nav)
+- `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
 - `components/theme/` — Theme provider and toggle
 - `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table)
+- `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
 - `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result)
 - `components/topology/` — Network topology visualization
@@ -44,7 +47,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 **Database schema** (`db/schema/`):
 
 - `cables.ts` — Tables: `interfaces`, `consolePorts`, `rearPorts`, `frontPorts`, `cables`
-- `enums.ts` — Enums include: `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`
+- `enums.ts` — Enums include: `userRoleEnum` (admin/operator/viewer/tenant_viewer), `auditActionTypeEnum` (login/api_call/asset_view/export), `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`
+- `audit.ts` — `auditLogs` table with `actionType`, `ipAddress`, `userAgent` columns for enhanced audit
 
 **API routes**:
 
@@ -58,12 +62,16 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/export/xml/{racks,devices}` — XML export endpoints
 - `/api/import/{devices,cables}` — CSV import endpoints
 - `/api/import/templates/[type]` — CSV template downloads
+- `/api/admin/users` — User management CRUD (admin only)
+- `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
 
 **State management**:
 
 - `stores/use-cable-store.ts` — Cable management Zustand store
 
-**Pages**: `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports)
+**RBAC**: All API routes use `checkPermission(role, resource, action)` from `lib/auth/rbac.ts`. Permission matrix covers 10 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check.
+
+**Pages**: `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only)
 
 **Path alias**: `@/*` maps to project root.
 

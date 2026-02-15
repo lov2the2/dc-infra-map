@@ -38,6 +38,21 @@
 - **CSV 템플릿 다운로드**: 가져오기에 필요한 CSV 템플릿 제공
 - **보고서 페이지** (`/reports`): 내보내기/가져오기 기능을 통합 제공하는 대시보드
 
+### Phase 5-1: 역할 기반 접근 제어 (RBAC)
+
+- **4가지 역할**: Admin, Operator, Viewer, Tenant Viewer
+- **권한 매트릭스**: 10개 리소스 × 4개 역할별 CRUD 권한 관리
+- **사용자 관리**: 관리자 전용 사용자 관리 페이지 (`/admin/users`)
+- **감사 로그 강화**: 로그인, API 호출, 내보내기 이벤트 기록 (IP, User-Agent 포함)
+- **미들웨어 보호**: `/admin/*` 경로는 관리자만 접근 가능
+
+| 역할 | 설명 |
+| --- | --- |
+| Admin | 모든 리소스 CRUD + 사용자 관리 |
+| Operator | 대부분 리소스 CRUD (사용자 관리 제외) |
+| Viewer | 읽기 전용 |
+| Tenant Viewer | 자신의 테넌트 데이터만 읽기 전용 |
+
 ## 시작하기
 
 개발 서버를 실행합니다:
@@ -79,12 +94,14 @@ app/                    # Next.js App Router 페이지
 components/
   ui/                   # shadcn/ui 컴포넌트
   common/               # 공통 컴포넌트 (페이지 헤더, 내보내기 버튼 등)
+  admin/                # 관리자 컴포넌트 (사용자 관리)
   cables/               # 케이블 관련 컴포넌트
   reports/              # 보고서 관련 컴포넌트
   topology/             # 토폴로지 관련 컴포넌트
-  layout/               # 레이아웃 컴포넌트
+  layout/               # 레이아웃 컴포넌트 (헤더, 사용자 네비게이션)
   theme/                # 테마 관련 컴포넌트
 lib/
+  auth/                 # RBAC 권한 관리
   export/               # 내보내기/가져오기 유틸리티
 config/                 # 사이트 설정
 types/                  # TypeScript 타입 정의
