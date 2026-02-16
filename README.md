@@ -53,6 +53,21 @@
 | Viewer | 읽기 전용 |
 | Tenant Viewer | 자신의 테넌트 데이터만 읽기 전용 |
 
+### Phase 5-3: 알림 및 알림 채널 (Alerts & Notifications)
+
+- **알림 규칙 관리**: 조건 기반 알림 규칙 생성/수정/삭제 (`/alerts`)
+- **3가지 알림 유형**:
+  - **전력 임계값 초과** (power_threshold): 랙/장비 전력 사용량이 설정 임계값을 초과할 때 발생
+  - **보증 만료 임박** (warranty_expiry): 장비 보증 만료 D-day 기준으로 사전 알림 발생
+  - **랙 용량 초과** (rack_capacity): 랙 사용률이 설정 임계값을 초과할 때 발생
+- **심각도 등급**: critical / warning / info 3단계 분류
+- **알림 이력 관리**: 발생한 알림 이력 조회 및 확인(acknowledge) 처리
+- **알림 채널 설정**: 알림 수신 채널 구성 (관리자 전용)
+  - Slack 웹훅
+  - 이메일
+  - 인앱(in-app) 알림
+- **권한 관리**: `alert_rules`, `alert_history`는 Admin/Operator/Viewer 접근, `alert_channels`는 Admin 전용
+
 ## 시작하기
 
 개발 서버를 실행합니다:
@@ -88,6 +103,7 @@ app/                    # Next.js App Router 페이지
   api/                  # API 라우트
     export/             # Excel/XML 내보내기 엔드포인트
     import/             # CSV 가져오기 엔드포인트
+  alerts/               # 알림 대시보드 페이지
   cables/               # 케이블 관리 페이지
   reports/              # 보고서 페이지
   topology/             # 토폴로지 시각화 페이지
@@ -95,6 +111,7 @@ components/
   ui/                   # shadcn/ui 컴포넌트
   common/               # 공통 컴포넌트 (페이지 헤더, 내보내기 버튼 등)
   admin/                # 관리자 컴포넌트 (사용자 관리)
+  alerts/               # 알림 관련 컴포넌트 (규칙, 이력, 채널)
   cables/               # 케이블 관련 컴포넌트
   reports/              # 보고서 관련 컴포넌트
   topology/             # 토폴로지 관련 컴포넌트
@@ -102,6 +119,7 @@ components/
   theme/                # 테마 관련 컴포넌트
 lib/
   auth/                 # RBAC 권한 관리
+  alerts/               # 알림 평가 엔진 및 알림 서비스
   export/               # 내보내기/가져오기 유틸리티
 config/                 # 사이트 설정
 types/                  # TypeScript 타입 정의
