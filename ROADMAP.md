@@ -131,14 +131,14 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 **기간**: 2주 | **목표**: 개발 환경 및 DB 스키마 확정
 
-- [ ] PostgreSQL 17 + TimescaleDB 로컬 개발 환경 설정 (Docker Compose)
-- [ ] Drizzle ORM 설정 및 코어 스키마 정의
+- [x] PostgreSQL 17 + TimescaleDB 로컬 개발 환경 설정 (Docker Compose)
+- [x] Drizzle ORM 설정 및 코어 스키마 정의
   - Region, Site, Location, Rack, DeviceType, Device
   - Manufacturer, Tenant (고객사)
-- [ ] Auth.js v5 기본 인증 (Credentials Provider)
-- [ ] Zustand 스토어 초기 설정
-- [ ] API 라우트 기본 구조 (`/api/sites`, `/api/racks`, `/api/devices`)
-- [ ] 시드 데이터 (한국 DC 표준 기반 샘플)
+- [x] Auth.js v5 기본 인증 (Credentials Provider)
+- [x] Zustand 스토어 초기 설정
+- [x] API 라우트 기본 구조 (`/api/sites`, `/api/racks`, `/api/devices`)
+- [x] 시드 데이터 (한국 DC 표준 기반 샘플)
 
 ### Phase 1: 상면 관리 MVP
 
@@ -146,19 +146,19 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 1-1. 랙 시각화 (2주)
 
-- [ ] 랙 엘리베이션 뷰 컴포넌트 (42U 그리드, 전면/후면)
-- [ ] @dnd-kit 커스텀 충돌 감지 (U-slot 기반 배치 검증)
-- [ ] 가변 높이 장비 드래그 앤 드롭 (1U, 2U, 4U)
-- [ ] 랙 간 장비 이동 (드래그로 다른 랙으로 이동)
-- [ ] 상면 도면 뷰 (플로어 레이아웃 - 랙 배치도)
+- [x] 랙 엘리베이션 뷰 컴포넌트 (42U 그리드, 전면/후면)
+- [x] @dnd-kit 커스텀 충돌 감지 (U-slot 기반 배치 검증)
+- [x] 가변 높이 장비 드래그 앤 드롭 (1U, 2U, 4U)
+- [x] 랙 간 장비 이동 (드래그로 다른 랙으로 이동)
+- [x] 상면 도면 뷰 (플로어 레이아웃 - 랙 배치도)
 
 #### 1-2. 자산 관리 (2주)
 
-- [ ] 장비 CRUD (서버, 네트워크, 스토리지 구분)
-- [ ] 고객사 태깅 시스템 (`Tenant` 엔티티 + 필터링)
-- [ ] 자산 상태 관리 (planned → staged → active → decommissioned)
-- [ ] 변경 이력 로그 (JSONB 스냅샷 + 사유 기록)
-- [ ] 장비 검색/필터 (고객사별, 장비 유형별, 상태별)
+- [x] 장비 CRUD (서버, 네트워크, 스토리지 구분)
+- [x] 고객사 태깅 시스템 (`Tenant` 엔티티 + 필터링)
+- [x] 자산 상태 관리 (planned → staged → active → decommissioned)
+- [x] 변경 이력 로그 (JSONB 스냅샷 + 사유 기록)
+- [x] 장비 검색/필터 (고객사별, 장비 유형별, 상태별)
 
 ### Phase 2: 입출입 및 전력 관리
 
@@ -166,18 +166,18 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 2-1. 입출입 관리 (2주)
 
-- [ ] 인력 입출입 기록 (방문자, 작업자)
-- [ ] 장비 반출입 기록 (입고/출고 워크플로우)
-- [ ] 입출입 이력 조회 및 리포트
+- [x] 인력 입출입 기록 (방문자, 작업자)
+- [x] 장비 반출입 기록 (입고/출고 워크플로우)
+- [x] 입출입 이력 조회 및 리포트
 
 #### 2-2. 전력 모니터링 (2주)
 
-- [ ] PowerPanel, PowerFeed, PowerPort, PowerOutlet 스키마
-- [ ] 전력 데이터 수집 API (`POST /api/power/readings`)
-- [ ] TimescaleDB hypertable + 압축 정책 설정
-- [ ] SSE 기반 실시간 전력 대시보드
-- [ ] 랙별 전압/전류 현황 표시
-- [ ] 전력 용량 대비 사용률 시각화
+- [x] PowerPanel, PowerFeed, PowerPort, PowerOutlet 스키마
+- [x] 전력 데이터 수집 API (`POST /api/power/readings`)
+- [x] TimescaleDB hypertable + 압축 정책 설정
+- [x] SSE 기반 실시간 전력 대시보드
+- [x] 랙별 전압/전류 현황 표시
+- [x] 전력 용량 대비 사용률 시각화
 
 ### Phase 3: 네트워크 및 선번장
 
@@ -185,31 +185,31 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 3-1. 선번장 (Cable Management) (3주)
 
-- [ ] Cable, Interface, FrontPort, RearPort, ConsolePort 스키마
-- [ ] 케이블 연결 CRUD (양 끝 터미네이션 정의)
-- [ ] 경로 추적 (서버 NIC → 패치패널 → 스위치 포트)
-- [ ] 선번장 테이블 뷰 (엑셀 유사 형태)
-- [ ] 네트워크 대역폭 정보 (인터페이스 타입별 속도)
+- [x] Cable, Interface, FrontPort, RearPort, ConsolePort 스키마
+- [x] 케이블 연결 CRUD (양 끝 터미네이션 정의)
+- [x] 경로 추적 (서버 NIC → 패치패널 → 스위치 포트)
+- [x] 선번장 테이블 뷰 (엑셀 유사 형태)
+- [x] 네트워크 대역폭 정보 (인터페이스 타입별 속도)
 
 #### 3-2. 네트워크 토폴로지 (1주)
 
-- [ ] 장비 간 연결 다이어그램 (간략 뷰)
-- [ ] 스위치 포트 사용률 표시
+- [x] 장비 간 연결 다이어그램 (간략 뷰)
+- [x] 스위치 포트 사용률 표시
 
 ### Phase 4: 리포트 및 내보내기
 
 **기간**: 3주 | **목표**: 엔터프라이즈 출력 기능
 
-- [ ] Excel 내보내기 (ExcelJS)
+- [x] Excel 내보내기 (ExcelJS)
   - 상면 도면 (랙 배치 + 장비 목록)
   - 자산 목록 (고객사별, 유형별)
   - 전력 사용 리포트 (일간/월간 집계)
   - 선번장 (케이블 연결표)
-- [ ] XML 내보내기 (fast-xml-parser)
+- [x] XML 내보내기 (fast-xml-parser)
   - 도면 데이터 교환용 표준 XML 스키마
   - 자산 목록 XML (외부 시스템 연동용)
 - [ ] 정기 리포트 스케줄링 (cron + 이메일 발송)
-- [ ] CSV 일괄 가져오기 (기존 데이터 마이그레이션)
+- [x] CSV 일괄 가져오기 (기존 데이터 마이그레이션)
 
 ### Phase 5: 고도화
 
@@ -217,9 +217,9 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 5-1. 인증/권한 고도화
 
-- [ ] RBAC (관리자/운영자/조회자/고객사 역할)
+- [x] RBAC (관리자/운영자/조회자/고객사 역할)
 - [ ] LDAP/Active Directory 연동 (Auth.js Provider)
-- [ ] 감사 로그 강화 (로그인, API 호출, 자산 조회 기록)
+- [x] 감사 로그 강화 (로그인, API 호출, 자산 조회 기록)
 
 #### 5-2. 백엔드 분리 (Go 마이그레이션)
 
@@ -229,9 +229,9 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 5-3. 알림 및 자동화
 
-- [ ] 전력 임계값 초과 알림 (Slack/이메일)
-- [ ] 자산 보증 만료 알림
-- [ ] 랙 용량 임계값 알림
+- [x] 전력 임계값 초과 알림 (Slack/이메일)
+- [x] 자산 보증 만료 알림
+- [x] 랙 용량 임계값 알림
 
 #### 5-4. 멀티 사이트
 
