@@ -14,6 +14,7 @@ interface AlertState {
     history: AlertHistory[];
     channels: NotificationChannel[];
     isLoading: boolean;
+    error: string | null;
 
     // Rules
     fetchRules: () => Promise<void>;
@@ -37,6 +38,9 @@ interface AlertState {
 
     // Computed
     getStats: () => AlertStats;
+
+    // Error
+    clearError: () => void;
 }
 
 export const useAlertStore = create<AlertState>()(
@@ -45,44 +49,76 @@ export const useAlertStore = create<AlertState>()(
         history: [],
         channels: [],
         isLoading: false,
+        error: null,
 
         fetchRules: async () => {
-            set((state) => { state.isLoading = true; });
+            set((state) => { state.isLoading = true; state.error = null; });
             try {
                 const res = await fetch("/api/alerts/rules");
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to fetch rules"; });
+                    return;
+                }
                 const json = await res.json();
                 set((state) => { state.rules = json.data ?? []; });
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             } finally {
                 set((state) => { state.isLoading = false; });
             }
         },
 
         createRule: async (data) => {
-            const res = await fetch("/api/alerts/rules", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch("/api/alerts/rules", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to create rule"; });
+                    return;
+                }
                 await get().fetchRules();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         updateRule: async (id, data) => {
-            const res = await fetch(`/api/alerts/rules/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/alerts/rules/${id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to update rule"; });
+                    return;
+                }
                 await get().fetchRules();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         deleteRule: async (id) => {
-            const res = await fetch(`/api/alerts/rules/${id}`, { method: "DELETE" });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/alerts/rules/${id}`, { method: "DELETE" });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to delete rule"; });
+                    return;
+                }
                 await get().fetchRules();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
@@ -91,71 +127,124 @@ export const useAlertStore = create<AlertState>()(
         },
 
         fetchHistory: async () => {
-            set((state) => { state.isLoading = true; });
+            set((state) => { state.isLoading = true; state.error = null; });
             try {
                 const res = await fetch("/api/alerts/history");
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to fetch history"; });
+                    return;
+                }
                 const json = await res.json();
                 set((state) => { state.history = json.data ?? []; });
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             } finally {
                 set((state) => { state.isLoading = false; });
             }
         },
 
         acknowledgeAlert: async (id) => {
-            const res = await fetch(`/api/alerts/history/${id}/acknowledge`, { method: "PATCH" });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/alerts/history/${id}/acknowledge`, { method: "PATCH" });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to acknowledge alert"; });
+                    return;
+                }
                 await get().fetchHistory();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         fetchChannels: async () => {
-            set((state) => { state.isLoading = true; });
+            set((state) => { state.isLoading = true; state.error = null; });
             try {
                 const res = await fetch("/api/alerts/channels");
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to fetch channels"; });
+                    return;
+                }
                 const json = await res.json();
                 set((state) => { state.channels = json.data ?? []; });
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             } finally {
                 set((state) => { state.isLoading = false; });
             }
         },
 
         createChannel: async (data) => {
-            const res = await fetch("/api/alerts/channels", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch("/api/alerts/channels", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to create channel"; });
+                    return;
+                }
                 await get().fetchChannels();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         updateChannel: async (id, data) => {
-            const res = await fetch(`/api/alerts/channels/${id}`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/alerts/channels/${id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to update channel"; });
+                    return;
+                }
                 await get().fetchChannels();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         deleteChannel: async (id) => {
-            const res = await fetch(`/api/alerts/channels/${id}`, { method: "DELETE" });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/alerts/channels/${id}`, { method: "DELETE" });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to delete channel"; });
+                    return;
+                }
                 await get().fetchChannels();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
 
         evaluateRules: async () => {
-            const res = await fetch("/api/alerts/evaluate", { method: "POST" });
-            const json = await res.json();
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch("/api/alerts/evaluate", { method: "POST" });
+                const json = await res.json();
+                if (!res.ok) {
+                    set((state) => { state.error = json.error ?? "Failed to evaluate rules"; });
+                    return { count: 0 };
+                }
                 await get().fetchHistory();
                 return { count: json.data?.count ?? 0 };
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
+                return { count: 0 };
             }
-            return { count: 0 };
         },
 
         getStats: () => {
@@ -170,5 +259,10 @@ export const useAlertStore = create<AlertState>()(
                 unacknowledgedAlerts: unacknowledged.length,
             };
         },
+
+        clearError: () =>
+            set((state) => {
+                state.error = null;
+            }),
     }))
 );

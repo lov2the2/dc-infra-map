@@ -13,6 +13,7 @@ interface CableState {
     filters: CableFilters;
     tracePath: TraceStep[] | null;
     isLoading: boolean;
+    error: string | null;
     fetchCables: () => Promise<void>;
     setFilter: <K extends keyof CableFilters>(key: K, value: CableFilters[K]) => void;
     resetFilters: () => void;
@@ -20,6 +21,7 @@ interface CableState {
     deleteCable: (id: string) => Promise<void>;
     traceCable: (portId: string) => Promise<void>;
     clearTrace: () => void;
+    clearError: () => void;
     setLoading: (loading: boolean) => void;
 }
 
@@ -35,8 +37,9 @@ export const useCableStore = create<CableState>()(
         filters: { ...DEFAULT_FILTERS },
         tracePath: null,
         isLoading: false,
+        error: null,
         fetchCables: async () => {
-            set((state) => { state.isLoading = true; });
+            set((state) => { state.isLoading = true; state.error = null; });
             try {
                 const { cableType, status, search } = get().filters;
                 const params = new URLSearchParams();
@@ -44,8 +47,15 @@ export const useCableStore = create<CableState>()(
                 if (status) params.set("status", status);
                 if (search) params.set("search", search);
                 const res = await fetch(`/api/cables?${params.toString()}`);
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to fetch cables"; });
+                    return;
+                }
                 const json = await res.json();
                 set((state) => { state.cables = json.data ?? []; });
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             } finally {
                 set((state) => { state.isLoading = false; });
             }
@@ -59,27 +69,50 @@ export const useCableStore = create<CableState>()(
                 state.filters = { ...DEFAULT_FILTERS };
             }),
         createCable: async (data) => {
-            const res = await fetch("/api/cables", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(data),
-            });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch("/api/cables", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to create cable"; });
+                    return;
+                }
                 await get().fetchCables();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
         deleteCable: async (id) => {
-            const res = await fetch(`/api/cables/${id}`, { method: "DELETE" });
-            if (res.ok) {
+            set((state) => { state.error = null; });
+            try {
+                const res = await fetch(`/api/cables/${id}`, { method: "DELETE" });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to delete cable"; });
+                    return;
+                }
                 await get().fetchCables();
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             }
         },
         traceCable: async (portId) => {
-            set((state) => { state.isLoading = true; });
+            set((state) => { state.isLoading = true; state.error = null; });
             try {
                 const res = await fetch(`/api/cables/trace/${portId}`);
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    set((state) => { state.error = json.error ?? "Failed to trace cable"; });
+                    return;
+                }
                 const json = await res.json();
                 set((state) => { state.tracePath = json.data ?? null; });
+            } catch (err) {
+                set((state) => { state.error = err instanceof Error ? err.message : "Unknown error"; });
             } finally {
                 set((state) => { state.isLoading = false; });
             }
@@ -87,6 +120,10 @@ export const useCableStore = create<CableState>()(
         clearTrace: () =>
             set((state) => {
                 state.tracePath = null;
+            }),
+        clearError: () =>
+            set((state) => {
+                state.error = null;
             }),
         setLoading: (loading) =>
             set((state) => {

@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { auth } from "@/auth";
+import { db } from "@/db";
+import { notificationChannels } from "@/db/schema/alerts";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api";
 import { checkPermission } from "@/lib/auth/rbac";
-import {
-    getMockNotificationChannels,
-    createMockNotificationChannel,
-} from "@/lib/alerts/evaluate";
+import { logAudit } from "@/lib/audit";
 import type { NotificationChannelFormData } from "@/types/alerts";
 
 export async function GET() {
@@ -14,7 +13,8 @@ export async function GET() {
         if (!session) return errorResponse("Unauthorized", 401);
         if (!checkPermission(session.user.role, "alert_channels", "read")) return errorResponse("Forbidden", 403);
 
-        return successResponse(getMockNotificationChannels());
+        const channels = await db.select().from(notificationChannels);
+        return successResponse(channels);
     } catch (error) {
         return handleApiError(error);
     }
@@ -32,7 +32,15 @@ export async function POST(req: NextRequest) {
             return errorResponse("name and channelType are required", 400);
         }
 
-        const channel = createMockNotificationChannel(body);
+        const [channel] = await db.insert(notificationChannels).values({
+            name: body.name,
+            channelType: body.channelType,
+            config: body.config ?? {},
+            enabled: body.enabled ?? true,
+        }).returning();
+
+        await logAudit(session.user.id, "create", "notification_channels", channel.id, null, channel as unknown as Record<string, unknown>);
+
         return successResponse(channel, 201);
     } catch (error) {
         return handleApiError(error);
