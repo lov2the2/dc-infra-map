@@ -30,17 +30,30 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 - `config/site.ts` — Centralized site metadata, nav links, CTA links, footer config
 - `types/index.ts` — Shared TypeScript interfaces
+- `types/entities.ts` — Entity type definitions (Site, Rack, Device, Tenant, etc.)
 - `types/cable.ts` — Cable, interface, and port type definitions
+- `types/alerts.ts` — Alert type definitions
+- `types/next-auth.d.ts` — NextAuth type augmentation (session user with role)
 - `lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
+- `lib/api.ts` — API client utility
 - `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
+- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `lib/alerts/` — Alert evaluation engine and notification service
+- `lib/power/mock-generator.ts` — Power mock data generator for development
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
 - `components/theme/` — Theme provider and toggle
+- `components/providers/` — Context providers (session-provider)
 - `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table)
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
+- `components/devices/` — Device management components (device-table, device-filters, device-form, device-audit-log)
+- `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
+- `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card)
+- `components/rack/` — Rack elevation components (rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header)
+- `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
+- `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
 - `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result)
 - `components/topology/` — Network topology visualization
@@ -48,19 +61,57 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **Database schema** (`db/schema/`):
 
+- `enums.ts` — Enums include: `userRoleEnum` (admin/operator/viewer/tenant_viewer), `auditActionTypeEnum` (login/api_call/asset_view/export), `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`, `alertRuleTypeEnum` (power_threshold/warranty_expiry/rack_capacity), `alertSeverityEnum` (critical/warning/info), `notificationChannelTypeEnum` (slack_webhook/email/in_app), `conditionOperatorEnum`
+- `auth.ts` — Tables: `users`, `accounts`, `sessions`, `verificationTokens`
+- `core.ts` — Tables: `manufacturers`, `tenants`, `sites`, `locations`, `racks`
+- `devices.ts` — Tables: `deviceTypes`, `devices`
+- `access.ts` — Tables: `accessLogs`, `equipmentMovements`
+- `power.ts` — Tables: `powerPanels`, `powerFeeds`, `powerPorts`, `powerOutlets`, `powerReadings`
 - `cables.ts` — Tables: `interfaces`, `consolePorts`, `rearPorts`, `frontPorts`, `cables`
-- `enums.ts` — Enums include: `userRoleEnum` (admin/operator/viewer/tenant_viewer), `auditActionTypeEnum` (login/api_call/asset_view/export), `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`, `alertRuleTypeEnum` (power_threshold/warranty_expiry/rack_capacity), `alertSeverityEnum` (critical/warning/info), `notificationChannelTypeEnum` (slack/email/in_app), `conditionOperatorEnum`
 - `audit.ts` — `auditLogs` table with `actionType`, `ipAddress`, `userAgent` columns for enhanced audit
 - `alerts.ts` — Tables: `alertRules`, `alertHistory`, `notificationChannels`
+- `relations.ts` — Drizzle ORM relation definitions
+- `index.ts` — Schema barrel export
 
 **API routes**:
 
+- `/api/auth/[...nextauth]` — NextAuth authentication (login/logout/session)
+- `/api/sites` — Site CRUD
+- `/api/sites/[id]` — Single site GET/PATCH/DELETE
+- `/api/racks` — Rack CRUD
+- `/api/racks/[id]` — Single rack GET/PATCH/DELETE
+- `/api/devices` — Device CRUD
+- `/api/devices/[id]` — Single device GET/PATCH/DELETE
+- `/api/device-types` — Device type CRUD
+- `/api/device-types/[id]` — Single device type GET/PATCH/DELETE
+- `/api/manufacturers` — Manufacturer listing
+- `/api/tenants` — Tenant CRUD
+- `/api/tenants/[id]` — Single tenant GET/PATCH/DELETE
+- `/api/locations` — Location CRUD
+- `/api/locations/[id]` — Single location GET/PATCH/DELETE
+- `/api/access-logs` — Access log CRUD
+- `/api/access-logs/[id]` — Single access log GET/PATCH/DELETE
+- `/api/equipment-movements` — Equipment movement CRUD
+- `/api/equipment-movements/[id]` — Single equipment movement GET/PATCH/DELETE
+- `/api/power/panels` — Power panel CRUD
+- `/api/power/panels/[id]` — Single power panel GET/PATCH/DELETE
+- `/api/power/feeds` — Power feed CRUD
+- `/api/power/feeds/[id]` — Single power feed GET/PATCH/DELETE
+- `/api/power/readings` — Power readings POST
+- `/api/power/sse` — Power SSE real-time streaming
+- `/api/power/summary` — Power summary GET
 - `/api/interfaces` — Interface CRUD
+- `/api/interfaces/[id]` — Single interface GET/PATCH/DELETE
 - `/api/console-ports` — Console port CRUD
+- `/api/console-ports/[id]` — Single console port GET/PATCH/DELETE
 - `/api/front-ports` — Front port CRUD
+- `/api/front-ports/[id]` — Single front port GET/PATCH/DELETE
 - `/api/rear-ports` — Rear port CRUD
+- `/api/rear-ports/[id]` — Single rear port GET/PATCH/DELETE
 - `/api/cables` — Cable CRUD
+- `/api/cables/[id]` — Single cable GET/PATCH/DELETE
 - `/api/cables/trace/[id]` — Cable path tracing
+- `/api/audit-logs` — Audit log listing
 - `/api/export/{racks,devices,cables,access,power}` — Excel export endpoints
 - `/api/export/xml/{racks,devices}` — XML export endpoints
 - `/api/import/{devices,cables}` — CSV import endpoints
@@ -77,12 +128,17 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **State management**:
 
+- `stores/use-site-store.ts` — Site management Zustand store
+- `stores/use-rack-store.ts` — Rack management Zustand store
+- `stores/use-device-store.ts` — Device management Zustand store
+- `stores/use-access-store.ts` — Access management Zustand store
+- `stores/use-power-store.ts` — Power monitoring Zustand store
 - `stores/use-cable-store.ts` — Cable management Zustand store
 - `stores/use-alert-store.ts` — Alert management Zustand store
 
 **RBAC**: All API routes use `checkPermission(role, resource, action)` from `lib/auth/rbac.ts`. Permission matrix covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
 
-**Pages**: `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs)
 
 **Path alias**: `@/*` maps to project root.
 

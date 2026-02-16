@@ -24,13 +24,13 @@
 | UI | Tailwind CSS 4 + shadcn/ui | 최신 | RSC 호환, 다크모드 지원 |
 | Database | PostgreSQL | 17.x | JSONB + GIN 인덱스, 감사 로그, 확장성 |
 | Time-Series | TimescaleDB (PG 확장) | 2.x | 전력 데이터 압축 (10~20x), hypertable |
-| ORM | Drizzle ORM | ^0.40.0 | SQL-first, 7KB 번들, RSC 호환 |
+| ORM | Drizzle ORM | ^0.45.1 | SQL-first, 7KB 번들, RSC 호환 |
 | DB Driver | postgres.js | ^3.4.0 | Node.js 최고 성능 PG 드라이버 |
 | Drag & Drop | @dnd-kit | core 6.x / sortable 8.x | React 19 호환, 가변 높이 그리드 지원 |
 | State | Zustand + Immer | ^5.0.0 | 글로벌 상태 (드래그, 전력 캐시, 선택) |
 | Auth | Auth.js v5 (NextAuth) | ^5.0.0 | 벤더 종속 없음, 내부 도구에 적합 |
 | Excel Export | ExcelJS | ^4.4.0 | 유지보수 활발, 셀 스타일링 지원 |
-| XML Export | fast-xml-parser | ^4.5.0 | 경량, 양방향 파싱/생성 |
+| XML Export | fast-xml-parser | ^5.3.6 | 경량, 양방향 파싱/생성 |
 | Real-time | SSE (Server-Sent Events) | 브라우저 내장 | 단방향 모니터링에 최적, WebSocket 불필요 |
 
 ### 선택하지 않은 기술과 이유
