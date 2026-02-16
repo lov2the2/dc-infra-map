@@ -6,11 +6,15 @@ import { users } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { checkPermission } from "@/lib/auth/rbac";
 
 export async function GET() {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "users", "read")) {
+            return errorResponse("Forbidden", 403);
+        }
 
         const result = await db.query.users.findMany({
             columns: {
@@ -34,6 +38,9 @@ export async function POST(req: NextRequest) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "users", "create")) {
+            return errorResponse("Forbidden", 403);
+        }
 
         const body = await req.json();
         const { name, email, password, role } = body;

@@ -6,6 +6,7 @@ import { users } from "@/db/schema";
 import { auth } from "@/auth";
 import { successResponse, errorResponse, handleApiError } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { checkPermission } from "@/lib/auth/rbac";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -13,6 +14,9 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "users", "read")) {
+            return errorResponse("Forbidden", 403);
+        }
 
         const { id } = await context.params;
         const user = await db.query.users.findFirst({
@@ -38,6 +42,9 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "users", "update")) {
+            return errorResponse("Forbidden", 403);
+        }
 
         const { id } = await context.params;
         const body = await req.json();
@@ -88,6 +95,9 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     try {
         const session = await auth();
         if (!session) return errorResponse("Unauthorized", 401);
+        if (!checkPermission(session.user.role, "users", "delete")) {
+            return errorResponse("Forbidden", 403);
+        }
 
         const { id } = await context.params;
 

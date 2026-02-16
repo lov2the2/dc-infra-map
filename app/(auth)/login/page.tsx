@@ -20,10 +20,21 @@ export default function LoginPage() {
     );
 }
 
+function isValidRedirectUrl(url: string): boolean {
+    return url.startsWith("/") && !url.startsWith("//");
+}
+
+function getSafeRedirectUrl(redirect: string | null): string {
+    if (!redirect || !isValidRedirectUrl(redirect)) {
+        return "/dashboard";
+    }
+    return redirect;
+}
+
 function LoginForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+    const callbackUrl = getSafeRedirectUrl(searchParams.get("callbackUrl"));
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
