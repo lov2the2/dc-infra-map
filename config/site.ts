@@ -19,6 +19,7 @@ export const NAV_LINKS: NavLink[] = [
     { label: "Cables", href: "/cables" },
     { label: "Topology", href: "/topology" },
     { label: "Reports", href: "/reports" },
+    { label: "Alerts", href: "/alerts" },
 ];
 
 export const CTA_LINKS = {

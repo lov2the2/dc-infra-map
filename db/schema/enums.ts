@@ -90,3 +90,29 @@ export const interfaceTypeEnum = pgEnum("interface_type", [
 export const portSideEnum = pgEnum("port_side", [
     "front", "rear",
 ]);
+
+export const alertRuleTypeEnum = pgEnum("alert_rule_type", [
+    "power_threshold",
+    "warranty_expiry",
+    "rack_capacity",
+]);
+
+export const alertSeverityEnum = pgEnum("alert_severity", [
+    "critical",
+    "warning",
+    "info",
+]);
+
+export const notificationChannelTypeEnum = pgEnum("notification_channel_type", [
+    "slack_webhook",
+    "email",
+    "in_app",
+]);
+
+export const conditionOperatorEnum = pgEnum("condition_operator", [
+    "gt",
+    "lt",
+    "gte",
+    "lte",
+    "eq",
+]);

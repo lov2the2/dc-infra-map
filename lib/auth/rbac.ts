@@ -12,7 +12,10 @@ export type Resource =
     | "access_logs"
     | "reports"
     | "users"
-    | "audit_logs";
+    | "audit_logs"
+    | "alert_rules"
+    | "alert_channels"
+    | "alert_history";
 
 export type Action = "read" | "create" | "update" | "delete";
 
@@ -69,6 +72,22 @@ const PERMISSION_MATRIX: Record<Resource, Partial<Record<UserRole, Action[]>>> =
     audit_logs: {
         admin: ["read"],
         operator: ["read"],
+    },
+    alert_rules: {
+        admin: ["read", "create", "update", "delete"],
+        operator: ["read", "create", "update"],
+        viewer: ["read"],
+        tenant_viewer: ["read"],
+    },
+    alert_channels: {
+        admin: ["read", "create", "update", "delete"],
+        operator: ["read"],
+    },
+    alert_history: {
+        admin: ["read", "update", "delete"],
+        operator: ["read", "update"],
+        viewer: ["read"],
+        tenant_viewer: ["read"],
     },
 };
 

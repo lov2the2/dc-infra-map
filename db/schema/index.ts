@@ -6,4 +6,5 @@ export * from "./audit";
 export * from "./access";
 export * from "./power";
 export * from "./cables";
+export * from "./alerts";
 export * from "./relations";
