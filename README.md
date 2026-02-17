@@ -144,6 +144,12 @@ ADMIN_PASSWORD=admin1234
 - **알림 채널**: Slack 웹훅, 이메일, 인앱 알림
 - **알림 이력**: 발생 이력 조회 및 확인(acknowledge) 처리
 
+### API 문서
+
+- **인터랙티브 API 레퍼런스**: `/api-docs` 경로에서 Scalar UI 기반 API 문서 제공
+- **OpenAPI 3.1.1 스펙**: 40개 이상의 API 엔드포인트 문서화
+- **Try It Out**: 브라우저에서 직접 API 테스트 가능
+
 ## 프로젝트 구조
 
 ```text
@@ -152,6 +158,7 @@ app/                          # Next.js App Router
   access/                     # 입출입 관리
   admin/users/                # 사용자 관리 (관리자 전용)
   alerts/                     # 알림 대시보드
+  api-docs/                   # API 레퍼런스 (Scalar UI)
   cables/                     # 케이블 관리
   dashboard/                  # 대시보드
   devices/                    # 장비 관리
@@ -177,6 +184,7 @@ lib/
   auth/rbac.ts                # RBAC 권한 매트릭스
   alerts/                     # 알림 평가 엔진
   export/                     # Excel/XML/CSV 유틸리티
+  swagger/openapi.ts          # OpenAPI 3.1.1 스펙 정의
 stores/                       # Zustand 스토어
 types/                        # TypeScript 타입 정의
 scripts/                      # DB 초기화 SQL

@@ -21,6 +21,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - **next-themes** for dark/light theme switching (class-based, system default)
 - **exceljs** for Excel (.xlsx) file generation
 - **fast-xml-parser** for XML export
+- **@scalar/nextjs-api-reference** for interactive API documentation (OpenAPI 3.1.1)
 
 ## Architecture
 
@@ -41,6 +42,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `lib/alerts/` — Alert evaluation engine and notification service
+- `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
@@ -125,6 +127,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/alerts/channels` — Notification channel CRUD
 - `/api/alerts/channels/[id]` — Single channel GET/PATCH/DELETE
 - `/api/alerts/evaluate` — Manual alert evaluation trigger POST
+- `/api-docs` — Interactive API reference (Scalar UI, serves OpenAPI spec)
 
 **State management**:
 
@@ -138,7 +141,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **RBAC**: All API routes use `checkPermission(role, resource, action)` from `lib/auth/rbac.ts`. Permission matrix covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 
