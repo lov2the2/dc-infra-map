@@ -1,41 +1,30 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/auth";
-import { errorResponse, handleApiError } from "@/lib/api";
+import { errorResponse } from "@/lib/api";
 import { getDeviceTemplate, getCableTemplate } from "@/lib/export/csv-templates";
+import { withAuthOnly } from "@/lib/auth/with-auth";
 
-export async function GET(
-    _req: NextRequest,
-    { params }: { params: Promise<{ type: string }> },
-) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
+export const GET = withAuthOnly(async (req, _session) => {
+    const type = req.nextUrl.pathname.split("/").pop()!;
 
-        const { type } = await params;
+    let csv: string;
+    let filename: string;
 
-        let csv: string;
-        let filename: string;
-
-        switch (type) {
-            case "devices":
-                csv = getDeviceTemplate();
-                filename = "dcim-device-import-template.csv";
-                break;
-            case "cables":
-                csv = getCableTemplate();
-                filename = "dcim-cable-import-template.csv";
-                break;
-            default:
-                return errorResponse("Invalid template type. Use 'devices' or 'cables'.", 400);
-        }
-
-        return new Response(csv, {
-            headers: {
-                "Content-Type": "text/csv",
-                "Content-Disposition": `attachment; filename="${filename}"`,
-            },
-        });
-    } catch (error) {
-        return handleApiError(error);
+    switch (type) {
+        case "devices":
+            csv = getDeviceTemplate();
+            filename = "dcim-device-import-template.csv";
+            break;
+        case "cables":
+            csv = getCableTemplate();
+            filename = "dcim-cable-import-template.csv";
+            break;
+        default:
+            return errorResponse("Invalid template type. Use 'devices' or 'cables'.", 400);
     }
-}
+
+    return new Response(csv, {
+        headers: {
+            "Content-Type": "text/csv",
+            "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+    });
+});

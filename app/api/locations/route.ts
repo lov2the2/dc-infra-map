@@ -1,53 +1,35 @@
-import { NextRequest } from "next/server";
 import { eq, isNull, and } from "drizzle-orm";
 import { db } from "@/db";
 import { locations } from "@/db/schema";
-import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
+import { successResponse, validationErrorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { locationCreateSchema } from "@/lib/validators/location";
-import { checkPermission } from "@/lib/auth/rbac";
+import { withAuth } from "@/lib/auth/with-auth";
 
-export async function GET(req: NextRequest) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "read")) return errorResponse("Forbidden", 403);
+export const GET = withAuth("sites", "read", async (req, _session) => {
+    const { searchParams } = new URL(req.url);
+    const siteId = searchParams.get("siteId");
 
-        const { searchParams } = new URL(req.url);
-        const siteId = searchParams.get("siteId");
+    const conditions = [isNull(locations.deletedAt)];
+    if (siteId) conditions.push(eq(locations.siteId, siteId));
 
-        const conditions = [isNull(locations.deletedAt)];
-        if (siteId) conditions.push(eq(locations.siteId, siteId));
+    const result = await db.query.locations.findMany({
+        where: and(...conditions),
+        with: { site: true, tenant: true },
+    });
 
-        const result = await db.query.locations.findMany({
-            where: and(...conditions),
-            with: { site: true, tenant: true },
-        });
+    return successResponse(result);
+});
 
-        return successResponse(result);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+export const POST = withAuth("sites", "create", async (req, session) => {
+    const body = await req.json();
+    const parsed = locationCreateSchema.safeParse(body);
+    if (!parsed.success) return validationErrorResponse(parsed.error);
 
-export async function POST(req: NextRequest) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "create")) return errorResponse("Forbidden", 403);
+    const { ...data } = parsed.data;
+    const [location] = await db.insert(locations).values(data).returning();
 
-        const body = await req.json();
-        const parsed = locationCreateSchema.safeParse(body);
-        if (!parsed.success) return validationErrorResponse(parsed.error);
+    await logAudit(session.user.id, "create", "locations", location.id, null, location as Record<string, unknown>);
 
-        const { ...data } = parsed.data;
-        const [location] = await db.insert(locations).values(data).returning();
-
-        await logAudit(session.user.id, "create", "locations", location.id, null, location as Record<string, unknown>);
-
-        return successResponse(location, 201);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    return successResponse(location, 201);
+});

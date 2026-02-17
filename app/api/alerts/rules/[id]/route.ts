@@ -1,75 +1,49 @@
-import { NextRequest } from "next/server";
-import { auth } from "@/auth";
 import { db } from "@/db";
 import { alertRules } from "@/db/schema/alerts";
 import { eq } from "drizzle-orm";
-import { successResponse, errorResponse, handleApiError } from "@/lib/api";
-import { checkPermission } from "@/lib/auth/rbac";
+import { successResponse, errorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
+import { withAuth } from "@/lib/auth/with-auth";
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "alert_rules", "read")) return errorResponse("Forbidden", 403);
+export const GET = withAuth("alert_rules", "read", async (req, _session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const [rule] = await db.select().from(alertRules).where(eq(alertRules.id, id));
+    if (!rule) return errorResponse("Alert rule not found", 404);
 
-        const { id } = await params;
-        const [rule] = await db.select().from(alertRules).where(eq(alertRules.id, id));
-        if (!rule) return errorResponse("Alert rule not found", 404);
+    return successResponse(rule);
+});
 
-        return successResponse(rule);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+export const PATCH = withAuth("alert_rules", "update", async (req, session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "alert_rules", "update")) return errorResponse("Forbidden", 403);
+    const [existing] = await db.select().from(alertRules).where(eq(alertRules.id, id));
+    if (!existing) return errorResponse("Alert rule not found", 404);
 
-        const { id } = await params;
+    const body = await req.json();
+    const [updated] = await db
+        .update(alertRules)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(alertRules.id, id))
+        .returning();
 
-        const [existing] = await db.select().from(alertRules).where(eq(alertRules.id, id));
-        if (!existing) return errorResponse("Alert rule not found", 404);
+    await logAudit(
+        session.user.id,
+        "update",
+        "alert_rules",
+        id,
+        existing as unknown as Record<string, unknown>,
+        updated as unknown as Record<string, unknown>,
+    );
 
-        const body = await req.json();
-        const [updated] = await db
-            .update(alertRules)
-            .set({ ...body, updatedAt: new Date() })
-            .where(eq(alertRules.id, id))
-            .returning();
+    return successResponse(updated);
+});
 
-        await logAudit(
-            session.user.id,
-            "update",
-            "alert_rules",
-            id,
-            existing as unknown as Record<string, unknown>,
-            updated as unknown as Record<string, unknown>,
-        );
+export const DELETE = withAuth("alert_rules", "delete", async (req, session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const [deleted] = await db.delete(alertRules).where(eq(alertRules.id, id)).returning();
+    if (!deleted) return errorResponse("Alert rule not found", 404);
 
-        return successResponse(updated);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    await logAudit(session.user.id, "delete", "alert_rules", id, deleted as unknown as Record<string, unknown>, null);
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "alert_rules", "delete")) return errorResponse("Forbidden", 403);
-
-        const { id } = await params;
-        const [deleted] = await db.delete(alertRules).where(eq(alertRules.id, id)).returning();
-        if (!deleted) return errorResponse("Alert rule not found", 404);
-
-        await logAudit(session.user.id, "delete", "alert_rules", id, deleted as unknown as Record<string, unknown>, null);
-
-        return successResponse({ message: "Alert rule deleted" });
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    return successResponse({ message: "Alert rule deleted" });
+});

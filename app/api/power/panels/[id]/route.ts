@@ -1,80 +1,53 @@
-import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { powerPanels } from "@/db/schema";
-import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError, validationErrorResponse } from "@/lib/api";
-import { checkPermission } from "@/lib/auth/rbac";
+import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { powerPanelUpdateSchema } from "@/lib/validators/power";
+import { withAuth, withAuthOnly } from "@/lib/auth/with-auth";
 
-type RouteContext = { params: Promise<{ id: string }> };
+export const GET = withAuthOnly(async (req, _session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const panel = await db.query.powerPanels.findFirst({
+        where: eq(powerPanels.id, id),
+        with: { powerFeeds: { with: { rack: true } }, site: true },
+    });
 
-export async function GET(_req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
+    if (!panel) return errorResponse("Power panel not found", 404);
+    return successResponse(panel);
+});
 
-        const { id } = await context.params;
-        const panel = await db.query.powerPanels.findFirst({
-            where: eq(powerPanels.id, id),
-            with: { powerFeeds: { with: { rack: true } }, site: true },
-        });
+export const PATCH = withAuth("power_config", "update", async (req, session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const body = await req.json();
+    const parsed = powerPanelUpdateSchema.safeParse(body);
+    if (!parsed.success) return validationErrorResponse(parsed.error);
 
-        if (!panel) return errorResponse("Power panel not found", 404);
-        return successResponse(panel);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    const existing = await db.query.powerPanels.findFirst({ where: eq(powerPanels.id, id) });
+    if (!existing) return errorResponse("Power panel not found", 404);
 
-export async function PATCH(req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "power_config", "update")) return errorResponse("Forbidden", 403);
+    const [updated] = await db
+        .update(powerPanels)
+        .set({ ...parsed.data, updatedAt: new Date() })
+        .where(eq(powerPanels.id, id))
+        .returning();
 
-        const { id } = await context.params;
-        const body = await req.json();
-        const parsed = powerPanelUpdateSchema.safeParse(body);
-        if (!parsed.success) return validationErrorResponse(parsed.error);
+    await logAudit(session.user.id, "update", "power_panels", id, existing as Record<string, unknown>, updated as Record<string, unknown>);
 
-        const existing = await db.query.powerPanels.findFirst({ where: eq(powerPanels.id, id) });
-        if (!existing) return errorResponse("Power panel not found", 404);
+    return successResponse(updated);
+});
 
-        const [updated] = await db
-            .update(powerPanels)
-            .set({ ...parsed.data, updatedAt: new Date() })
-            .where(eq(powerPanels.id, id))
-            .returning();
+export const DELETE = withAuth("power_config", "delete", async (req, session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const existing = await db.query.powerPanels.findFirst({ where: eq(powerPanels.id, id) });
+    if (!existing) return errorResponse("Power panel not found", 404);
 
-        await logAudit(session.user.id, "update", "power_panels", id, existing as Record<string, unknown>, updated as Record<string, unknown>);
+    await db
+        .update(powerPanels)
+        .set({ deletedAt: new Date() })
+        .where(eq(powerPanels.id, id));
 
-        return successResponse(updated);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    await logAudit(session.user.id, "delete", "power_panels", id, existing as Record<string, unknown>, null);
 
-export async function DELETE(_req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "power_config", "delete")) return errorResponse("Forbidden", 403);
-
-        const { id } = await context.params;
-        const existing = await db.query.powerPanels.findFirst({ where: eq(powerPanels.id, id) });
-        if (!existing) return errorResponse("Power panel not found", 404);
-
-        await db
-            .update(powerPanels)
-            .set({ deletedAt: new Date() })
-            .where(eq(powerPanels.id, id));
-
-        await logAudit(session.user.id, "delete", "power_panels", id, existing as Record<string, unknown>, null);
-
-        return successResponse({ message: "Power panel deleted" });
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    return successResponse({ message: "Power panel deleted" });
+});

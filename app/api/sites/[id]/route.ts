@@ -1,69 +1,41 @@
-import { NextRequest } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sites } from "@/db/schema";
-import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError } from "@/lib/api";
-import { checkPermission } from "@/lib/auth/rbac";
+import { successResponse, errorResponse } from "@/lib/api";
+import { withAuth } from "@/lib/auth/with-auth";
 
-type RouteContext = { params: Promise<{ id: string }> };
+export const GET = withAuth("sites", "read", async (req, _session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const site = await db.query.sites.findFirst({
+        where: eq(sites.id, id),
+        with: { region: true, tenant: true, locations: true },
+    });
 
-export async function GET(_req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "read")) return errorResponse("Forbidden", 403);
+    if (!site) return errorResponse("Site not found", 404);
+    return successResponse(site);
+});
 
-        const { id } = await context.params;
-        const site = await db.query.sites.findFirst({
-            where: eq(sites.id, id),
-            with: { region: true, tenant: true, locations: true },
-        });
+export const PATCH = withAuth("sites", "update", async (req, _session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const body = await req.json();
+    const [updated] = await db
+        .update(sites)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(sites.id, id))
+        .returning();
 
-        if (!site) return errorResponse("Site not found", 404);
-        return successResponse(site);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    if (!updated) return errorResponse("Site not found", 404);
+    return successResponse(updated);
+});
 
-export async function PATCH(req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "update")) return errorResponse("Forbidden", 403);
+export const DELETE = withAuth("sites", "delete", async (req, _session) => {
+    const id = req.nextUrl.pathname.split("/").pop()!;
+    const [deleted] = await db
+        .update(sites)
+        .set({ deletedAt: new Date() })
+        .where(eq(sites.id, id))
+        .returning();
 
-        const { id } = await context.params;
-        const body = await req.json();
-        const [updated] = await db
-            .update(sites)
-            .set({ ...body, updatedAt: new Date() })
-            .where(eq(sites.id, id))
-            .returning();
-
-        if (!updated) return errorResponse("Site not found", 404);
-        return successResponse(updated);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
-
-export async function DELETE(_req: NextRequest, context: RouteContext) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "delete")) return errorResponse("Forbidden", 403);
-
-        const { id } = await context.params;
-        const [deleted] = await db
-            .update(sites)
-            .set({ deletedAt: new Date() })
-            .where(eq(sites.id, id))
-            .returning();
-
-        if (!deleted) return errorResponse("Site not found", 404);
-        return successResponse({ message: "Site deleted" });
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    if (!deleted) return errorResponse("Site not found", 404);
+    return successResponse({ message: "Site deleted" });
+});

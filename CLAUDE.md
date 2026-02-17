@@ -38,6 +38,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/utils.ts` — `cn()` utility (clsx + tailwind-merge)
 - `lib/api.ts` — API client utility
 - `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
+- `lib/auth/with-auth.ts` — `withAuth(resource, action, handler)` HOF for API route auth+RBAC boilerplate; `withAuthOnly(handler)` for auth-only routes
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
@@ -139,7 +140,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `stores/use-cable-store.ts` — Cable management Zustand store
 - `stores/use-alert-store.ts` — Alert management Zustand store
 
-**RBAC**: All API routes use `checkPermission(role, resource, action)` from `lib/auth/rbac.ts`. Permission matrix covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
+**RBAC**: All API routes use `withAuth(resource, action, handler)` from `lib/auth/with-auth.ts`, which wraps auth + RBAC permission checking. Permission matrix (in `lib/auth/rbac.ts`) covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
+
+**Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery.
 
 **Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 

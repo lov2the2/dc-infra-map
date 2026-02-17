@@ -1,78 +1,56 @@
-import { NextRequest } from "next/server";
 import { desc } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError } from "@/lib/api";
+import { successResponse, errorResponse } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
-import { checkPermission } from "@/lib/auth/rbac";
+import { withAuth } from "@/lib/auth/with-auth";
 
-export async function GET() {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "users", "read")) {
-            return errorResponse("Forbidden", 403);
-        }
+export const GET = withAuth("users", "read", async (_req, _session) => {
+    const result = await db.query.users.findMany({
+        columns: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            createdAt: true,
+            updatedAt: true,
+        },
+        orderBy: [desc(users.createdAt)],
+    });
 
-        const result = await db.query.users.findMany({
-            columns: {
-                id: true,
-                name: true,
-                email: true,
-                role: true,
-                createdAt: true,
-                updatedAt: true,
-            },
-            orderBy: [desc(users.createdAt)],
-        });
+    return successResponse(result);
+});
 
-        return successResponse(result);
-    } catch (error) {
-        return handleApiError(error);
+export const POST = withAuth("users", "create", async (req, session) => {
+    const body = await req.json();
+    const { name, email, password, role } = body;
+
+    if (!email || !password) {
+        return errorResponse("Email and password are required", 422);
     }
-}
 
-export async function POST(req: NextRequest) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "users", "create")) {
-            return errorResponse("Forbidden", 403);
-        }
+    // Check if user already exists
+    const existing = await db.query.users.findFirst({
+        where: (u, { eq }) => eq(u.email, email),
+    });
+    if (existing) return errorResponse("User with this email already exists", 409);
 
-        const body = await req.json();
-        const { name, email, password, role } = body;
+    const hashedPassword = await bcrypt.hash(password, 12);
+    const [user] = await db.insert(users).values({
+        name: name || null,
+        email,
+        hashedPassword,
+        role: role || "viewer",
+    }).returning({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        createdAt: users.createdAt,
+    });
 
-        if (!email || !password) {
-            return errorResponse("Email and password are required", 422);
-        }
+    await logAudit(session.user.id, "create", "users", user.id, null, user as Record<string, unknown>);
 
-        // Check if user already exists
-        const existing = await db.query.users.findFirst({
-            where: (u, { eq }) => eq(u.email, email),
-        });
-        if (existing) return errorResponse("User with this email already exists", 409);
-
-        const hashedPassword = await bcrypt.hash(password, 12);
-        const [user] = await db.insert(users).values({
-            name: name || null,
-            email,
-            hashedPassword,
-            role: role || "viewer",
-        }).returning({
-            id: users.id,
-            name: users.name,
-            email: users.email,
-            role: users.role,
-            createdAt: users.createdAt,
-        });
-
-        await logAudit(session.user.id, "create", "users", user.id, null, user as Record<string, unknown>);
-
-        return successResponse(user, 201);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    return successResponse(user, 201);
+});

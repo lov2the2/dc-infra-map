@@ -1,39 +1,21 @@
-import { NextRequest } from "next/server";
-import { eq, isNull } from "drizzle-orm";
+import { isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { sites } from "@/db/schema";
-import { auth } from "@/auth";
-import { successResponse, errorResponse, handleApiError } from "@/lib/api";
-import { checkPermission } from "@/lib/auth/rbac";
+import { successResponse } from "@/lib/api";
+import { withAuth } from "@/lib/auth/with-auth";
 
-export async function GET() {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "read")) return errorResponse("Forbidden", 403);
+export const GET = withAuth("sites", "read", async (_req, _session) => {
+    const result = await db.query.sites.findMany({
+        where: isNull(sites.deletedAt),
+        with: { region: true, tenant: true },
+    });
 
-        const result = await db.query.sites.findMany({
-            where: isNull(sites.deletedAt),
-            with: { region: true, tenant: true },
-        });
+    return successResponse(result);
+});
 
-        return successResponse(result);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+export const POST = withAuth("sites", "create", async (req, _session) => {
+    const body = await req.json();
+    const [site] = await db.insert(sites).values(body).returning();
 
-export async function POST(req: NextRequest) {
-    try {
-        const session = await auth();
-        if (!session) return errorResponse("Unauthorized", 401);
-        if (!checkPermission(session.user.role, "sites", "create")) return errorResponse("Forbidden", 403);
-
-        const body = await req.json();
-        const [site] = await db.insert(sites).values(body).returning();
-
-        return successResponse(site, 201);
-    } catch (error) {
-        return handleApiError(error);
-    }
-}
+    return successResponse(site, 201);
+});
