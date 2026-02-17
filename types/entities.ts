@@ -10,7 +10,7 @@ import {
 import { deviceTypes, devices } from "@/db/schema/devices";
 import { auditLogs } from "@/db/schema/audit";
 import { accessLogs, equipmentMovements } from "@/db/schema/access";
-import { powerPanels, powerFeeds, powerPorts, powerOutlets } from "@/db/schema/power";
+import { powerPanels, powerFeeds, powerPorts, powerOutlets, powerReadings } from "@/db/schema/power";
 
 // Base entity types (inferred from Drizzle schema)
 export type Manufacturer = InferSelectModel<typeof manufacturers>;
@@ -68,6 +68,7 @@ export type PowerPanel = InferSelectModel<typeof powerPanels>;
 export type PowerFeed = InferSelectModel<typeof powerFeeds>;
 export type PowerPort = InferSelectModel<typeof powerPorts>;
 export type PowerOutlet = InferSelectModel<typeof powerOutlets>;
+export type PowerReading = InferSelectModel<typeof powerReadings>;
 
 // Composite types
 export interface AccessLogWithUser extends AccessLog {

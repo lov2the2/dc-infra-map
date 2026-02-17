@@ -11,7 +11,7 @@ import {
 import { deviceTypes, devices } from "./devices";
 import { auditLogs } from "./audit";
 import { accessLogs, equipmentMovements } from "./access";
-import { powerPanels, powerFeeds, powerPorts, powerOutlets } from "./power";
+import { powerPanels, powerFeeds, powerPorts, powerOutlets, powerReadings } from "./power";
 import { interfaces, consolePorts, rearPorts, frontPorts, cables } from "./cables";
 
 // Auth relations
@@ -188,6 +188,14 @@ export const powerFeedsRelations = relations(powerFeeds, ({ one, many }) => ({
         references: [racks.id],
     }),
     powerPorts: many(powerPorts),
+    powerReadings: many(powerReadings),
+}));
+
+export const powerReadingsRelations = relations(powerReadings, ({ one }) => ({
+    feed: one(powerFeeds, {
+        fields: [powerReadings.feedId],
+        references: [powerFeeds.id],
+    }),
 }));
 
 export const powerPortsRelations = relations(powerPorts, ({ one }) => ({

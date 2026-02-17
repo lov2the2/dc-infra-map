@@ -81,3 +81,18 @@ export const powerOutlets = pgTable("power_outlets", {
     maxAmps: real("max_amps").notNull(),
     ...timestamps,
 });
+
+export const powerReadings = pgTable("power_readings", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    feedId: text("feed_id")
+        .notNull()
+        .references(() => powerFeeds.id),
+    voltageV: real("voltage_v").notNull(),
+    currentA: real("current_a").notNull(),
+    powerKw: real("power_kw").notNull(),
+    powerFactor: real("power_factor"),
+    energyKwh: real("energy_kwh"),
+    recordedAt: timestamp("recorded_at", { withTimezone: true }).defaultNow().notNull(),
+});

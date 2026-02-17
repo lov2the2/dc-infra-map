@@ -30,13 +30,13 @@ export async function evaluateAllRules(): Promise<AlertHistoryType[]> {
 
         switch (rule.ruleType) {
             case "power_threshold":
-                triggered = evaluatePowerThreshold(ruleForEval);
+                triggered = await evaluatePowerThreshold(ruleForEval);
                 break;
             case "warranty_expiry":
-                triggered = evaluateWarrantyExpiry(ruleForEval);
+                triggered = await evaluateWarrantyExpiry(ruleForEval);
                 break;
             case "rack_capacity":
-                triggered = evaluateRackCapacity(ruleForEval);
+                triggered = await evaluateRackCapacity(ruleForEval);
                 break;
         }
 

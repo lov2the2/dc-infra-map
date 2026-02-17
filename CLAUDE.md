@@ -66,13 +66,13 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `enums.ts` — Enums include: `userRoleEnum` (admin/operator/viewer/tenant_viewer), `auditActionTypeEnum` (login/api_call/asset_view/export), `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`, `alertRuleTypeEnum` (power_threshold/warranty_expiry/rack_capacity), `alertSeverityEnum` (critical/warning/info), `notificationChannelTypeEnum` (slack_webhook/email/in_app), `conditionOperatorEnum`
 - `auth.ts` — Tables: `users`, `accounts`, `sessions`, `verificationTokens`
 - `core.ts` — Tables: `manufacturers`, `tenants`, `sites`, `locations`, `racks`
-- `devices.ts` — Tables: `deviceTypes`, `devices`
+- `devices.ts` — Tables: `deviceTypes`, `devices` (devices includes `warrantyExpiresAt` nullable timestamp)
 - `access.ts` — Tables: `accessLogs`, `equipmentMovements`
 - `power.ts` — Tables: `powerPanels`, `powerFeeds`, `powerPorts`, `powerOutlets`, `powerReadings`
 - `cables.ts` — Tables: `interfaces`, `consolePorts`, `rearPorts`, `frontPorts`, `cables`
 - `audit.ts` — `auditLogs` table with `actionType`, `ipAddress`, `userAgent` columns for enhanced audit
 - `alerts.ts` — Tables: `alertRules`, `alertHistory`, `notificationChannels`
-- `relations.ts` — Drizzle ORM relation definitions
+- `relations.ts` — Drizzle ORM relation definitions (includes `powerReadingsRelations`)
 - `index.ts` — Schema barrel export
 
 **API routes**:
@@ -99,7 +99,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/power/panels/[id]` — Single power panel GET/PATCH/DELETE
 - `/api/power/feeds` — Power feed CRUD
 - `/api/power/feeds/[id]` — Single power feed GET/PATCH/DELETE
-- `/api/power/readings` — Power readings POST
+- `/api/power/readings` — Power readings CRUD (POST inserts to DB, GET queries DB with mock fallback)
 - `/api/power/sse` — Power SSE real-time streaming
 - `/api/power/summary` — Power summary GET
 - `/api/interfaces` — Interface CRUD

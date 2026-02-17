@@ -48,6 +48,7 @@ export const devices = pgTable("devices", {
     position: integer("position"),
     serialNumber: text("serial_number"),
     assetTag: text("asset_tag"),
+    warrantyExpiresAt: timestamp("warranty_expires_at", { withTimezone: true }),
     primaryIp: text("primary_ip"),
     description: text("description"),
     customFields: jsonb("custom_fields").$type<Record<string, unknown>>(),
