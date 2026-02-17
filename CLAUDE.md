@@ -54,12 +54,12 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `components/devices/` — Device management components (device-table, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
 - `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card)
-- `components/rack/` — Rack elevation components (rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header)
+- `components/rack/` — Rack elevation components (rack-elevation-client, multi-rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header); multi-rack-elevation-client provides a single DndContext for cross-rack drag-and-drop; rack-grid/rack-slot/device-block accept rackId props for multi-rack context
 - `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
 - `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result)
-- `components/topology/` — Network topology visualization
+- `components/topology/` — Network topology visualization (accurate per-interface port utilization via cable terminations, patch panel tracing with front/rear port lookup and dashed-line rendering)
 - `components/alerts/` — Alert components (severity-badge, alert-stats-card, alert-rules-table, alert-rule-form, alert-history-table, channel-config)
 
 **Database schema** (`db/schema/`):
@@ -133,7 +133,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 **State management**:
 
 - `stores/use-site-store.ts` — Site management Zustand store
-- `stores/use-rack-store.ts` — Rack management Zustand store
+- `stores/use-rack-store.ts` — Rack management Zustand store (multi-rack support: `racks[]`, `setRacks()`, `moveDeviceBetweenRacks()` with optimistic update and rollback)
 - `stores/use-device-store.ts` — Device management Zustand store
 - `stores/use-access-store.ts` — Access management Zustand store
 - `stores/use-power-store.ts` — Power monitoring Zustand store
