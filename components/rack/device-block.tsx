@@ -17,13 +17,14 @@ interface DeviceBlockProps {
     device: Device & { deviceType: DeviceType };
     startRow: number;
     uHeight: number;
+    sourceRackId: string;
 }
 
-export function DeviceBlock({ device, startRow, uHeight }: DeviceBlockProps) {
+export function DeviceBlock({ device, startRow, uHeight, sourceRackId }: DeviceBlockProps) {
     const { draggingDeviceId } = useRackStore();
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
         id: device.id,
-        data: { device },
+        data: { device, sourceRackId },
     });
 
     const isDragging = draggingDeviceId === device.id;

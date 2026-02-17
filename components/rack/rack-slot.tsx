@@ -6,13 +6,14 @@ import { useRackStore } from "@/stores/use-rack-store";
 interface RackSlotProps {
     position: number;
     gridRow: number;
+    rackId: string;
 }
 
-export function RackSlot({ position, gridRow }: RackSlotProps) {
+export function RackSlot({ position, gridRow, rackId }: RackSlotProps) {
     const { dragOverSlot } = useRackStore();
     const { setNodeRef, isOver } = useDroppable({
-        id: `slot-${position}`,
-        data: { position },
+        id: `slot-${rackId}-${position}`,
+        data: { position, rackId },
     });
 
     const isHighlighted = isOver || dragOverSlot === position;
