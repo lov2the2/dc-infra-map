@@ -19,6 +19,20 @@ interface Connection {
     status: string;
     sourceDeviceId: string;
     targetDeviceId: string;
+    isPatchPanel?: boolean;
+}
+
+interface PortData {
+    id: string;
+    name: string;
+    deviceId: string;
+    rearPortId?: string | null;
+}
+
+interface RearPortData {
+    id: string;
+    name: string;
+    deviceId: string;
 }
 
 const CABLE_COLORS: Record<string, string> = {
@@ -33,9 +47,63 @@ const CABLE_COLORS: Record<string, string> = {
     "console": "#6b7280",
 };
 
+// Trace through patch panels to find the endpoint interface deviceId
+function traceToEndpoint(
+    terminationType: string,
+    terminationId: string,
+    ifaceData: { id: string; deviceId: string }[],
+    frontPortData: PortData[],
+    rearPortData: RearPortData[],
+    allCables: { id: string; terminationAType: string; terminationAId: string; terminationBType: string; terminationBId: string }[],
+    visited: Set<string> = new Set(),
+): string | null {
+    const visitKey = `${terminationType}:${terminationId}`;
+    if (visited.has(visitKey)) return null;
+    visited.add(visitKey);
+
+    if (terminationType === "interface") {
+        const iface = ifaceData.find((i) => i.id === terminationId);
+        return iface?.deviceId ?? null;
+    }
+
+    if (terminationType === "frontPort") {
+        const fp = frontPortData.find((p) => p.id === terminationId);
+        if (!fp?.rearPortId) return null;
+        // Find cable on the rear port
+        const cable = allCables.find(
+            (c) =>
+                (c.terminationAType === "rearPort" && c.terminationAId === fp.rearPortId) ||
+                (c.terminationBType === "rearPort" && c.terminationBId === fp.rearPortId),
+        );
+        if (!cable) return null;
+        const otherType = cable.terminationAId === fp.rearPortId ? cable.terminationBType : cable.terminationAType;
+        const otherId = cable.terminationAId === fp.rearPortId ? cable.terminationBId : cable.terminationAId;
+        return traceToEndpoint(otherType, otherId, ifaceData, frontPortData, rearPortData, allCables, visited);
+    }
+
+    if (terminationType === "rearPort") {
+        // Find the first front port linked to this rear port
+        const fp = frontPortData.find((p) => p.rearPortId === terminationId);
+        if (!fp) return null;
+        // Find cable on the front port
+        const cable = allCables.find(
+            (c) =>
+                (c.terminationAType === "frontPort" && c.terminationAId === fp.id) ||
+                (c.terminationBType === "frontPort" && c.terminationBId === fp.id),
+        );
+        if (!cable) return null;
+        const otherType = cable.terminationAId === fp.id ? cable.terminationBType : cable.terminationAType;
+        const otherId = cable.terminationAId === fp.id ? cable.terminationBId : cable.terminationAId;
+        return traceToEndpoint(otherType, otherId, ifaceData, frontPortData, rearPortData, allCables, visited);
+    }
+
+    return null;
+}
+
 export function TopologyDiagram() {
     const [devices, setDevices] = useState<DeviceNode[]>([]);
     const [connections, setConnections] = useState<Connection[]>([]);
+    const [connectedInterfaceIds, setConnectedInterfaceIds] = useState<Set<string>>(new Set());
     const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -45,10 +113,26 @@ export function TopologyDiagram() {
             fetch("/api/devices").then((r) => r.json()),
             fetch("/api/interfaces").then((r) => r.json()),
             fetch("/api/cables").then((r) => r.json()),
-        ]).then(([devRes, ifaceRes, cableRes]) => {
+            fetch("/api/front-ports").then((r) => r.json()),
+            fetch("/api/rear-ports").then((r) => r.json()),
+        ]).then(([devRes, ifaceRes, cableRes, frontPortRes, rearPortRes]) => {
             const devData = devRes.data ?? [];
-            const ifaceData = ifaceRes.data ?? [];
+            const ifaceData: { id: string; deviceId: string; name: string }[] = ifaceRes.data ?? [];
             const cableData: CableWithTenant[] = cableRes.data ?? [];
+            const frontPortData: PortData[] = frontPortRes.data ?? [];
+            const rearPortData: RearPortData[] = rearPortRes.data ?? [];
+
+            // Build connected interface IDs set from cables
+            const connectedIds = new Set<string>();
+            for (const cable of cableData) {
+                if (cable.terminationAType === "interface") {
+                    connectedIds.add(cable.terminationAId);
+                }
+                if (cable.terminationBType === "interface") {
+                    connectedIds.add(cable.terminationBId);
+                }
+            }
+            setConnectedInterfaceIds(connectedIds);
 
             // Build device nodes with their interfaces
             const deviceMap = new Map<string, DeviceNode>();
@@ -68,12 +152,12 @@ export function TopologyDiagram() {
                 }
             }
 
-            // Build connections from cables that connect interfaces
+            // Build connections from cables that connect interfaces directly
             const conns: Connection[] = [];
             for (const cable of cableData) {
                 if (cable.terminationAType === "interface" && cable.terminationBType === "interface") {
-                    const ifaceA = ifaceData.find((i: { id: string }) => i.id === cable.terminationAId);
-                    const ifaceB = ifaceData.find((i: { id: string }) => i.id === cable.terminationBId);
+                    const ifaceA = ifaceData.find((i) => i.id === cable.terminationAId);
+                    const ifaceB = ifaceData.find((i) => i.id === cable.terminationBId);
                     if (ifaceA && ifaceB) {
                         conns.push({
                             cableId: cable.id,
@@ -82,6 +166,49 @@ export function TopologyDiagram() {
                             status: cable.status,
                             sourceDeviceId: ifaceA.deviceId,
                             targetDeviceId: ifaceB.deviceId,
+                        });
+                    }
+                }
+            }
+
+            // Build patch panel connections
+            for (const cable of cableData) {
+                // Skip cables already handled as direct interface-interface
+                if (cable.terminationAType === "interface" && cable.terminationBType === "interface") continue;
+
+                const srcDeviceId = traceToEndpoint(
+                    cable.terminationAType,
+                    cable.terminationAId,
+                    ifaceData,
+                    frontPortData,
+                    rearPortData,
+                    cableData,
+                );
+                const tgtDeviceId = traceToEndpoint(
+                    cable.terminationBType,
+                    cable.terminationBId,
+                    ifaceData,
+                    frontPortData,
+                    rearPortData,
+                    cableData,
+                );
+
+                if (srcDeviceId && tgtDeviceId && srcDeviceId !== tgtDeviceId) {
+                    // Check if this device pair already has a direct connection
+                    const alreadyExists = conns.some(
+                        (c) =>
+                            (c.sourceDeviceId === srcDeviceId && c.targetDeviceId === tgtDeviceId) ||
+                            (c.sourceDeviceId === tgtDeviceId && c.targetDeviceId === srcDeviceId),
+                    );
+                    if (!alreadyExists) {
+                        conns.push({
+                            cableId: `pp-${cable.id}`,
+                            label: cable.label ?? "patch panel",
+                            cableType: cable.cableType,
+                            status: cable.status,
+                            sourceDeviceId: srcDeviceId,
+                            targetDeviceId: tgtDeviceId,
+                            isPatchPanel: true,
                         });
                     }
                 }
@@ -166,10 +293,13 @@ export function TopologyDiagram() {
                                             y1={srcPos.y + 30}
                                             x2={tgtPos.x + 70}
                                             y2={tgtPos.y + 30}
-                                            stroke={color}
+                                            stroke={conn.isPatchPanel ? "#10b981" : color}
                                             strokeWidth={isHighlighted ? 2.5 : 1}
                                             opacity={isHighlighted ? 1 : 0.2}
-                                            strokeDasharray={conn.status === "planned" ? "5,5" : undefined}
+                                            strokeDasharray={
+                                                conn.isPatchPanel ? "8,4" :
+                                                conn.status === "planned" ? "5,5" : undefined
+                                            }
                                         />
                                         <text
                                             x={(srcPos.x + tgtPos.x) / 2 + 70}
@@ -178,7 +308,7 @@ export function TopologyDiagram() {
                                             className="fill-muted-foreground text-[10px]"
                                             opacity={isHighlighted ? 1 : 0.3}
                                         >
-                                            {conn.label}
+                                            {conn.isPatchPanel ? `${conn.label} (PP)` : conn.label}
                                         </text>
                                     </g>
                                 );
@@ -244,6 +374,7 @@ export function TopologyDiagram() {
                 <SwitchPortUsage
                     device={devices.find((d) => d.id === selectedDeviceId)!}
                     connections={connections}
+                    connectedInterfaceIds={connectedInterfaceIds}
                     onClear={() => setSelectedDeviceId(null)}
                 />
             )}
@@ -254,22 +385,23 @@ export function TopologyDiagram() {
 interface SwitchPortUsageProps {
     device: DeviceNode;
     connections: Connection[];
+    connectedInterfaceIds: Set<string>;
     onClear: () => void;
 }
 
-function SwitchPortUsage({ device, connections, onClear }: SwitchPortUsageProps) {
+function SwitchPortUsage({ device, connections, connectedInterfaceIds, onClear }: SwitchPortUsageProps) {
     const deviceConns = connections.filter(
         (c) => c.sourceDeviceId === device.id || c.targetDeviceId === device.id,
     );
+    const connectedPorts = device.interfaces.filter((i) => connectedInterfaceIds.has(i.id)).length;
     const totalPorts = device.interfaces.length;
-    const connectedPorts = deviceConns.length;
     const utilization = totalPorts > 0 ? Math.round((connectedPorts / totalPorts) * 100) : 0;
 
     return (
         <Card>
             <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-base">
-                    {device.name} - Port Usage
+                    {device.name} - Port Usage ({deviceConns.length} cables)
                 </CardTitle>
                 <Button variant="ghost" size="sm" onClick={onClear}>
                     Clear
@@ -285,7 +417,7 @@ function SwitchPortUsage({ device, connections, onClear }: SwitchPortUsageProps)
                     </div>
                     <div className="flex flex-wrap gap-1.5">
                         {device.interfaces.map((iface, idx) => {
-                            const isConnected = idx < connectedPorts; // simplified
+                            const isConnected = connectedInterfaceIds.has(iface.id);
                             return (
                                 <div
                                     key={iface.id}
