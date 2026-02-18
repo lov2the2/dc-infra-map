@@ -14,6 +14,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm test` — Start Vitest in watch mode
 - `npm run test:run` — Run all tests once
 - `npm run test:coverage` — Run tests with coverage report
+- `npm run test:e2e` — Run Playwright E2E tests
+- `npm run test:e2e:ui` — Run Playwright E2E tests with UI mode
+- `npm run db:timescale` — Apply TimescaleDB hypertable setup (requires TimescaleDB extension)
 
 ## Tech Stack
 
@@ -25,6 +28,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - **fast-xml-parser** for XML export
 - **@scalar/nextjs-api-reference** for interactive API documentation (OpenAPI 3.1.1)
 - **vitest** for unit testing with @vitejs/plugin-react and vite-tsconfig-paths
+- **@playwright/test** for E2E testing (chromium; requires `npx playwright install`)
 
 ## Architecture
 
@@ -49,6 +53,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `tests/lib/auth/` — Unit tests for RBAC permission matrix
 - `tests/lib/export/` — Unit tests for export/import utilities (csv-templates, xml, csv-import)
 - `tests/lib/alerts/` — Unit tests for alert evaluators (power threshold, warranty expiry, rack capacity)
+- `lib/rate-limit.ts` — In-memory sliding window rate limiter (`checkRateLimit`, `getClientIdentifier`, `rateLimitResponse`, `RATE_LIMITS` presets: auth 10/min, exportImport 20/min, api 200/min)
 - `lib/alerts/` — Alert evaluation engine and notification service
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
@@ -149,7 +154,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **RBAC**: All API routes use `withAuth(resource, action, handler)` from `lib/auth/with-auth.ts`, which wraps auth + RBAC permission checking. Permission matrix (in `lib/auth/rbac.ts`) covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
 
-**Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery.
+**Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
 **Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
@@ -176,6 +181,17 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - Test files location: `tests/` directory (mirrors `lib/` and `components/` structure)
 - Coverage measurement available with `npm run test:coverage`
 - Unit tests cover: validators (device, rack, tenant, access, cable, location, power), RBAC permission matrix, export/import utilities (csv-templates, xml, csv-import), and alert evaluators (power threshold, warranty expiry, rack capacity)
+
+## Playwright (E2E)
+
+- Configuration file: `playwright.config.ts` (chromium, webServer auto-start on port 3000)
+- Test files location: `e2e/` directory (auth.spec.ts, dashboard.spec.ts, devices.spec.ts)
+- Setup: `npx playwright install` to download browser binaries
+
+## Database Migrations
+
+- `drizzle/timescaledb-setup.sql` — TimescaleDB hypertable setup for `power_readings` (run via `npm run db:timescale`)
+- `drizzle/README.md` — Migration documentation and instructions
 
 ## Documentation Index
 
