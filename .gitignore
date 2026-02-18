@@ -41,6 +41,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Playwright
+/e2e/test-results/
+/e2e/playwright-report/
+/playwright-report/
+/blob-report/
+
 # claude
 /.claude/settings.local.json
 .playwright-mcp/
