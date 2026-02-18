@@ -165,6 +165,50 @@ document.documentElement.className  // Should be "light" or "dark"
 
 ---
 
+## Route Not Found Pages
+
+### Before Creating Dynamic Routes
+
+- [ ] Add `not-found.tsx` for routes with dynamic segments (`[id]`, `[slug]`)
+- [ ] Use `notFound()` from `next/navigation` when entity lookup fails
+- [ ] Provide a user-friendly message with navigation back
+
+**Pattern for Dynamic Route 404:**
+
+```tsx
+// app/devices/[id]/not-found.tsx
+export default function DeviceNotFound() {
+    return (
+        <div className="space-y-4 text-center py-12">
+            <h2 className="text-2xl font-bold">Device Not Found</h2>
+            <p className="text-muted-foreground">
+                The requested device does not exist or has been removed.
+            </p>
+            <Button asChild>
+                <Link href="/devices">Back to Devices</Link>
+            </Button>
+        </div>
+    )
+}
+```
+
+**Triggering from Server Components:**
+
+```tsx
+// app/devices/[id]/page.tsx
+import { notFound } from 'next/navigation'
+
+export default async function DevicePage({ params }: { params: { id: string } }) {
+    const device = await getDevice(params.id)
+    if (!device) notFound()
+    return <DeviceDetail device={device} />
+}
+```
+
+**Note**: `not-found.tsx` is different from `error.tsx`. Use `not-found.tsx` for missing entities (404), `error.tsx` for unexpected runtime errors (500).
+
+---
+
 ## Quick Diagnosis Reference
 
 | Symptom | First Check | Location |
@@ -175,6 +219,7 @@ document.documentElement.className  // Should be "light" or "dark"
 | Redirect to external site | Open Redirect vulnerability | Validate with `isValidRedirectUrl` |
 | Module not found (ui component) | shadcn/ui component not installed | Run `npx shadcn@latest add <name> -y` |
 | dark: styles not working | Tailwind 4 dark variant selector | Fix `@custom-variant` in `globals.css` |
+| Dynamic route shows generic 404 | Missing `not-found.tsx` in route | Add `not-found.tsx` + call `notFound()` |
 
 ---
 

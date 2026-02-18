@@ -2,7 +2,7 @@
 
 > **프로젝트**: 데이터센터 인프라 관리 시스템 (DCIM)
 > **작성일**: 2026-02-13
-> **최종 감사**: 2026-02-17
+> **최종 감사**: 2026-02-18
 > **데이터 보존**: 3년 (2026-02 ~ 2029-02)
 > **대상 규모**: 중형 DC (500~2,000 랙)
 
@@ -151,7 +151,7 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 - [x] 랙 엘리베이션 뷰 컴포넌트 (42U 그리드, 전면/후면)
 - [x] @dnd-kit 기본 드래그 앤 드롭 (단일 랙 내 장비 배치)
 - [x] 가변 높이 장비 드래그 앤 드롭 (1U, 2U, 4U)
-- [ ] 랙 간 장비 이동 (멀티 랙 DndContext + rackId 업데이트)
+- [x] 랙 간 장비 이동 (멀티 랙 DndContext + rackId 업데이트)
 - [x] 상면 도면 뷰 (플로어 레이아웃 - 카드 그리드 형태)
 
 #### 1-2. 자산 관리 (2주)
@@ -175,7 +175,7 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 #### 2-2. 전력 모니터링 (2주)
 
 - [x] PowerPanel, PowerFeed, PowerPort, PowerOutlet 스키마
-- [ ] 전력 데이터 수집 API 실제 DB 저장 (`POST /api/power/readings` — 현재 stub 응답)
+- [x] 전력 데이터 수집 API 실제 DB 저장 (`POST /api/power/readings` — 2026-02-18 해결)
 - [ ] TimescaleDB hypertable 자동 설정 + 압축 정책 (SQL은 존재, Drizzle 통합 필요)
 - [x] SSE 기반 실시간 전력 대시보드 (mock 데이터로 동작)
 - [x] 랙별 전압/전류 현황 표시
@@ -196,7 +196,7 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 #### 3-2. 네트워크 토폴로지 (1주)
 
 - [x] 장비 간 연결 다이어그램 (간략 뷰)
-- [ ] 스위치 포트 사용률 정확한 표시 (현재 인덱스 기반 가짜 로직)
+- [x] 스위치 포트 사용률 정확한 표시 (케이블 터미네이션 기반으로 수정 완료, 2026-02-18)
 
 ### Phase 4: 리포트 및 내보내기
 
@@ -232,9 +232,9 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 5-3. 알림 및 자동화
 
-- [ ] 전력 임계값 초과 알림 (CRUD 완료, evaluator가 mock 데이터 → 실제 DB 쿼리 필요)
-- [ ] 자산 보증 만료 알림 (devices 스키마에 `warrantyExpiresAt` 컬럼 추가 필요)
-- [ ] 랙 용량 임계값 알림 (CRUD 완료, evaluator가 mock 데이터 → 실제 DB 쿼리 필요)
+- [x] 전력 임계값 초과 알림 (evaluator가 실제 DB 쿼리 사용, 2026-02-18 해결)
+- [x] 자산 보증 만료 알림 (`warrantyExpiresAt` 컬럼 추가 완료, evaluator 동작 확인, 2026-02-18 해결)
+- [x] 랙 용량 임계값 알림 (evaluator가 실제 DB 쿼리 사용, 2026-02-18 해결)
 
 #### 5-4. 멀티 사이트
 
@@ -244,88 +244,68 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 #### 5-5. UX 및 품질 개선
 
-- [ ] 글로벌 검색 (cmdk 커맨드 팔레트 — 장비, 랙, 사이트, 테넌트 통합 검색)
-- [ ] Bulk 작업 (일괄 상태 변경, 테넌트 할당, 삭제)
-- [ ] 라우트별 loading.tsx 추가 (현재 2개만 존재, 12+ 라우트 누락)
-- [ ] 라우트별 error.tsx 추가 (현재 root만 존재)
-- [ ] API 라우트 auth wrapper 유틸리티 (60+ 라우트 보일러플레이트 제거)
+- [x] 글로벌 검색 (cmdk 커맨드 팔레트 구현 완료, 2026-02-18 해결)
+- [x] Bulk 작업 (device-table에 일괄 상태 변경/삭제 구현 완료, 2026-02-18 해결)
+- [x] 라우트별 loading.tsx 추가 (12개 라우트 커버, 2026-02-18 해결)
+- [x] 라우트별 error.tsx 추가 (12개 라우트 커버, 2026-02-18 해결)
+- [x] API 라우트 auth wrapper 유틸리티 (`withAuth`/`withAuthOnly` HOF 구현 완료, 2026-02-18 해결)
 - [ ] Region 관리 UI 및 API (스키마는 존재, 관리 화면 없음)
 - [ ] 상면 도면 2D 공간 배치 (현재 카드 그리드 → SVG/Canvas 좌표 기반)
 
 #### 5-6. 테스트 인프라
 
-- [ ] Vitest 단위 테스트 (validators, RBAC, export 유틸리티)
+- [x] Vitest 단위 테스트 (validators, RBAC, export 유틸리티 — 2026-02-18 해결)
 - [ ] Playwright E2E 테스트 (로그인, 주요 페이지 흐름)
 
 ---
 
-## 기술 부채 현황 (2026-02-17 감사)
+## 기술 부채 현황 (2026-02-18 감사)
 
 > 코드 감사에서 발견된 구현 품질 이슈. 기능 추가 전 우선 해결 권장.
 
 ### Critical (기능 미동작)
 
-| 항목 | 파일 | 설명 |
-| --- | --- | --- |
-| 전력 readings stub | `app/api/power/readings/route.ts` | POST가 DB 저장 없이 성공 응답만 반환 |
-| warrantyExpiresAt 누락 | `db/schema/devices.ts` | 보증 만료 알림을 위한 컬럼이 스키마에 없음 |
-| Alert evaluator mock | `lib/alerts/evaluators/*.ts` | 3개 evaluator 모두 하드코딩된 mock 데이터 사용 |
+| 항목 | 파일 | 상태 | 설명 |
+| --- | --- | --- | --- |
+| 전력 readings stub | `app/api/power/readings/route.ts` | **RESOLVED** (2026-02-18) | POST가 실제 DB에 저장하도록 수정 완료 |
+| warrantyExpiresAt 누락 | `db/schema/devices.ts` | **RESOLVED** (2026-02-18) | `warrantyExpiresAt` nullable timestamp 컬럼 추가 완료 |
+| Alert evaluator mock | `lib/alerts/evaluators/*.ts` | **RESOLVED** (2026-02-18) | 3개 evaluator 모두 실제 DB 쿼리로 교체 완료 |
 
 ### Medium (사용자 경험)
 
-| 항목 | 파일 | 설명 |
-| --- | --- | --- |
-| 스위치 포트 사용률 버그 | `components/topology/topology-diagram.tsx:288` | 인덱스 비교로 가짜 사용률 표시 |
-| loading.tsx 부족 | `app/` 전체 | 14개 라우트 중 2개만 존재 |
-| error.tsx 부족 | `app/` 전체 | root 1개만 존재, 라우트별 없음 |
+| 항목 | 파일 | 상태 | 설명 |
+| --- | --- | --- | --- |
+| 스위치 포트 사용률 버그 | `components/topology/` | **RESOLVED** (2026-02-18) | 케이블 터미네이션 기반 정확한 사용률 표시 |
+| loading.tsx 부족 | `app/` 전체 | **RESOLVED** (2026-02-18) | 12개 라우트에 loading.tsx 추가 완료 |
+| error.tsx 부족 | `app/` 전체 | **RESOLVED** (2026-02-18) | 12개 라우트에 error.tsx 추가 완료 |
 
 ### Low (유지보수)
 
-| 항목 | 파일 | 설명 |
-| --- | --- | --- |
-| API auth 보일러플레이트 | `app/api/*/route.ts` (60+) | 동일한 auth+permission+try-catch 패턴 반복 |
-| SQL 스크립트 위치 | `scripts/` | `db/scripts/`로 이동 권장 |
+| 항목 | 파일 | 상태 | 설명 |
+| --- | --- | --- | --- |
+| API auth 보일러플레이트 | `lib/auth/with-auth.ts` | **RESOLVED** (2026-02-18) | `withAuth`/`withAuthOnly` HOF로 추출 완료 |
+| SQL 스크립트 위치 | `scripts/` | 미해결 | `db/scripts/`로 이동 권장 |
 
 ---
 
 ## 단계별 실행 가이드
 
-> `/clear` 후 아래 순서대로 각 단계를 실행하면 기술 부채를 체계적으로 해소할 수 있다.
+> 2026-02-18 기준으로 Step 1~5는 모두 완료되었다. 아래는 남은 작업 목록이다.
 
-### Step 1: Critical 기술 부채 해소
+### ~~Step 1~5: 완료~~ (2026-02-18)
 
-```text
-devices 스키마에 warrantyExpiresAt 컬럼 추가하고,
-POST /api/power/readings를 실제 DB 저장하도록 구현하고,
-3개 alert evaluator를 mock 데이터 대신 실제 DB 쿼리로 교체해줘.
-```
+Critical/Medium/Low 기술 부채 해소, UX 개선, 미완성 기능 구현, 새 기능 추가, 테스트 인프라 모두 완료.
 
-### Step 2: UX 품질 개선
+### Step 6: 남은 작업
 
 ```text
-모든 주요 라우트에 loading.tsx와 error.tsx를 추가하고,
-API 라우트 auth 보일러플레이트를 withAuth() wrapper로 추출해줘.
-```
-
-### Step 3: 미완성 기능 구현
-
-```text
-랙 간 장비 이동 (멀티 랙 DndContext)을 구현하고,
-스위치 포트 사용률을 실제 케이블 연결 기반으로 수정하고,
-토폴로지 뷰에서 패치패널 경유 경로 추적을 반영해줘.
-```
-
-### Step 4: 새 기능 추가
-
-```text
-cmdk 커맨드 팔레트로 글로벌 검색을 구현하고,
-장비 테이블에 bulk 작업 (일괄 상태 변경, 삭제)을 추가해줘.
-```
-
-### Step 5: 테스트 인프라
-
-```text
-Vitest를 설치하고 validators, RBAC, export 유틸리티에 대한 단위 테스트를 작성해줘.
+- TimescaleDB hypertable 자동 설정 + Drizzle 통합
+- LDAP/Active Directory 연동
+- 정기 리포트 스케줄링 (cron + 이메일)
+- Region 관리 UI 및 API
+- 상면 도면 2D 공간 배치 (SVG/Canvas)
+- Playwright E2E 테스트
+- SQL 스크립트 위치 정리 (scripts/ → db/scripts/)
 ```
 
 ---

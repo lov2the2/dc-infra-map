@@ -45,9 +45,10 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
-- `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant)
+- `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
 - `tests/lib/auth/` — Unit tests for RBAC permission matrix
 - `tests/lib/export/` — Unit tests for export/import utilities (csv-templates, xml, csv-import)
+- `tests/lib/alerts/` — Unit tests for alert evaluators (power threshold, warranty expiry, rack capacity)
 - `lib/alerts/` — Alert evaluation engine and notification service
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
@@ -174,7 +175,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - Configuration file: `vitest.config.ts` (node environment, globals enabled, path alias support)
 - Test files location: `tests/` directory (mirrors `lib/` and `components/` structure)
 - Coverage measurement available with `npm run test:coverage`
-- Unit tests cover: validators, RBAC permission matrix, export/import utilities, and related business logic
+- Unit tests cover: validators (device, rack, tenant, access, cable, location, power), RBAC permission matrix, export/import utilities (csv-templates, xml, csv-import), and alert evaluators (power threshold, warranty expiry, rack capacity)
 
 ## Documentation Index
 
@@ -192,3 +193,4 @@ See `.claude/rules/pitfalls.md` for detailed checklists on:
 - Page layout consistency (avoid duplicate container classes)
 - Open redirect prevention patterns
 - Tailwind 4 dark mode variant configuration
+- Route not-found pages for dynamic segments
