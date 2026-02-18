@@ -194,5 +194,5 @@ scripts/                      # DB 초기화 SQL
 
 | 문서 | 설명 |
 | --- | --- |
-| [ROADMAP.md](./ROADMAP.md) | 프로젝트 비전, 기술 스택, 데이터 모델, 구현 로드맵 |
+| [ROADMAP.md](./docs/ROADMAP.md) | 프로젝트 비전, 기술 스택, 데이터 모델, 구현 로드맵 |
 | [CLAUDE.md](./CLAUDE.md) | 개발 아키텍처 가이드 (English) |
