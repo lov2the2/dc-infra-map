@@ -11,7 +11,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run dev` — Start development server (http://localhost:3000)
 - `npm run build` — Production build (also serves as type-check)
 - `npm run lint` — ESLint with Next.js core-web-vitals and TypeScript rules
-- No test framework is configured yet
+- `npm test` — Start Vitest in watch mode
+- `npm run test:run` — Run all tests once
+- `npm run test:coverage` — Run tests with coverage report
 
 ## Tech Stack
 
@@ -22,6 +24,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - **exceljs** for Excel (.xlsx) file generation
 - **fast-xml-parser** for XML export
 - **@scalar/nextjs-api-reference** for interactive API documentation (OpenAPI 3.1.1)
+- **vitest** for unit testing with @vitejs/plugin-react and vite-tsconfig-paths
 
 ## Architecture
 
@@ -42,6 +45,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
+- `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant)
+- `tests/lib/auth/` — Unit tests for RBAC permission matrix
+- `tests/lib/export/` — Unit tests for export/import utilities (csv-templates, xml, csv-import)
 - `lib/alerts/` — Alert evaluation engine and notification service
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
@@ -162,6 +168,13 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - Style: new-york | Base color: neutral | CSS variables: enabled
 - Must install components before importing: `npx shadcn@latest add <component> -y`
 - Use correct Radix UI props: `onOpenChange` (not `onClose`), `onCheckedChange` (not `onChange`), `onValueChange` (not `onSelect`)
+
+## Vitest
+
+- Configuration file: `vitest.config.ts` (node environment, globals enabled, path alias support)
+- Test files location: `tests/` directory (mirrors `lib/` and `components/` structure)
+- Coverage measurement available with `npm run test:coverage`
+- Unit tests cover: validators, RBAC permission matrix, export/import utilities, and related business logic
 
 ## Documentation Index
 
