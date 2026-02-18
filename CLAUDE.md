@@ -49,9 +49,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
-- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table)
+- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette)
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
-- `components/devices/` — Device management components (device-table, device-filters, device-form, device-audit-log)
+- `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
 - `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card)
 - `components/rack/` — Rack elevation components (rack-elevation-client, multi-rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header); multi-rack-elevation-client provides a single DndContext for cross-rack drag-and-drop; rack-grid/rack-slot/device-block accept rackId props for multi-rack context

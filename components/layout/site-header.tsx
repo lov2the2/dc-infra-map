@@ -4,6 +4,7 @@ import { NAV_LINKS, SITE_CONFIG } from "@/config/site";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { UserNav } from "@/components/layout/user-nav";
+import { CommandPalette } from "@/components/common/command-palette";
 
 export function SiteHeader() {
     return (
@@ -36,9 +37,14 @@ export function SiteHeader() {
                         )
                     )}
                 </nav>
-                <div className="ml-auto hidden md:flex items-center gap-2">
-                    <ThemeToggle />
-                    <UserNav />
+                <div className="ml-auto flex items-center gap-2">
+                    <div className="hidden md:flex">
+                        <CommandPalette />
+                    </div>
+                    <div className="hidden md:flex items-center gap-2">
+                        <ThemeToggle />
+                        <UserNav />
+                    </div>
                 </div>
             </div>
         </header>
