@@ -3,8 +3,11 @@ import { db } from "@/db";
 import { devices } from "@/db/schema";
 import { buildXml } from "@/lib/export/xml";
 import { withAuthOnly } from "@/lib/auth/with-auth";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const GET = withAuthOnly(async (_req, _session) => {
+    const rlResult = checkRateLimit(`export:${getClientIdentifier(_req)}`, RATE_LIMITS.exportImport);
+    if (!rlResult.success) return rateLimitResponse(rlResult);
     const result = await db.query.devices.findMany({
         where: isNull(devices.deletedAt),
         with: {

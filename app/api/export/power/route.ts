@@ -3,8 +3,11 @@ import { db } from "@/db";
 import { powerPanels, powerFeeds } from "@/db/schema";
 import { createWorkbook, addSheet, workbookToBlob } from "@/lib/export/excel";
 import { withAuthOnly } from "@/lib/auth/with-auth";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const GET = withAuthOnly(async (_req, _session) => {
+    const rlResult = checkRateLimit(`export:${getClientIdentifier(_req)}`, RATE_LIMITS.exportImport);
+    if (!rlResult.success) return rateLimitResponse(rlResult);
     const panels = await db.query.powerPanels.findMany({
         where: isNull(powerPanels.deletedAt),
         with: { site: true },

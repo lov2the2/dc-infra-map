@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { accessLogs } from "@/db/schema";
 import { createWorkbook, addSheet, workbookToBlob } from "@/lib/export/excel";
 import { withAuthOnly } from "@/lib/auth/with-auth";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 function formatDate(date: Date | null): string {
     if (!date) return "";
@@ -10,6 +11,9 @@ function formatDate(date: Date | null): string {
 }
 
 export const GET = withAuthOnly(async (req, _session) => {
+    const rlResult = checkRateLimit(`export:${getClientIdentifier(req)}`, RATE_LIMITS.exportImport);
+    if (!rlResult.success) return rateLimitResponse(rlResult);
+
     const { searchParams } = new URL(req.url);
     const siteId = searchParams.get("siteId");
     const from = searchParams.get("from");

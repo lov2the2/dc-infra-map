@@ -3,8 +3,11 @@ import { db } from "@/db";
 import { devices } from "@/db/schema";
 import { createWorkbook, addSheet, workbookToBlob } from "@/lib/export/excel";
 import { withAuthOnly } from "@/lib/auth/with-auth";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const GET = withAuthOnly(async (req, _session) => {
+    const rlResult = checkRateLimit(`export:${getClientIdentifier(req)}`, RATE_LIMITS.exportImport);
+    if (!rlResult.success) return rateLimitResponse(rlResult);
     const { searchParams } = new URL(req.url);
     const tenantId = searchParams.get("tenantId");
     const status = searchParams.get("status");

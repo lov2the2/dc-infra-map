@@ -3,8 +3,11 @@ import { db } from "@/db";
 import { cables } from "@/db/schema";
 import { createWorkbook, addSheet, workbookToBlob } from "@/lib/export/excel";
 import { withAuthOnly } from "@/lib/auth/with-auth";
+import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
 export const GET = withAuthOnly(async (_req, _session) => {
+    const rlResult = checkRateLimit(`export:${getClientIdentifier(_req)}`, RATE_LIMITS.exportImport);
+    if (!rlResult.success) return rateLimitResponse(rlResult);
     const result = await db.query.cables.findMany({
         where: isNull(cables.deletedAt),
         with: { tenant: true },
