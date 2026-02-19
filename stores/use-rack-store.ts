@@ -16,6 +16,7 @@ interface RackState {
     setActiveFace: (face: "front" | "rear") => void;
     moveDevice: (deviceId: string, newPosition: number) => Promise<void>;
     moveDeviceBetweenRacks: (deviceId: string, sourceRackId: string, targetRackId: string, newPosition: number) => Promise<void>;
+    updateRackPosition: (rackId: string, posX: number, posY: number) => Promise<void>;
     setLoading: (loading: boolean) => void;
 }
 
@@ -103,6 +104,29 @@ export const useRackStore = create<RackState>()(
                     if (srcIdx !== -1) state.racks[srcIdx] = srcData.data;
                     if (tgtIdx !== -1) state.racks[tgtIdx] = tgtData.data;
                 });
+            }
+        },
+        updateRackPosition: async (rackId, posX, posY) => {
+            // Optimistic update in racks array and activeRack
+            set((state) => {
+                const rack = state.racks.find((r) => r.id === rackId);
+                if (rack) {
+                    rack.posX = posX;
+                    rack.posY = posY;
+                }
+                if (state.activeRack?.id === rackId) {
+                    state.activeRack.posX = posX;
+                    state.activeRack.posY = posY;
+                }
+            });
+            try {
+                await fetch(`/api/racks/${rackId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ posX, posY }),
+                });
+            } catch {
+                // silently ignore - position will be reloaded on next fetch
             }
         },
         setLoading: (loading) => set((state) => { state.isLoading = loading; }),

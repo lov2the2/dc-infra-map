@@ -4,7 +4,7 @@ import { db } from "@/db";
 import { locations, racks, devices } from "@/db/schema";
 import { eq, isNull, and } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
-import { FloorPlanGrid } from "@/components/floor-plan/floor-plan-grid";
+import { FloorPlanClient } from "./floor-plan-client";
 
 export default async function LocationFloorPlanPage({
     params,
@@ -71,7 +71,7 @@ export default async function LocationFloorPlanPage({
                 ]}
             />
 
-            <FloorPlanGrid
+            <FloorPlanClient
                 racks={racksWithCounts}
                 siteId={siteId}
                 locationId={locationId}
