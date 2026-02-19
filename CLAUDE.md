@@ -93,6 +93,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/auth/[...nextauth]` — NextAuth authentication (login/logout/session)
 - `/api/sites` — Site CRUD
 - `/api/sites/[id]` — Single site GET/PATCH/DELETE
+- `/api/regions` — Region CRUD
+- `/api/regions/[id]` — Single region GET/PATCH/DELETE
 - `/api/racks` — Rack CRUD
 - `/api/racks/[id]` — Single rack GET/PATCH/DELETE
 - `/api/devices` — Device CRUD
@@ -156,7 +158,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 
@@ -190,7 +192,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 ## Database Migrations
 
-- `drizzle/timescaledb-setup.sql` — TimescaleDB hypertable setup for `power_readings` (run via `npm run db:timescale`)
+- `db/scripts/timescaledb-setup.sql` — TimescaleDB hypertable setup for `power_readings` (run via `npm run db:timescale`)
 - `drizzle/README.md` — Migration documentation and instructions
 
 ## Documentation Index

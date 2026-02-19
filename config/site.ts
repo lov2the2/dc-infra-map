@@ -12,6 +12,7 @@ export const SITE_CONFIG = {
 export const NAV_LINKS: NavLink[] = [
     { label: "Dashboard", href: "/dashboard" },
     { label: "Sites", href: "/sites" },
+    { label: "Regions", href: "/regions" },
     { label: "Devices", href: "/devices" },
     { label: "Tenants", href: "/tenants" },
     { label: "Access", href: "/access" },
