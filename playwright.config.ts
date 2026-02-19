@@ -12,9 +12,19 @@ export default defineConfig({
         trace: "on-first-retry",
     },
     projects: [
+        // Run login once and save auth state
+        {
+            name: "setup",
+            testMatch: /global\.setup\.ts/,
+        },
+        // All tests run with admin auth state by default
         {
             name: "chromium",
-            use: { ...devices["Desktop Chrome"] },
+            use: {
+                ...devices["Desktop Chrome"],
+                storageState: "e2e/.auth/admin.json",
+            },
+            dependencies: ["setup"],
         },
     ],
     webServer: {
