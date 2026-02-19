@@ -26,6 +26,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - **shadcn/ui** (new-york style, RSC-enabled, Lucide icons)
 - **next-themes** for dark/light theme switching (class-based, system default)
 - **exceljs** for Excel (.xlsx) file generation
+- **node-cron** for server-side cron job scheduling (report automation)
+- **nodemailer** for SMTP email delivery with Excel report attachments
 - **fast-xml-parser** for XML export
 - **@scalar/nextjs-api-reference** for interactive API documentation (OpenAPI 3.1.1)
 - **vitest** for unit testing with @vitejs/plugin-react and vite-tsconfig-paths
@@ -34,6 +36,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 ## Architecture
 
 **Layout chain**: `app/layout.tsx` wraps all pages with `ThemeProvider` → `SiteHeader` → `main` → `SiteFooter`.
+
+**Instrumentation**: `instrumentation.ts` (project root) — Next.js instrumentation hook; initializes the report scheduler on Node.js server startup.
 
 **Key conventions**:
 
@@ -56,6 +60,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `tests/lib/alerts/` — Unit tests for alert evaluators (power threshold, warranty expiry, rack capacity)
 - `lib/rate-limit.ts` — In-memory sliding window rate limiter (`checkRateLimit`, `getClientIdentifier`, `rateLimitResponse`, `RATE_LIMITS` presets: auth 10/min, exportImport 20/min, api 200/min)
 - `lib/alerts/` — Alert evaluation engine and notification service
+- `lib/scheduler/report-scheduler.ts` — Cron-based report scheduler (initScheduler, stopScheduler, reloadSchedule); loads active schedules from DB on startup
+- `lib/mailer/report-mailer.ts` — Nodemailer SMTP mailer for scheduled report email delivery with Excel attachments
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
@@ -71,7 +77,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
-- `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result)
+- `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result, schedule-table, schedule-form)
 - `components/topology/` — Network topology visualization (accurate per-interface port utilization via cable terminations, patch panel tracing with front/rear port lookup and dashed-line rendering)
 - `components/alerts/` — Alert components (severity-badge, alert-stats-card, alert-rules-table, alert-rule-form, alert-history-table, channel-config)
 
@@ -86,6 +92,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `cables.ts` — Tables: `interfaces`, `consolePorts`, `rearPorts`, `frontPorts`, `cables`
 - `audit.ts` — `auditLogs` table with `actionType`, `ipAddress`, `userAgent` columns for enhanced audit
 - `alerts.ts` — Tables: `alertRules`, `alertHistory`, `notificationChannels`
+- `reports.ts` — Tables: `reportSchedules`
 - `relations.ts` — Drizzle ORM relation definitions (includes `powerReadingsRelations`)
 - `index.ts` — Schema barrel export
 
@@ -143,6 +150,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/alerts/channels` — Notification channel CRUD
 - `/api/alerts/channels/[id]` — Single channel GET/PATCH/DELETE
 - `/api/alerts/evaluate` — Manual alert evaluation trigger POST
+- `/api/reports/schedules` — Report schedule CRUD (GET list, POST create)
+- `/api/reports/schedules/[id]` — Single schedule GET/PATCH/DELETE
+- `/api/reports/schedules/[id]/run` — Immediate schedule execution POST
 - `/api-docs` — Interactive API reference (Scalar UI, serves OpenAPI spec)
 
 **State management**:
@@ -195,6 +205,18 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 - `drizzle/0001_timescaledb_setup.sql` — TimescaleDB hypertable setup for `power_readings` (applied via `npm run db:timescale` or `npm run db:setup`)
 - `drizzle/README.md` — Migration documentation and instructions
+
+## Environment Variables
+
+**SMTP Configuration** (for scheduled report email delivery):
+
+- `SMTP_HOST` — SMTP server hostname
+- `SMTP_PORT` — SMTP server port
+- `SMTP_USER` — SMTP authentication username
+- `SMTP_PASS` — SMTP authentication password
+- `SMTP_FROM` — Sender email address for scheduled report emails
+
+See `.env.example` for configuration template.
 
 ## Documentation Index
 

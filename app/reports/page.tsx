@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { PageHeader } from "@/components/common/page-header";
 import { ExportCard } from "@/components/reports/export-card";
 import { ImportDialog } from "@/components/reports/import-dialog";
+import { ScheduleTable } from "@/components/reports/schedule-table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default async function ReportsPage() {
     const session = await auth();
@@ -16,65 +18,75 @@ export default async function ReportsPage() {
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Reports" },
                 ]}
-                description="Export data as Excel or XML, and import from CSV."
+                description="Export data as Excel or XML, import from CSV, and manage scheduled reports."
             />
 
-            <div className="space-y-6">
-                <h2 className="text-xl font-semibold tracking-tight">Export</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <ExportCard
-                        title="Rack Layout"
-                        description="Export all racks with devices and positions."
-                        formats={["xlsx", "xml"]}
-                        endpoint="/api/export/racks"
-                    />
-                    <ExportCard
-                        title="Device Inventory"
-                        description="Export device list with types, locations, and tenants."
-                        formats={["xlsx", "xml"]}
-                        endpoint="/api/export/devices"
-                        showTenant
-                    />
-                    <ExportCard
-                        title="Power Report"
-                        description="Export power panels and feeds."
-                        formats={["xlsx"]}
-                        endpoint="/api/export/power"
-                    />
-                    <ExportCard
-                        title="Cable Table"
-                        description="Export all cable connections."
-                        formats={["xlsx"]}
-                        endpoint="/api/export/cables"
-                    />
-                    <ExportCard
-                        title="Access Logs"
-                        description="Export access log history with date filtering."
-                        formats={["xlsx"]}
-                        endpoint="/api/export/access"
-                        showSite
-                        showDateRange
-                    />
-                </div>
-            </div>
+            <Tabs defaultValue="export">
+                <TabsList>
+                    <TabsTrigger value="export">Export</TabsTrigger>
+                    <TabsTrigger value="import">Import</TabsTrigger>
+                    <TabsTrigger value="schedules">Schedules</TabsTrigger>
+                </TabsList>
 
-            <div className="space-y-6">
-                <h2 className="text-xl font-semibold tracking-tight">Import</h2>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <ImportDialog
-                        title="Devices"
-                        templateEndpoint="/api/import/templates/devices"
-                        importEndpoint="/api/import/devices"
-                        type="devices"
-                    />
-                    <ImportDialog
-                        title="Cables"
-                        templateEndpoint="/api/import/templates/cables"
-                        importEndpoint="/api/import/cables"
-                        type="cables"
-                    />
-                </div>
-            </div>
+                <TabsContent value="export" className="space-y-6 mt-6">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <ExportCard
+                            title="Rack Layout"
+                            description="Export all racks with devices and positions."
+                            formats={["xlsx", "xml"]}
+                            endpoint="/api/export/racks"
+                        />
+                        <ExportCard
+                            title="Device Inventory"
+                            description="Export device list with types, locations, and tenants."
+                            formats={["xlsx", "xml"]}
+                            endpoint="/api/export/devices"
+                            showTenant
+                        />
+                        <ExportCard
+                            title="Power Report"
+                            description="Export power panels and feeds."
+                            formats={["xlsx"]}
+                            endpoint="/api/export/power"
+                        />
+                        <ExportCard
+                            title="Cable Table"
+                            description="Export all cable connections."
+                            formats={["xlsx"]}
+                            endpoint="/api/export/cables"
+                        />
+                        <ExportCard
+                            title="Access Logs"
+                            description="Export access log history with date filtering."
+                            formats={["xlsx"]}
+                            endpoint="/api/export/access"
+                            showSite
+                            showDateRange
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="import" className="space-y-6 mt-6">
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        <ImportDialog
+                            title="Devices"
+                            templateEndpoint="/api/import/templates/devices"
+                            importEndpoint="/api/import/devices"
+                            type="devices"
+                        />
+                        <ImportDialog
+                            title="Cables"
+                            templateEndpoint="/api/import/templates/cables"
+                            importEndpoint="/api/import/cables"
+                            type="cables"
+                        />
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="schedules" className="mt-6">
+                    <ScheduleTable />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

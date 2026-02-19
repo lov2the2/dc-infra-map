@@ -8,3 +8,4 @@ export * from "./power";
 export * from "./cables";
 export * from "./alerts";
 export * from "./relations";
+export * from "./reports";

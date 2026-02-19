@@ -116,3 +116,11 @@ export const conditionOperatorEnum = pgEnum("condition_operator", [
     "lte",
     "eq",
 ]);
+
+export const reportTypeEnum = pgEnum("report_type", [
+    "racks", "devices", "cables", "power", "access",
+]);
+
+export const reportFrequencyEnum = pgEnum("report_frequency", [
+    "daily", "weekly", "monthly",
+]);
