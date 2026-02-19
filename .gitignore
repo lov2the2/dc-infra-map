@@ -50,3 +50,7 @@ next-env.d.ts
 # claude
 /.claude/settings.local.json
 .playwright-mcp/
+
+# dev server runtime files
+/scripts/.server.pid
+/scripts/.server.log

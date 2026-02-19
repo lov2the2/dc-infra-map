@@ -9,6 +9,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 ## Commands
 
 - `npm run dev` — Start development server (http://localhost:3000)
+- `npm run server:start` — Start dev server in background (PID saved to `scripts/.server.pid`, logs to `scripts/.server.log`)
+- `npm run server:stop` — Stop the background dev server
+- `npm run server:restart` — Restart the dev server (stop + 1s delay + start)
 - `npm run build` — Production build (also serves as type-check)
 - `npm run lint` — ESLint with Next.js core-web-vitals and TypeScript rules
 - `npm test` — Start Vitest in watch mode
@@ -38,6 +41,12 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 **Layout chain**: `app/layout.tsx` wraps all pages with `ThemeProvider` → `SiteHeader` → `main` → `SiteFooter`.
 
 **Instrumentation**: `instrumentation.ts` (project root) — Next.js instrumentation hook; initializes the report scheduler on Node.js server startup.
+
+**Scripts** (`scripts/`):
+
+- `server-start.sh` — Starts `npm run dev` in background; checks port 3000 availability; polls for readiness (max 15s); saves PID to `.server.pid`, logs to `.server.log`
+- `server-stop.sh` — Stops server via PID file or port 3000 process lookup; SIGTERM then SIGKILL if needed; cleans up PID file
+- `server-restart.sh` — Sequentially runs stop → 1s delay → start
 
 **Key conventions**:
 

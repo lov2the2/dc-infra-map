@@ -19,7 +19,10 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "db:timescale": "psql $DATABASE_URL -f drizzle/0001_timescaledb_setup.sql",
-    "db:setup": "npm run db:migrate && npm run db:timescale"
+    "db:setup": "npm run db:migrate && npm run db:timescale",
+    "server:start": "bash scripts/server-start.sh",
+    "server:stop": "bash scripts/server-stop.sh",
+    "server:restart": "bash scripts/server-restart.sh"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",
