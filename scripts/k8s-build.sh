@@ -22,12 +22,19 @@ echo "    Context: ${PROJECT_DIR}"
 echo ""
 
 docker build \
+    --target runner \
     --tag "${IMAGE_NAME}:${TAG}" \
     --file "${PROJECT_DIR}/Dockerfile" \
     "${PROJECT_DIR}"
 
+docker build \
+    --target migrator \
+    --tag "${IMAGE_NAME}:migrate" \
+    --file "${PROJECT_DIR}/Dockerfile" \
+    "${PROJECT_DIR}"
+
 echo ""
-echo "==> Build complete: ${IMAGE_NAME}:${TAG}"
-echo "    Image is available in docker-desktop K8s cluster"
+echo "==> Build complete: ${IMAGE_NAME}:${TAG} and ${IMAGE_NAME}:migrate"
+echo "    Images are available in docker-desktop K8s cluster"
 echo ""
 echo "Next: ./scripts/k8s-deploy.sh"

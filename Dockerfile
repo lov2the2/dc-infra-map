@@ -21,7 +21,19 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# Stage 3: Production runner
+# Stage 3: Database migration runner
+FROM node:20-alpine AS migrator
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY drizzle.config.ts ./
+COPY drizzle/ ./drizzle/
+COPY db/ ./db/
+COPY package.json ./
+
+CMD ["sh", "-c", "npx drizzle-kit migrate && echo 'Migration complete'"]
+
+# Stage 4: Production runner
 FROM node:20-alpine AS runner
 WORKDIR /app
 

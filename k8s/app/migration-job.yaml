@@ -29,16 +29,14 @@ spec:
                           echo "Postgres is ready"
             containers:
                 - name: migrate
-                  image: dc-infra-map:latest
+                  image: dc-infra-map:migrate
                   imagePullPolicy: IfNotPresent
                   command:
                       - sh
                       - -c
                       - |
                           echo "Running database migrations..."
-                          npm run db:migrate
-                          echo "Applying TimescaleDB hypertable setup..."
-                          npm run db:timescale
+                          npx drizzle-kit migrate
                           echo "Migration complete."
                   envFrom:
                       - secretRef:

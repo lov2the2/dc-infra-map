@@ -72,6 +72,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/auth/with-auth.ts` — `withAuth(resource, action, handler)` HOF for API route auth+RBAC boilerplate; `withAuthOnly(handler)` for auth-only routes
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
+  - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
 - `tests/lib/auth/` — Unit tests for RBAC permission matrix
@@ -87,7 +88,9 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
-- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette)
+- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette, route-error, table-loading)
+  - `route-error.tsx` — Shared error boundary for route `error.tsx` files (props: `title`, `error`, `reset`)
+  - `table-loading.tsx` — Shared table skeleton loading for table-based route `loading.tsx` files (props: `rows`, `columns`)
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
