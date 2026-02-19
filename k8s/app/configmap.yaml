@@ -3,8 +3,12 @@ kind: ConfigMap
 metadata:
     name: app-config
     namespace: dcim
+    labels:
+        app: dcim-app
 data:
     NODE_ENV: "production"
-    AUTH_URL: "http://localhost:30300"
+    # Primary: Ingress domain (requires nginx-ingress + /etc/hosts: 127.0.0.1 dcim.local)
+    # Fallback: NodePort access at http://localhost:30300
+    AUTH_URL: "http://dcim.local"
     TIMESCALEDB_ENABLED: "true"
     NEXT_TELEMETRY_DISABLED: "1"

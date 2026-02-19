@@ -27,7 +27,8 @@
     "k8s:deploy": "bash scripts/k8s-deploy.sh",
     "k8s:migrate": "bash scripts/k8s-migrate.sh",
     "k8s:destroy": "bash scripts/k8s-destroy.sh",
-    "k8s:status": "kubectl get all -n dcim"
+    "k8s:status": "kubectl get all -n dcim",
+    "k8s:ingress": "bash scripts/k8s-setup-ingress.sh"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

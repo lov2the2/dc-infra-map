@@ -75,10 +75,20 @@ fi
 echo "==> Waiting for application to be ready..."
 kubectl rollout status deployment/dcim-app -n "${NAMESPACE}" --timeout=120s
 
+# Deploy Ingress (if nginx-ingress controller is installed)
+if kubectl get ingressclass nginx &>/dev/null 2>&1; then
+    echo "==> Deploying Ingress resource..."
+    kubectl apply -f "${K8S_DIR}/app/ingress.yaml"
+else
+    echo "==> Skipping Ingress (nginx-ingress controller not installed)"
+    echo "    Run: npm run k8s:ingress to install nginx-ingress controller"
+fi
+
 echo ""
 echo "==> Deployment complete!"
 echo ""
-echo "    Application URL: http://localhost:30300"
+echo "    NodePort URL:  http://localhost:30300"
+echo "    Ingress URL:   http://dcim.local (requires nginx-ingress + /etc/hosts entry)"
 echo ""
 echo "    Useful commands:"
 echo "      kubectl get all -n ${NAMESPACE}"

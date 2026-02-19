@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: dcim-ingress
+    namespace: dcim
+    labels:
+        app: dcim-app
+    annotations:
+        # Extend timeouts for SSE (Server-Sent Events) used by power monitoring
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+        # Allow larger request bodies for Excel/CSV import
+        nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+spec:
+    ingressClassName: nginx
+    rules:
+        - host: dcim.local
+          http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: dcim-app
+                            port:
+                                number: 80

@@ -23,6 +23,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run db:setup` — Full DB initialization: `db:migrate` then `db:timescale` in sequence
 - `npm run k8s:build` — Build Docker image for Kubernetes (uses local docker-desktop daemon)
 - `npm run k8s:deploy` — Full deployment: build → namespace → postgres → app → migration
+- `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (required once before using Ingress)
 - `npm run k8s:migrate` — Run DB migration Job in Kubernetes
 - `npm run k8s:destroy` — Remove Kubernetes resources (use `--all` flag to also delete PVC data)
 - `npm run k8s:status` — Show all Kubernetes resources in dcim namespace
@@ -45,7 +46,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **Layout chain**: `app/layout.tsx` wraps all pages with `ThemeProvider` → `SiteHeader` → `main` → `SiteFooter`.
 
-**Instrumentation**: `instrumentation.ts` (project root) — Next.js instrumentation hook; initializes the report scheduler on Node.js server startup.
+**Instrumentation**: `instrumentation.ts` (project root) — Next.js instrumentation hook; initializes the report scheduler on Node.js server startup. Uses `output: 'standalone'` for container deployment, compatible with server-side features (cron scheduling, SSE streaming, node-cron).
 
 **Scripts** (`scripts/`):
 
@@ -54,6 +55,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `server-restart.sh` — Sequentially runs stop → 1s delay → start
 - `k8s-build.sh` — Build Docker image for Kubernetes; uses local docker-desktop daemon (no registry push needed)
 - `k8s-deploy.sh` — Orchestrates full deployment: build → postgres → app → migration Job
+- `k8s-setup-ingress.sh` — Install nginx-ingress controller; enables Ingress-based domain routing
 - `k8s-migrate.sh` — Creates timestamped migration Job in Kubernetes (auto-cleaned after 5min)
 - `k8s-destroy.sh` — Removes all Kubernetes resources; `--all` flag deletes namespace + PVC data
 
@@ -210,17 +212,20 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `k8s/namespace.yaml` — Creates `dcim` namespace for all deployment resources
 - `k8s/postgres/` — TimescaleDB StatefulSet (image: `timescale/timescaledb:2.17.2-pg17`), ClusterIP Service for internal DNS, Secret for credentials, ConfigMap with initialization SQL
 - `k8s/app/` — Next.js Deployment (replicas: 3, NodePort Service on port 30300), imagePullPolicy set to `IfNotPresent` for docker-desktop local daemon, environment ConfigMap, Secret for credentials, migration Job (runs once per deploy, auto-cleans after 5min)
+- `k8s/app/ingress.yaml` — nginx Ingress for domain-based access (dcim.local); includes SSE-compatible timeout annotations and upstream buffer settings
 
 **Deployment workflow**:
 
-1. `npm run k8s:build` — Build Docker image using local docker-desktop daemon (no registry required)
-2. `npm run k8s:deploy` — Execute deployment orchestration:
+1. `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (one-time setup; required before Ingress features work)
+2. `npm run k8s:build` — Build Docker image using local docker-desktop daemon (no registry required)
+3. `npm run k8s:deploy` — Execute deployment orchestration:
    - Apply namespace
    - Deploy postgres (waits for readiness)
    - Deploy Next.js app (waits for rollout)
+   - Deploy Ingress (if nginx-ingress controller is available)
    - Run migration Job (via `k8s-migrate.sh`)
-3. `npm run k8s:status` — View deployment status
-4. `npm run k8s:destroy [--all]` — Cleanup (use `--all` to remove namespace and persistent data)
+4. `npm run k8s:status` — View deployment status
+5. `npm run k8s:destroy [--all]` — Cleanup (use `--all` to remove namespace and persistent data)
 
 **Database migration**:
 
@@ -232,8 +237,12 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 **Network topology**:
 
 - postgres StatefulSet (ClusterIP) accessible at `postgres.dcim.svc.cluster.local`
-- Next.js app Deployment accessible from `kubectl port-forward svc/app 3000:3000` or via NodePort 30300
+- Next.js app Deployment accessible via:
+  - Ingress domain: `http://dcim.local` (requires `npm run k8s:ingress` setup and `/etc/hosts` entry)
+  - kubectl port-forward: `kubectl port-forward svc/app 3000:3000`
+  - NodePort: port 30300
 - All components share `dcim` namespace
+- Ingress enables domain-based routing for cleaner access and SSE streaming compatibility
 
 ## Tailwind 4 Specifics
 

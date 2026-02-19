@@ -35,6 +35,7 @@ else
     # Remove app resources (keep PVCs for data safety)
     kubectl delete deployment dcim-app -n "${NAMESPACE}" --ignore-not-found=true
     kubectl delete service dcim-app -n "${NAMESPACE}" --ignore-not-found=true
+    kubectl delete ingress dcim-ingress -n "${NAMESPACE}" --ignore-not-found=true
     kubectl delete configmap app-config -n "${NAMESPACE}" --ignore-not-found=true
     kubectl delete secret app-secret -n "${NAMESPACE}" --ignore-not-found=true
     kubectl delete jobs -l app=dcim-migrate -n "${NAMESPACE}" --ignore-not-found=true
