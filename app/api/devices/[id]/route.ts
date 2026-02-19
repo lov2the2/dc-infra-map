@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { devices } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { deviceUpdateSchema } from "@/lib/validators/device";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("devices", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const device = await db.query.devices.findFirst({
         where: eq(devices.id, id),
         with: { deviceType: true, rack: true, tenant: true },
@@ -18,7 +18,7 @@ export const GET = withAuth("devices", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("devices", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = deviceUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -39,7 +39,7 @@ export const PATCH = withAuth("devices", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("devices", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.devices.findFirst({ where: eq(devices.id, id) });
     if (!existing) return errorResponse("Device not found", 404);
 

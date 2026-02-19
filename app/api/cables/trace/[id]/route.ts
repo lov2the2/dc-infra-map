@@ -1,7 +1,7 @@
 import { eq, or, and, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { cables, interfaces, consolePorts, frontPorts, rearPorts } from "@/db/schema";
-import { successResponse, errorResponse } from "@/lib/api";
+import { successResponse, errorResponse, getRouteId } from "@/lib/api";
 import { withAuthOnly } from "@/lib/auth/with-auth";
 
 interface TraceStep {
@@ -47,7 +47,7 @@ async function getTerminationInfo(type: string, id: string): Promise<{ name: str
 }
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const startId = req.nextUrl.pathname.split("/").pop()!;
+    const startId = getRouteId(req);
     const path: TraceStep[] = [];
     const visited = new Set<string>();
 

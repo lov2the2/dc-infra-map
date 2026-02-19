@@ -26,8 +26,7 @@ export const POST = withAuth("sites", "create", async (req, session) => {
     const parsed = locationCreateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
 
-    const { ...data } = parsed.data;
-    const [location] = await db.insert(locations).values(data).returning();
+    const [location] = await db.insert(locations).values(parsed.data).returning();
 
     await logAudit(session.user.id, "create", "locations", location.id, null, location as Record<string, unknown>);
 

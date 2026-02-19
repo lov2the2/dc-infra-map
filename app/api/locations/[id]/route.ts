@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { locations } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { locationUpdateSchema } from "@/lib/validators/location";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("sites", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const location = await db.query.locations.findFirst({
         where: eq(locations.id, id),
         with: { site: true, racks: true, tenant: true },
@@ -18,7 +18,7 @@ export const GET = withAuth("sites", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("sites", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = locationUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -26,10 +26,9 @@ export const PATCH = withAuth("sites", "update", async (req, session) => {
     const existing = await db.query.locations.findFirst({ where: eq(locations.id, id) });
     if (!existing) return errorResponse("Location not found", 404);
 
-    const { ...data } = parsed.data;
     const [updated] = await db
         .update(locations)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...parsed.data, updatedAt: new Date() })
         .where(eq(locations.id, id))
         .returning();
 
@@ -39,7 +38,7 @@ export const PATCH = withAuth("sites", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("sites", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.locations.findFirst({ where: eq(locations.id, id) });
     if (!existing) return errorResponse("Location not found", 404);
 

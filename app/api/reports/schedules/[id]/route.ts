@@ -1,36 +1,31 @@
 import { eq } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reportSchedules } from "@/db/schema";
+import { successResponse, errorResponse, getRouteId } from "@/lib/api";
 import { withAuth } from "@/lib/auth/with-auth";
 import { reloadSchedule } from "@/lib/scheduler/report-scheduler";
 
 export const GET = withAuth("reports", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
 
     const [schedule] = await db
         .select()
         .from(reportSchedules)
         .where(eq(reportSchedules.id, id));
 
-    if (!schedule) {
-        return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(schedule);
+    if (!schedule) return errorResponse("Schedule not found", 404);
+    return successResponse(schedule);
 });
 
 export const PATCH = withAuth("reports", "create", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
 
     const [existing] = await db
         .select()
         .from(reportSchedules)
         .where(eq(reportSchedules.id, id));
 
-    if (!existing) {
-        return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
-    }
+    if (!existing) return errorResponse("Schedule not found", 404);
 
     const body = await req.json();
     const [updated] = await db
@@ -41,20 +36,18 @@ export const PATCH = withAuth("reports", "create", async (req, _session) => {
 
     await reloadSchedule(id);
 
-    return NextResponse.json(updated);
+    return successResponse(updated);
 });
 
 export const DELETE = withAuth("reports", "create", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
 
     const [existing] = await db
         .select()
         .from(reportSchedules)
         .where(eq(reportSchedules.id, id));
 
-    if (!existing) {
-        return NextResponse.json({ error: "Schedule not found" }, { status: 404 });
-    }
+    if (!existing) return errorResponse("Schedule not found", 404);
 
     // Delete from DB first so reloadSchedule will find no record and not re-register
     await db.delete(reportSchedules).where(eq(reportSchedules.id, id));
@@ -62,5 +55,5 @@ export const DELETE = withAuth("reports", "create", async (req, _session) => {
     // Stop any running cron task for this schedule
     await reloadSchedule(id);
 
-    return NextResponse.json({ message: "Schedule deleted" });
+    return successResponse({ message: "Schedule deleted" });
 });

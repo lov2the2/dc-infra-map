@@ -1,13 +1,13 @@
 import { eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { racks, devices } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { rackUpdateSchema } from "@/lib/validators/rack";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("racks", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const rack = await db.query.racks.findFirst({
         where: eq(racks.id, id),
         with: {
@@ -25,7 +25,7 @@ export const GET = withAuth("racks", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("racks", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = rackUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -33,10 +33,9 @@ export const PATCH = withAuth("racks", "update", async (req, session) => {
     const existing = await db.query.racks.findFirst({ where: eq(racks.id, id) });
     if (!existing) return errorResponse("Rack not found", 404);
 
-    const { ...data } = parsed.data;
     const [updated] = await db
         .update(racks)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...parsed.data, updatedAt: new Date() })
         .where(eq(racks.id, id))
         .returning();
 
@@ -47,7 +46,7 @@ export const PATCH = withAuth("racks", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("racks", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.racks.findFirst({ where: eq(racks.id, id) });
     if (!existing) return errorResponse("Rack not found", 404);
 

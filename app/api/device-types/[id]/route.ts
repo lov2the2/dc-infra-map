@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { deviceTypes } from "@/db/schema";
-import { successResponse, errorResponse } from "@/lib/api";
+import { successResponse, errorResponse, getRouteId } from "@/lib/api";
 import { withAuth, withAuthOnly } from "@/lib/auth/with-auth";
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const deviceType = await db.query.deviceTypes.findFirst({
         where: eq(deviceTypes.id, id),
         with: { manufacturer: true },
@@ -16,7 +16,7 @@ export const GET = withAuthOnly(async (req, _session) => {
 });
 
 export const PATCH = withAuth("devices", "update", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const [updated] = await db
         .update(deviceTypes)
@@ -29,7 +29,7 @@ export const PATCH = withAuth("devices", "update", async (req, _session) => {
 });
 
 export const DELETE = withAuth("devices", "delete", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const [deleted] = await db
         .update(deviceTypes)
         .set({ deletedAt: new Date() })

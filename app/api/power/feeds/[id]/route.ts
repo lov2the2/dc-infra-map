@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { powerFeeds } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { powerFeedUpdateSchema } from "@/lib/validators/power";
 import { withAuth, withAuthOnly } from "@/lib/auth/with-auth";
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const feed = await db.query.powerFeeds.findFirst({
         where: eq(powerFeeds.id, id),
         with: { panel: true, rack: true, powerPorts: true },
@@ -18,7 +18,7 @@ export const GET = withAuthOnly(async (req, _session) => {
 });
 
 export const PATCH = withAuth("power_config", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = powerFeedUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -38,7 +38,7 @@ export const PATCH = withAuth("power_config", "update", async (req, session) => 
 });
 
 export const DELETE = withAuth("power_config", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.powerFeeds.findFirst({ where: eq(powerFeeds.id, id) });
     if (!existing) return errorResponse("Power feed not found", 404);
 

@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { equipmentMovements } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { equipmentMovementUpdateSchema } from "@/lib/validators/access";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("access_logs", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const movement = await db.query.equipmentMovements.findFirst({
         where: eq(equipmentMovements.id, id),
         with: {
@@ -30,7 +30,7 @@ export const GET = withAuth("access_logs", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("access_logs", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = equipmentMovementUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);

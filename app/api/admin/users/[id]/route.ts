@@ -2,12 +2,12 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { db } from "@/db";
 import { users } from "@/db/schema";
-import { successResponse, errorResponse } from "@/lib/api";
+import { successResponse, errorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("users", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const user = await db.query.users.findFirst({
         where: eq(users.id, id),
         columns: {
@@ -25,7 +25,7 @@ export const GET = withAuth("users", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("users", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const { name, email, password, role } = body;
 
@@ -68,7 +68,7 @@ export const PATCH = withAuth("users", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("users", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
 
     // Prevent self-deletion
     if (id === session.user.id) {

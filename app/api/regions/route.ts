@@ -19,8 +19,7 @@ export const POST = withAuth("sites", "create", async (req, session) => {
     const parsed = regionCreateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
 
-    const { ...data } = parsed.data;
-    const [region] = await db.insert(regions).values(data).returning();
+    const [region] = await db.insert(regions).values(parsed.data).returning();
 
     await logAudit(session.user.id, "create", "regions", region.id, null, region as Record<string, unknown>);
 

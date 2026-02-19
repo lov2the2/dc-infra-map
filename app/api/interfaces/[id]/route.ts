@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { interfaces } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { interfaceUpdateSchema } from "@/lib/validators/cable";
 import { withAuth, withAuthOnly } from "@/lib/auth/with-auth";
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const iface = await db.query.interfaces.findFirst({
         where: eq(interfaces.id, id),
         with: { device: true },
@@ -18,7 +18,7 @@ export const GET = withAuthOnly(async (req, _session) => {
 });
 
 export const PATCH = withAuth("cables", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = interfaceUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -39,7 +39,7 @@ export const PATCH = withAuth("cables", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("cables", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.interfaces.findFirst({ where: eq(interfaces.id, id) });
     if (!existing) return errorResponse("Interface not found", 404);
 

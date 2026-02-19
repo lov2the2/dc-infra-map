@@ -1,11 +1,11 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sites } from "@/db/schema";
-import { successResponse, errorResponse } from "@/lib/api";
+import { successResponse, errorResponse, getRouteId } from "@/lib/api";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("sites", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const site = await db.query.sites.findFirst({
         where: eq(sites.id, id),
         with: { region: true, tenant: true, locations: true },
@@ -16,7 +16,7 @@ export const GET = withAuth("sites", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("sites", "update", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const [updated] = await db
         .update(sites)
@@ -29,7 +29,7 @@ export const PATCH = withAuth("sites", "update", async (req, _session) => {
 });
 
 export const DELETE = withAuth("sites", "delete", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const [deleted] = await db
         .update(sites)
         .set({ deletedAt: new Date() })

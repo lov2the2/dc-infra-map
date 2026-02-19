@@ -1,7 +1,7 @@
 import { isNull, and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { accessLogs } from "@/db/schema";
-import { createWorkbook, addSheet, workbookToBlob } from "@/lib/export/excel";
+import { createWorkbook, addSheet, excelResponse } from "@/lib/export/excel";
 import { withAuthOnly } from "@/lib/auth/with-auth";
 import { checkRateLimit, getClientIdentifier, rateLimitResponse, RATE_LIMITS } from "@/lib/rate-limit";
 
@@ -55,13 +55,5 @@ export const GET = withAuthOnly(async (req, _session) => {
     ], rows);
 
     const date = new Date().toISOString().split("T")[0];
-    const filename = `dcim-access-${date}.xlsx`;
-    const blob = await workbookToBlob(wb);
-
-    return new Response(blob, {
-        headers: {
-            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition": `attachment; filename="${filename}"`,
-        },
-    });
+    return excelResponse(wb, `dcim-access-${date}.xlsx`);
 });

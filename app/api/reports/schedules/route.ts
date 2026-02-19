@@ -1,7 +1,7 @@
 import { desc } from "drizzle-orm";
-import { NextResponse } from "next/server";
 import { db } from "@/db";
 import { reportSchedules } from "@/db/schema";
+import { successResponse, errorResponse } from "@/lib/api";
 import { withAuth } from "@/lib/auth/with-auth";
 import { reloadSchedule } from "@/lib/scheduler/report-scheduler";
 
@@ -11,7 +11,7 @@ export const GET = withAuth("reports", "read", async (_req, _session) => {
         .from(reportSchedules)
         .orderBy(desc(reportSchedules.createdAt));
 
-    return NextResponse.json(schedules);
+    return successResponse(schedules);
 });
 
 export const POST = withAuth("reports", "create", async (req, session) => {
@@ -19,9 +19,9 @@ export const POST = withAuth("reports", "create", async (req, session) => {
     const { name, reportType, frequency, cronExpression, recipientEmails, isActive } = body;
 
     if (!name || !reportType || !frequency || !cronExpression || !recipientEmails) {
-        return NextResponse.json(
-            { error: "name, reportType, frequency, cronExpression, and recipientEmails are required" },
-            { status: 400 }
+        return errorResponse(
+            "name, reportType, frequency, cronExpression, and recipientEmails are required",
+            400
         );
     }
 
@@ -40,5 +40,5 @@ export const POST = withAuth("reports", "create", async (req, session) => {
 
     await reloadSchedule(created.id);
 
-    return NextResponse.json(created, { status: 201 });
+    return successResponse(created, 201);
 });

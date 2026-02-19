@@ -19,8 +19,7 @@ export const POST = withAuth("sites", "create", async (req, session) => {
     const parsed = tenantCreateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
 
-    const { ...data } = parsed.data;
-    const [tenant] = await db.insert(tenants).values(data).returning();
+    const [tenant] = await db.insert(tenants).values(parsed.data).returning();
 
     await logAudit(session.user.id, "create", "tenants", tenant.id, null, tenant as Record<string, unknown>);
 

@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { tenants } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { tenantUpdateSchema } from "@/lib/validators/tenant";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const GET = withAuth("sites", "read", async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const tenant = await db.query.tenants.findFirst({
         where: eq(tenants.id, id),
         with: { devices: true, racks: true, sites: true },
@@ -18,7 +18,7 @@ export const GET = withAuth("sites", "read", async (req, _session) => {
 });
 
 export const PATCH = withAuth("sites", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = tenantUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -26,10 +26,9 @@ export const PATCH = withAuth("sites", "update", async (req, session) => {
     const existing = await db.query.tenants.findFirst({ where: eq(tenants.id, id) });
     if (!existing) return errorResponse("Tenant not found", 404);
 
-    const { ...data } = parsed.data;
     const [updated] = await db
         .update(tenants)
-        .set({ ...data, updatedAt: new Date() })
+        .set({ ...parsed.data, updatedAt: new Date() })
         .where(eq(tenants.id, id))
         .returning();
 
@@ -39,7 +38,7 @@ export const PATCH = withAuth("sites", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("sites", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.tenants.findFirst({ where: eq(tenants.id, id) });
     if (!existing) return errorResponse("Tenant not found", 404);
 

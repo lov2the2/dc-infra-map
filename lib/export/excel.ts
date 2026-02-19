@@ -72,3 +72,13 @@ export async function workbookToBlob(wb: ExcelJS.Workbook): Promise<Blob> {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     });
 }
+
+export async function excelResponse(wb: ExcelJS.Workbook, filename: string): Promise<Response> {
+    const blob = await workbookToBlob(wb);
+    return new Response(blob, {
+        headers: {
+            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "Content-Disposition": `attachment; filename="${filename}"`,
+        },
+    });
+}

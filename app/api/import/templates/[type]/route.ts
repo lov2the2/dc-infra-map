@@ -1,9 +1,9 @@
-import { errorResponse } from "@/lib/api";
+import { errorResponse, getRouteId } from "@/lib/api";
 import { getDeviceTemplate, getCableTemplate } from "@/lib/export/csv-templates";
 import { withAuthOnly } from "@/lib/auth/with-auth";
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const type = req.nextUrl.pathname.split("/").pop()!;
+    const type = getRouteId(req);
 
     let csv: string;
     let filename: string;

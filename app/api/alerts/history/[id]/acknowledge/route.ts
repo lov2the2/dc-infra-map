@@ -1,14 +1,12 @@
 import { db } from "@/db";
 import { alertHistory } from "@/db/schema/alerts";
 import { eq } from "drizzle-orm";
-import { successResponse, errorResponse } from "@/lib/api";
+import { successResponse, errorResponse, getRouteParentId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { withAuth } from "@/lib/auth/with-auth";
 
 export const PATCH = withAuth("alert_history", "update", async (req, session) => {
-    // URL: /api/alerts/history/[id]/acknowledge — id is second-to-last segment
-    const segments = req.nextUrl.pathname.split("/");
-    const id = segments[segments.length - 2];
+    const id = getRouteParentId(req);
     const acknowledgedBy = session.user.email ?? session.user.id;
 
     const [existing] = await db.select().from(alertHistory).where(eq(alertHistory.id, id));

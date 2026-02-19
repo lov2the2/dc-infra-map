@@ -1,13 +1,13 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { rearPorts } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api";
+import { successResponse, errorResponse, validationErrorResponse, getRouteId } from "@/lib/api";
 import { logAudit } from "@/lib/audit";
 import { rearPortUpdateSchema } from "@/lib/validators/cable";
 import { withAuth, withAuthOnly } from "@/lib/auth/with-auth";
 
 export const GET = withAuthOnly(async (req, _session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const port = await db.query.rearPorts.findFirst({
         where: eq(rearPorts.id, id),
         with: { device: true, frontPorts: true },
@@ -18,7 +18,7 @@ export const GET = withAuthOnly(async (req, _session) => {
 });
 
 export const PATCH = withAuth("cables", "update", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const body = await req.json();
     const parsed = rearPortUpdateSchema.safeParse(body);
     if (!parsed.success) return validationErrorResponse(parsed.error);
@@ -39,7 +39,7 @@ export const PATCH = withAuth("cables", "update", async (req, session) => {
 });
 
 export const DELETE = withAuth("cables", "delete", async (req, session) => {
-    const id = req.nextUrl.pathname.split("/").pop()!;
+    const id = getRouteId(req);
     const existing = await db.query.rearPorts.findFirst({ where: eq(rearPorts.id, id) });
     if (!existing) return errorResponse("Rear port not found", 404);
 
