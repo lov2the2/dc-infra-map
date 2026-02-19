@@ -16,27 +16,50 @@ npm run db:migrate
 
 TimescaleDB provides time-series optimizations for power monitoring data.
 
+The hypertable setup is stored as a custom SQL migration at `drizzle/0001_timescaledb_setup.sql`.
+It is **not** applied automatically by `drizzle-kit migrate` — it runs as a separate step.
+
 ### Prerequisites
 
-Install TimescaleDB extension on your PostgreSQL instance:
+1. Install TimescaleDB extension on your PostgreSQL instance:
+   - [TimescaleDB Installation Guide](https://docs.timescale.com/install/latest/)
+   - For Docker: use `timescale/timescaledb-ha` image
 
-- [TimescaleDB Installation Guide](https://docs.timescale.com/install/latest/)
-- For Docker: use `timescale/timescaledb-ha` image
+2. Set the environment variable in your `.env.local`:
 
-### Setup
+   ```
+   TIMESCALEDB_ENABLED=true
+   ```
 
-After running standard migrations, enable TimescaleDB:
+### Setup — Full Database Initialization
+
+Run Drizzle migrations **and** TimescaleDB hypertable setup in one command:
+
+```bash
+npm run db:setup
+```
+
+This is equivalent to:
+
+```bash
+npm run db:migrate   # Apply all Drizzle schema migrations
+npm run db:timescale # Apply drizzle/0001_timescaledb_setup.sql via psql
+```
+
+### Setup — TimescaleDB Only
+
+If Drizzle migrations are already applied, run only the hypertable setup:
 
 ```bash
 npm run db:timescale
 ```
 
-This converts the `power_readings` table to a TimescaleDB hypertable for:
+### What `drizzle/0001_timescaledb_setup.sql` Does
 
-- Automatic time-based partitioning (1-week chunks)
-- Faster time-range queries
-- Efficient data compression
-- Continuous aggregate support
+- Enables the `timescaledb` PostgreSQL extension
+- Converts `power_readings` to a hypertable partitioned by `recorded_at` (1-week chunks)
+- Creates a composite index on `(feed_id, recorded_at DESC)` for efficient time-range queries
+- Script is idempotent — safe to run multiple times
 
 ### Without TimescaleDB
 

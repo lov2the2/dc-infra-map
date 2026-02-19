@@ -16,7 +16,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run test:coverage` — Run tests with coverage report
 - `npm run test:e2e` — Run Playwright E2E tests
 - `npm run test:e2e:ui` — Run Playwright E2E tests with UI mode
-- `npm run db:timescale` — Apply TimescaleDB hypertable setup (requires TimescaleDB extension)
+- `npm run db:timescale` — Apply TimescaleDB hypertable setup via `drizzle/0001_timescaledb_setup.sql` (requires TimescaleDB extension)
+- `npm run db:setup` — Full DB initialization: `db:migrate` then `db:timescale` in sequence
 
 ## Tech Stack
 
@@ -192,7 +193,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 ## Database Migrations
 
-- `db/scripts/timescaledb-setup.sql` — TimescaleDB hypertable setup for `power_readings` (run via `npm run db:timescale`)
+- `drizzle/0001_timescaledb_setup.sql` — TimescaleDB hypertable setup for `power_readings` (applied via `npm run db:timescale` or `npm run db:setup`)
 - `drizzle/README.md` — Migration documentation and instructions
 
 ## Documentation Index
