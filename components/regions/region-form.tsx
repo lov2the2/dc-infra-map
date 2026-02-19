@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Dialog,
@@ -61,7 +61,8 @@ export function RegionForm({ region, open, onOpenChange, onSuccess }: RegionForm
         }
     }, [open, region, form]);
 
-    const nameValue = form.watch("name");
+    // useWatch is compatible with the React Compiler; form.watch() is not.
+    const nameValue = useWatch({ control: form.control, name: "name" });
 
     useEffect(() => {
         if (!isEditing && nameValue) {

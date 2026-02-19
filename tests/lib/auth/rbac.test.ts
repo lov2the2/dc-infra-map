@@ -4,7 +4,6 @@ import {
     isAdmin,
     canWrite,
     canDelete,
-    type UserRole,
     type Resource,
     type Action,
 } from '@/lib/auth/rbac'

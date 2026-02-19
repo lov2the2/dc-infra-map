@@ -29,7 +29,7 @@ async function seed() {
     if (admin) console.log(`  Created admin: ${admin.email}`);
 
     // Manufacturers
-    const [dell] = await db
+    await db
         .insert(schema.manufacturers)
         .values([
             { name: "Dell Technologies", slug: "dell" },
@@ -58,7 +58,7 @@ async function seed() {
     console.log("  Created region");
 
     // Sites
-    const [gasanSite, pangyo] = await db
+    const [gasanSite, _pangyo] = await db
         .insert(schema.sites)
         .values([
             {
@@ -224,7 +224,7 @@ async function seed() {
 
     // Patch panel devices in network racks
     const networkRacks = createdRacks.filter((_, i) => i >= 7);
-    const patchPanelValues = networkRacks.map((rack, i) => ({
+    const patchPanelValues = networkRacks.map((rack, _i) => ({
         name: `${rack.name}-PP01`,
         deviceTypeId: patchPanelType?.id ?? "",
         rackId: rack.id,

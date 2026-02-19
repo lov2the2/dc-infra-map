@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import {
@@ -45,7 +45,8 @@ export function TenantForm({ tenant }: TenantFormProps) {
         },
     });
 
-    const nameValue = form.watch("name");
+    // useWatch is compatible with the React Compiler; form.watch() is not.
+    const nameValue = useWatch({ control: form.control, name: "name" });
 
     // Auto-generate slug from name when creating a new tenant
     useEffect(() => {

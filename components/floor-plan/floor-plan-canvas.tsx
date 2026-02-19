@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import { FloorPlanToolbar } from "./floor-plan-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -31,6 +31,22 @@ const INITIAL_ZOOM = 1;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 3;
 
+/** Compute the default grid position for each rack from the prop data. */
+function computeDefaultPositions(
+    racks: RackPosition[],
+): Record<string, { x: number; y: number }> {
+    const result: Record<string, { x: number; y: number }> = {};
+    racks.forEach((rack, i) => {
+        if (rack.posX !== null && rack.posY !== null) {
+            result[rack.id] = { x: rack.posX, y: rack.posY };
+        } else {
+            // Default: arrange in grid layout if no position set
+            result[rack.id] = { x: (i % 5) * 3, y: Math.floor(i / 5) * 4 };
+        }
+    });
+    return result;
+}
+
 export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProps) {
     const [zoom, setZoom] = useState(INITIAL_ZOOM);
     const [pan, setPan] = useState({ x: 40, y: 40 });
@@ -43,25 +59,21 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
         py: number;
     } | null>(null);
     const [selectedRack, setSelectedRack] = useState<RackPosition | null>(null);
-    const [positions, setPositions] = useState<Record<string, { x: number; y: number }>>({});
+    // Stores only user-initiated drag overrides keyed by rack ID.
+    // Positions not present here fall back to the values derived from the racks prop.
+    const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({});
     const [draggingId, setDraggingId] = useState<string | null>(null);
     const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const svgRef = useRef<SVGSVGElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Initialize positions from rack data
-    useEffect(() => {
-        const initial: Record<string, { x: number; y: number }> = {};
-        racks.forEach((rack, i) => {
-            if (rack.posX !== null && rack.posY !== null) {
-                initial[rack.id] = { x: rack.posX, y: rack.posY };
-            } else {
-                // Default: arrange in grid layout if no position set
-                initial[rack.id] = { x: (i % 5) * 3, y: Math.floor(i / 5) * 4 };
-            }
-        });
-        setPositions(initial);
-    }, [racks]);
+    // Derive effective positions by merging rack defaults with drag overrides.
+    // This eliminates the need for a synchronising effect that called setState
+    // directly (which triggers the react-hooks/set-state-in-effect lint error).
+    const positions = useMemo(() => {
+        const defaults = computeDefaultPositions(racks);
+        return { ...defaults, ...dragOverrides };
+    }, [racks, dragOverrides]);
 
     // Zoom with mouse wheel
     const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -129,7 +141,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
             const rawY = (svgY - dragOffset.y) / CELL_SIZE;
             const snappedX = Math.max(0, Math.round(rawX));
             const snappedY = Math.max(0, Math.round(rawY));
-            setPositions((prev) => ({
+            setDragOverrides((prev) => ({
                 ...prev,
                 [rack.id]: { x: snappedX, y: snappedY },
             }));
