@@ -17,16 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenantCreateSchema, type TenantCreateInput } from "@/lib/validators/tenant";
+import { generateSlug } from "@/lib/utils";
 import type { Tenant } from "@/types/entities";
-
-function generateSlug(name: string): string {
-    return name
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-}
 
 interface TenantFormProps {
     tenant?: Tenant;

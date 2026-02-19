@@ -1,8 +1,9 @@
 import { z } from "zod/v4";
+import { slugSchema } from "./shared";
 
 export const locationCreateSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    slug: z.string().min(1, "Slug is required").regex(/^[a-z0-9-]+$/, "Slug must be lowercase with hyphens"),
+    slug: slugSchema,
     siteId: z.string().min(1, "Site is required"),
     tenantId: z.string().nullable().optional(),
     description: z.string().nullable().optional(),

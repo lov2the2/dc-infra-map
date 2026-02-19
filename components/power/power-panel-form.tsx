@@ -14,11 +14,8 @@ import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { powerPanelCreateSchema, type PowerPanelCreateInput } from "@/lib/validators/power";
+import { generateSlug } from "@/lib/utils";
 import type { Site, PowerPanel } from "@/types/entities";
-
-function generateSlug(name: string): string {
-    return name.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
-}
 
 interface PowerPanelFormProps {
     sites: Site[];

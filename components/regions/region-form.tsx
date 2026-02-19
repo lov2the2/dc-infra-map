@@ -21,16 +21,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { regionCreateSchema, type RegionCreateInput } from "@/lib/validators/region";
+import { generateSlug } from "@/lib/utils";
 import type { Region } from "@/types/entities";
-
-function generateSlug(name: string): string {
-    return name
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-");
-}
 
 interface RegionFormProps {
     region?: Region;
