@@ -54,3 +54,8 @@ next-env.d.ts
 # dev server runtime files
 /scripts/.server.pid
 /scripts/.server.log
+
+# Helm environment-specific values files (contain secrets; commit only .example files)
+/helm/dcim/values.dev.yaml
+/helm/dcim/values.staging.yaml
+/helm/dcim/values.prod.yaml

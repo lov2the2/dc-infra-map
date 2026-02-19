@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: dcim-app
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+spec:
+    type: {{ .Values.app.service.type }}
+    selector:
+        {{- include "dcim.app.selectorLabels" . | nindent 8 }}
+    ports:
+        - port: 80
+          targetPort: {{ .Values.app.service.port }}
+          {{- if and (eq .Values.app.service.type "NodePort") .Values.app.service.nodePort }}
+          nodePort: {{ .Values.app.service.nodePort }}
+          {{- end }}
+          name: http

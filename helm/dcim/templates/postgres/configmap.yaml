@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: postgres-init-scripts
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+data:
+    init-db.sql: |
+        -- Initialize TimescaleDB extension on database creation
+        CREATE EXTENSION IF NOT EXISTS timescaledb;

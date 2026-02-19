@@ -1,0 +1,33 @@
+{{- if .Values.app.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+    name: dcim-ingress
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+    annotations:
+        {{- range $key, $value := .Values.app.ingress.annotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+spec:
+    ingressClassName: nginx
+    {{- if .Values.app.ingress.tls.enabled }}
+    tls:
+        - hosts:
+              - {{ .Values.app.ingress.host | quote }}
+          secretName: {{ .Values.app.ingress.tls.secretName | quote }}
+    {{- end }}
+    rules:
+        - host: {{ .Values.app.ingress.host | quote }}
+          http:
+              paths:
+                  - path: /
+                    pathType: Prefix
+                    backend:
+                        service:
+                            name: dcim-app
+                            port:
+                                number: 80
+{{- end }}

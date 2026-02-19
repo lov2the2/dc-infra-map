@@ -190,6 +190,72 @@ types/                        # TypeScript 타입 정의
 scripts/                      # DB 초기화 SQL
 ```
 
+## Helm Chart 배포
+
+Helm을 사용하여 환경별로 설정을 분리하여 배포할 수 있습니다.
+
+### 사전 요구사항
+
+- Helm v3.x 설치 (`brew install helm`)
+- kubectl 설치 및 클러스터 연결
+
+### 초기 설정
+
+환경별 values 파일 생성 (example 파일 복사 후 수정):
+
+```bash
+# dev 환경
+cp helm/dcim/values.dev.example.yaml helm/dcim/values.dev.yaml
+# 필요한 값 수정 (비밀번호, 도메인 등)
+vim helm/dcim/values.dev.yaml
+```
+
+### 환경별 배포 명령어
+
+**dev 환경:**
+
+```bash
+npm run helm:install:dev
+# 또는
+helm upgrade --install dcim helm/dcim -f helm/dcim/values.dev.yaml -n dcim --create-namespace
+```
+
+**staging 환경:**
+
+```bash
+npm run helm:install:staging
+```
+
+**prod 환경:**
+
+```bash
+npm run helm:install:prod
+```
+
+### 배포 확인
+
+```bash
+npm run helm:status    # Helm 릴리스 상태
+kubectl get all -n dcim  # Kubernetes 리소스 확인
+```
+
+### 삭제
+
+```bash
+npm run helm:uninstall
+```
+
+### 환경별 주요 설정값
+
+| 항목 | dev | staging | prod |
+| --- | --- | --- | --- |
+| 레플리카 수 | 1 | 2 | 3 |
+| 도메인 | dcim-dev.local | dcim-staging.example.com | dcim.example.com |
+| TLS | 비활성화 | 비활성화 | 활성화 |
+| CPU (요청/제한) | 100m/500m | 250m/1000m | 500m/2000m |
+| 메모리 (요청/제한) | 256Mi/512Mi | 512Mi/1Gi | 1Gi/2Gi |
+| DB 스토리지 | 10Gi | 20Gi | 50Gi |
+
 ## 문서
 
 | 문서 | 설명 |

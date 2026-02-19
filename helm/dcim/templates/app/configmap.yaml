@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: app-config
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: app
+data:
+    NODE_ENV: {{ .Values.app.env.NODE_ENV | quote }}
+    NEXTAUTH_URL: {{ .Values.app.env.NEXTAUTH_URL | quote }}
+    TIMESCALEDB_ENABLED: {{ .Values.app.env.TIMESCALEDB_ENABLED | quote }}
+    NEXT_TELEMETRY_DISABLED: {{ .Values.app.env.NEXT_TELEMETRY_DISABLED | quote }}
+    # DATABASE_URL is generated from postgres credentials and stored in app-secret

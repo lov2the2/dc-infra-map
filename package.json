@@ -28,7 +28,16 @@
     "k8s:migrate": "bash scripts/k8s-migrate.sh",
     "k8s:destroy": "bash scripts/k8s-destroy.sh",
     "k8s:status": "kubectl get all -n dcim",
-    "k8s:ingress": "bash scripts/k8s-setup-ingress.sh"
+    "k8s:ingress": "bash scripts/k8s-setup-ingress.sh",
+    "helm:lint": "helm lint helm/dcim -f helm/dcim/values.dev.example.yaml",
+    "helm:template:dev": "helm template dcim helm/dcim -f helm/dcim/values.dev.yaml",
+    "helm:template:staging": "helm template dcim helm/dcim -f helm/dcim/values.staging.yaml",
+    "helm:template:prod": "helm template dcim helm/dcim -f helm/dcim/values.prod.yaml",
+    "helm:install:dev": "helm upgrade --install dcim helm/dcim -f helm/dcim/values.dev.yaml -n dcim --create-namespace",
+    "helm:install:staging": "helm upgrade --install dcim helm/dcim -f helm/dcim/values.staging.yaml -n dcim --create-namespace",
+    "helm:install:prod": "helm upgrade --install dcim helm/dcim -f helm/dcim/values.prod.yaml -n dcim --create-namespace",
+    "helm:uninstall": "helm uninstall dcim -n dcim",
+    "helm:status": "helm status dcim -n dcim"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.1",

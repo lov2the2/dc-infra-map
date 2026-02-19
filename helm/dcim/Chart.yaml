@@ -1,0 +1,14 @@
+apiVersion: v2
+name: dcim
+description: Data Center Infrastructure Map — Next.js application with TimescaleDB
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+    - dcim
+    - data-center
+    - infrastructure
+    - nextjs
+    - timescaledb
+maintainers:
+    - name: DCIM Team

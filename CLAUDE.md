@@ -27,6 +27,15 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run k8s:migrate` — Run DB migration Job in Kubernetes
 - `npm run k8s:destroy` — Remove Kubernetes resources (use `--all` flag to also delete PVC data)
 - `npm run k8s:status` — Show all Kubernetes resources in dcim namespace
+- `npm run helm:lint` — Helm chart syntax validation (dev values)
+- `npm run helm:install:dev` — Install/upgrade to dev environment
+- `npm run helm:install:staging` — Install/upgrade to staging environment
+- `npm run helm:install:prod` — Install/upgrade to production environment
+- `npm run helm:uninstall` — Uninstall Helm release
+- `npm run helm:status` — Show Helm release status
+- `npm run helm:template:dev` — Render templates without deploying (dev)
+- `npm run helm:template:staging` — Render templates without deploying (staging)
+- `npm run helm:template:prod` — Render templates without deploying (prod)
 
 ## Tech Stack
 
@@ -243,6 +252,36 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
   - NodePort: port 30300
 - All components share `dcim` namespace
 - Ingress enables domain-based routing for cleaner access and SSE streaming compatibility
+
+## Helm Chart Deployment
+
+**Chart location**: `helm/dcim/`
+
+**Environment-specific values**:
+
+- `helm/dcim/values.yaml` — Default values (shared across all environments)
+- `helm/dcim/values.dev.yaml` — Dev overrides (gitignored, copy from example)
+- `helm/dcim/values.staging.yaml` — Staging overrides (gitignored, copy from example)
+- `helm/dcim/values.prod.yaml` — Production overrides (gitignored, copy from example)
+- `helm/dcim/values.*.example.yaml` — Sample files for each environment (committed to git)
+
+**Setup**:
+
+1. Copy example files: `cp helm/dcim/values.dev.example.yaml helm/dcim/values.dev.yaml`
+2. Edit credentials and configuration in `values.dev.yaml`
+3. Deploy: `npm run helm:install:dev`
+
+**Environment differences** (dev → staging → prod):
+
+| Aspect | Dev | Staging | Prod |
+| --- | --- | --- | --- |
+| Replicas | 1 | 2 | 3 |
+| Resources | minimal | medium | production-grade |
+| Domain | dcim-dev.local | dcim-staging.example.com | dcim.example.com |
+| TLS | disabled | disabled | enabled |
+| CPU (request/limit) | 100m/500m | 250m/1000m | 500m/2000m |
+| Memory (request/limit) | 256Mi/512Mi | 512Mi/1Gi | 1Gi/2Gi |
+| DB Storage | 10Gi | 20Gi | 50Gi |
 
 ## Tailwind 4 Specifics
 

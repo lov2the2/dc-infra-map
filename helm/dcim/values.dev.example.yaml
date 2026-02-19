@@ -1,0 +1,71 @@
+# Dev environment values example.
+# Copy to values.dev.yaml and fill in actual secrets.
+# values.dev.yaml is gitignored — do NOT commit actual secrets.
+
+global:
+    environment: dev
+    imageRegistry: ""
+
+app:
+    image:
+        repository: dc-infra-map
+        tag: latest
+        pullPolicy: IfNotPresent
+    replicas: 1
+    service:
+        type: NodePort
+        port: 3000
+        nodePort: 30300
+    ingress:
+        enabled: true
+        host: dcim-dev.local
+        tls:
+            enabled: false
+            secretName: ""
+    resources:
+        requests:
+            cpu: "100m"
+            memory: "256Mi"
+        limits:
+            cpu: "500m"
+            memory: "512Mi"
+    env:
+        NODE_ENV: "development"
+        NEXTAUTH_URL: "http://dcim-dev.local"
+        TIMESCALEDB_ENABLED: "true"
+        NEXT_TELEMETRY_DISABLED: "1"
+    secrets:
+        AUTH_SECRET: "dev-secret-change-in-production"
+        ADMIN_EMAIL: "admin@dcim.local"
+        ADMIN_PASSWORD: "dev-admin-password"
+        SMTP_HOST: ""
+        SMTP_PORT: "587"
+        SMTP_USER: ""
+        SMTP_PASS: ""
+        SMTP_FROM: "dcim@company.com"
+
+postgres:
+    image:
+        repository: timescale/timescaledb
+        tag: 2.17.2-pg17
+        pullPolicy: IfNotPresent
+    service:
+        port: 5432
+    storage:
+        size: 10Gi
+        storageClass: ""
+    credentials:
+        database: dcim
+        username: dcim_user
+        password: "dev-password"
+    resources:
+        requests:
+            cpu: "100m"
+            memory: "256Mi"
+        limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+namespace:
+    name: dcim
+    create: true

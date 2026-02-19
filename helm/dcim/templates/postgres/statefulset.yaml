@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+    name: postgres
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: postgres
+spec:
+    serviceName: postgres
+    replicas: 1
+    selector:
+        matchLabels:
+            {{- include "dcim.postgres.selectorLabels" . | nindent 12 }}
+    template:
+        metadata:
+            labels:
+                {{- include "dcim.postgres.selectorLabels" . | nindent 16 }}
+        spec:
+            containers:
+                - name: postgres
+                  image: "{{ if .Values.global.imageRegistry }}{{ .Values.global.imageRegistry }}/{{ end }}{{ .Values.postgres.image.repository }}:{{ .Values.postgres.image.tag }}"
+                  imagePullPolicy: {{ .Values.postgres.image.pullPolicy }}
+                  ports:
+                      - containerPort: {{ .Values.postgres.service.port }}
+                        name: postgres
+                  env:
+                      - name: POSTGRES_DB
+                        valueFrom:
+                            secretKeyRef:
+                                name: postgres-secret
+                                key: POSTGRES_DB
+                      - name: POSTGRES_USER
+                        valueFrom:
+                            secretKeyRef:
+                                name: postgres-secret
+                                key: POSTGRES_USER
+                      - name: POSTGRES_PASSWORD
+                        valueFrom:
+                            secretKeyRef:
+                                name: postgres-secret
+                                key: POSTGRES_PASSWORD
+                      - name: PGDATA
+                        value: /var/lib/postgresql/data/pgdata
+                  volumeMounts:
+                      - name: postgres-data
+                        mountPath: /var/lib/postgresql/data
+                      - name: init-scripts
+                        mountPath: /docker-entrypoint-initdb.d
+                  readinessProbe:
+                      exec:
+                          command:
+                              - pg_isready
+                              - -U
+                              - {{ .Values.postgres.credentials.username }}
+                              - -d
+                              - {{ .Values.postgres.credentials.database }}
+                      initialDelaySeconds: 10
+                      periodSeconds: 5
+                      failureThreshold: 6
+                  livenessProbe:
+                      exec:
+                          command:
+                              - pg_isready
+                              - -U
+                              - {{ .Values.postgres.credentials.username }}
+                              - -d
+                              - {{ .Values.postgres.credentials.database }}
+                      initialDelaySeconds: 30
+                      periodSeconds: 10
+                  resources:
+                      requests:
+                          cpu: {{ .Values.postgres.resources.requests.cpu | quote }}
+                          memory: {{ .Values.postgres.resources.requests.memory | quote }}
+                      limits:
+                          cpu: {{ .Values.postgres.resources.limits.cpu | quote }}
+                          memory: {{ .Values.postgres.resources.limits.memory | quote }}
+            volumes:
+                - name: init-scripts
+                  configMap:
+                      name: postgres-init-scripts
+    volumeClaimTemplates:
+        - metadata:
+              name: postgres-data
+              namespace: {{ include "dcim.namespace" . }}
+          spec:
+              accessModes:
+                  - ReadWriteOnce
+              {{- if .Values.postgres.storage.storageClass }}
+              storageClassName: {{ .Values.postgres.storage.storageClass | quote }}
+              {{- end }}
+              resources:
+                  requests:
+                      storage: {{ .Values.postgres.storage.size }}
