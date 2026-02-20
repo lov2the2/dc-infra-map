@@ -76,3 +76,12 @@ Full DATABASE_URL built from postgres credentials.
     (.Values.postgres.service.port | int)
     .Values.postgres.credentials.database }}
 {{- end }}
+
+{{/*
+Selector labels for the go-service Deployment.
+*/}}
+{{- define "dcim.goService.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "dcim.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: go-service
+{{- end }}

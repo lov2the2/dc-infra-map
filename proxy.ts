@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 export default auth((req) => {
@@ -17,6 +18,14 @@ export default auth((req) => {
         const loginUrl = new URL("/login", req.nextUrl.origin);
         loginUrl.searchParams.set("callbackUrl", pathname);
         return Response.redirect(loginUrl);
+    }
+
+    // Inject internal secret for Go service proxy routes
+    const goServicePaths = ["/api/power/readings", "/api/power/sse", "/api/export/"];
+    if (isLoggedIn && goServicePaths.some((p) => pathname.startsWith(p))) {
+        const headers = new Headers(req.headers);
+        headers.set("x-internal-secret", process.env.INTERNAL_SECRET ?? "");
+        return NextResponse.next({ request: { headers } });
     }
 
     // Admin-only routes

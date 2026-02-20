@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: go-service-config
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: go-service
+data:
+    PORT: {{ .Values.goService.service.port | quote }}
+    GO_ENV: {{ .Values.global.environment | quote }}

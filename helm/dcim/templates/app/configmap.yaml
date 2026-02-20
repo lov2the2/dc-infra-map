@@ -11,4 +11,5 @@ data:
     NEXTAUTH_URL: {{ .Values.app.env.NEXTAUTH_URL | quote }}
     TIMESCALEDB_ENABLED: {{ .Values.app.env.TIMESCALEDB_ENABLED | quote }}
     NEXT_TELEMETRY_DISABLED: {{ .Values.app.env.NEXT_TELEMETRY_DISABLED | quote }}
+    GO_SERVICE_URL: "http://dcim-go-service.{{ include "dcim.namespace" . }}.svc.cluster.local:8080"
     # DATABASE_URL is generated from postgres credentials and stored in app-secret

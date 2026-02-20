@@ -79,3 +79,22 @@ postgres:
 namespace:
     name: dcim
     create: true
+
+# Go Service
+goService:
+    image:
+        repository: dc-infra-map-go
+        tag: latest
+        pullPolicy: IfNotPresent
+    replicas: 1
+    service:
+        port: 8080
+    resources:
+        requests:
+            cpu: "100m"
+            memory: "128Mi"
+        limits:
+            cpu: "500m"
+            memory: "256Mi"
+    secrets:
+        INTERNAL_SECRET: "dev-secret-change-in-production"
