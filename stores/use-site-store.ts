@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { persist } from "zustand/middleware";
 import type { Site } from "@/types/entities";
 
 interface SiteState {
@@ -12,21 +13,28 @@ interface SiteState {
 }
 
 export const useSiteStore = create<SiteState>()(
-    immer((set) => ({
-        sites: [],
-        activeSiteId: null,
-        isLoading: false,
-        setSites: (sites) =>
-            set((state) => {
-                state.sites = sites;
-            }),
-        setActiveSite: (id) =>
-            set((state) => {
-                state.activeSiteId = id;
-            }),
-        setLoading: (loading) =>
-            set((state) => {
-                state.isLoading = loading;
-            }),
-    })),
+    persist(
+        immer((set) => ({
+            sites: [],
+            activeSiteId: null,
+            isLoading: false,
+            setSites: (sites) =>
+                set((state) => {
+                    state.sites = sites;
+                }),
+            setActiveSite: (id) =>
+                set((state) => {
+                    state.activeSiteId = id;
+                }),
+            setLoading: (loading) =>
+                set((state) => {
+                    state.isLoading = loading;
+                }),
+        })),
+        {
+            name: "dcim-active-site",
+            // Persist only activeSiteId — sites list is fetched fresh from API
+            partialize: (state) => ({ activeSiteId: state.activeSiteId }),
+        },
+    ),
 );

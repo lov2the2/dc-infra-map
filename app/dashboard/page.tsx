@@ -14,6 +14,7 @@ import { PageHeader } from "@/components/common/page-header";
 import Link from "next/link";
 import { Building2, Server, HardDrive, Users, Zap, Shield } from "lucide-react";
 import { AccessStatusBadge } from "@/components/access/access-status-badge";
+import { SiteSummaryGrid } from "@/components/dashboard/site-summary-grid";
 
 export default async function DashboardPage() {
     const session = await auth();
@@ -115,6 +116,9 @@ export default async function DashboardPage() {
                     );
                 })}
             </div>
+
+            {/* Per-site summary grid (visible when "All Sites" is active) */}
+            <SiteSummaryGrid />
 
             <div className="grid gap-6 md:grid-cols-2">
                 {/* Recent Access Activity */}

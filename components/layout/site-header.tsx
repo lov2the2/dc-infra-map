@@ -5,6 +5,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { UserNav } from "@/components/layout/user-nav";
 import { CommandPalette } from "@/components/common/command-palette";
+import { SiteSelector } from "@/components/layout/site-selector";
 
 export function SiteHeader() {
     return (
@@ -38,6 +39,9 @@ export function SiteHeader() {
                     )}
                 </nav>
                 <div className="ml-auto flex items-center gap-2">
+                    <div className="hidden md:flex">
+                        <SiteSelector />
+                    </div>
                     <div className="hidden md:flex">
                         <CommandPalette />
                     </div>

@@ -16,10 +16,13 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/common/status-badge";
 import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { DeviceTransferDialog } from "@/components/devices/device-transfer-dialog";
+import { MoreHorizontal, ArrowRightLeft } from "lucide-react";
 import type { DeviceWithRelations } from "@/types/entities";
 
 const BULK_STATUSES = ["active", "inactive", "maintenance", "decommissioned"] as const;
@@ -33,6 +36,12 @@ export function DeviceTable({ devices }: DeviceTableProps) {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [isBulkLoading, setIsBulkLoading] = useState(false);
+
+    // Transfer dialog state
+    const [transferDevice, setTransferDevice] = useState<{
+        id: string;
+        name: string;
+    } | null>(null);
 
     const allSelected =
         devices.length > 0 && selectedIds.size === devices.length;
@@ -166,13 +175,16 @@ export function DeviceTable({ devices }: DeviceTableProps) {
                             <TableHead>Position</TableHead>
                             <TableHead>Tenant</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead className="w-[50px]">
+                                <span className="sr-only">Actions</span>
+                            </TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {devices.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={7}
+                                    colSpan={8}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No devices found.
@@ -193,9 +205,7 @@ export function DeviceTable({ devices }: DeviceTableProps) {
                                         onClick={(e) => e.stopPropagation()}
                                     >
                                         <Checkbox
-                                            checked={selectedIds.has(
-                                                device.id,
-                                            )}
+                                            checked={selectedIds.has(device.id)}
                                             onCheckedChange={() =>
                                                 toggleRow(device.id)
                                             }
@@ -205,40 +215,31 @@ export function DeviceTable({ devices }: DeviceTableProps) {
                                     <TableCell
                                         className="font-medium"
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         {device.name}
                                     </TableCell>
                                     <TableCell
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         <span className="text-muted-foreground">
-                                            {device.deviceType.manufacturer
-                                                ?.name ?? ""}{" "}
+                                            {device.deviceType.manufacturer?.name ?? ""}{" "}
                                         </span>
                                         {device.deviceType.model}
                                     </TableCell>
                                     <TableCell
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         {device.rack?.name ?? "\u2014"}
                                     </TableCell>
                                     <TableCell
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         {device.position
@@ -247,21 +248,65 @@ export function DeviceTable({ devices }: DeviceTableProps) {
                                     </TableCell>
                                     <TableCell
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         {device.tenant?.name ?? "\u2014"}
                                     </TableCell>
                                     <TableCell
                                         onClick={() =>
-                                            router.push(
-                                                `/devices/${device.id}`,
-                                            )
+                                            router.push(`/devices/${device.id}`)
                                         }
                                     >
                                         <StatusBadge status={device.status} />
+                                    </TableCell>
+                                    <TableCell
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8"
+                                                    aria-label={`Actions for ${device.name}`}
+                                                >
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `/devices/${device.id}`,
+                                                        )
+                                                    }
+                                                >
+                                                    View Details
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        router.push(
+                                                            `/devices/${device.id}/edit`,
+                                                        )
+                                                    }
+                                                >
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem
+                                                    onClick={() =>
+                                                        setTransferDevice({
+                                                            id: device.id,
+                                                            name: device.name,
+                                                        })
+                                                    }
+                                                >
+                                                    <ArrowRightLeft className="mr-2 h-4 w-4" />
+                                                    Transfer to Site
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -278,6 +323,18 @@ export function DeviceTable({ devices }: DeviceTableProps) {
                 onConfirm={handleBulkDelete}
                 loading={isBulkLoading}
             />
+
+            {/* Site transfer dialog */}
+            {transferDevice && (
+                <DeviceTransferDialog
+                    open={transferDevice !== null}
+                    onOpenChange={(open) => {
+                        if (!open) setTransferDevice(null);
+                    }}
+                    deviceId={transferDevice.id}
+                    deviceName={transferDevice.name}
+                />
+            )}
         </div>
     );
 }

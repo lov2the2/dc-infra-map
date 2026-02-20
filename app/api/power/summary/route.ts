@@ -1,14 +1,48 @@
-import { isNull } from "drizzle-orm";
+import { eq, isNull, and, inArray } from "drizzle-orm";
 import { db } from "@/db";
-import { powerFeeds } from "@/db/schema";
+import { powerFeeds, racks, locations } from "@/db/schema";
 import { successResponse } from "@/lib/api";
 import { generateMockReading } from "@/lib/power/mock-generator";
 import type { RackPowerSummary } from "@/types/entities";
 import { withAuthOnly } from "@/lib/auth/with-auth";
 
-export const GET = withAuthOnly(async (_req, _session) => {
+export const GET = withAuthOnly(async (req, _session) => {
+    const { searchParams } = new URL(req.url);
+    const siteId = searchParams.get("siteId");
+
+    let rackIdFilter: string[] | null = null;
+
+    // Resolve rack IDs for the given site
+    if (siteId) {
+        const siteLocations = await db
+            .select({ id: locations.id })
+            .from(locations)
+            .where(eq(locations.siteId, siteId));
+
+        if (siteLocations.length === 0) {
+            return successResponse([]);
+        }
+
+        const locationIds = siteLocations.map((l) => l.id);
+        const siteRacks = await db
+            .select({ id: racks.id })
+            .from(racks)
+            .where(and(isNull(racks.deletedAt), inArray(racks.locationId, locationIds)));
+
+        rackIdFilter = siteRacks.map((r) => r.id);
+
+        if (rackIdFilter.length === 0) {
+            return successResponse([]);
+        }
+    }
+
+    const feedConditions = [isNull(powerFeeds.deletedAt)];
+    if (rackIdFilter) {
+        feedConditions.push(inArray(powerFeeds.rackId, rackIdFilter));
+    }
+
     const feeds = await db.query.powerFeeds.findMany({
-        where: isNull(powerFeeds.deletedAt),
+        where: and(...feedConditions),
         with: { rack: true },
     });
 
