@@ -61,15 +61,15 @@ export function DeviceTable({ devices }: DeviceTableProps) {
     async function handleBulkStatus(status: string) {
         setIsBulkLoading(true);
         try {
-            await Promise.all(
-                [...selectedIds].map((id) =>
-                    fetch(`/api/devices/${id}`, {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ status }),
-                    }),
-                ),
-            );
+            await fetch("/api/devices/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ids: [...selectedIds],
+                    action: "update",
+                    data: { status },
+                }),
+            });
             setSelectedIds(new Set());
             router.refresh();
         } finally {
@@ -80,11 +80,14 @@ export function DeviceTable({ devices }: DeviceTableProps) {
     async function handleBulkDelete() {
         setIsBulkLoading(true);
         try {
-            await Promise.all(
-                [...selectedIds].map((id) =>
-                    fetch(`/api/devices/${id}`, { method: "DELETE" }),
-                ),
-            );
+            await fetch("/api/devices/batch", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    ids: [...selectedIds],
+                    action: "delete",
+                }),
+            });
             setSelectedIds(new Set());
             setShowDeleteConfirm(false);
             router.refresh();

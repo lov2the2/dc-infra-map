@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/common/data-table";
+import { formatDate } from "@/lib/data-formatters";
 import type { Tenant } from "@/types/entities";
 
 interface TenantTableProps {
@@ -36,7 +37,7 @@ export function TenantTable({ tenants }: TenantTableProps) {
             key: "createdAt",
             label: "Created",
             render: (tenant: Tenant) => (
-                <span>{new Date(tenant.createdAt).toLocaleDateString()}</span>
+                <span>{formatDate(tenant.createdAt)}</span>
             ),
         },
     ];

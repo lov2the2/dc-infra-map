@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { regionCreateSchema, type RegionCreateInput } from "@/lib/validators/region";
 import { generateSlug } from "@/lib/utils";
 import type { Region } from "@/types/entities";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 
 interface RegionFormProps {
     region?: Region;
@@ -62,24 +63,20 @@ export function RegionForm({ region, open, onOpenChange, onSuccess }: RegionForm
         }
     }, [nameValue, isEditing, form]);
 
+    const { mutate, isLoading } = useApiMutation<RegionCreateInput>({
+        endpoint: isEditing ? `/api/regions/${region?.id}` : "/api/regions",
+        method: isEditing ? "PATCH" : "POST",
+        onSuccess: () => {
+            onOpenChange(false);
+            onSuccess();
+        },
+        onError: (errorMessage) => {
+            form.setError("root", { message: errorMessage });
+        },
+    });
+
     async function onSubmit(data: RegionCreateInput) {
-        const url = isEditing ? `/api/regions/${region.id}` : "/api/regions";
-        const method = isEditing ? "PATCH" : "POST";
-
-        const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            form.setError("root", { message: errorData?.error ?? "Failed to save region" });
-            return;
-        }
-
-        onOpenChange(false);
-        onSuccess();
+        await mutate(data);
     }
 
     return (
@@ -140,8 +137,8 @@ export function RegionForm({ region, open, onOpenChange, onSuccess }: RegionForm
                             </p>
                         )}
                         <div className="flex gap-3">
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading
                                     ? "Saving..."
                                     : isEditing
                                       ? "Save Changes"

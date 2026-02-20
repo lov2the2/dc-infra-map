@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { accessLogCreateSchema, type AccessLogCreateInput } from "@/lib/validators/access";
 import type { Site } from "@/types/entities";
 
@@ -21,8 +22,6 @@ interface CheckInFormProps {
 }
 
 export function CheckInForm({ sites }: CheckInFormProps) {
-    const router = useRouter();
-
     const form = useForm<AccessLogCreateInput>({
         resolver: zodResolver(accessLogCreateSchema),
         defaultValues: {
@@ -37,21 +36,16 @@ export function CheckInForm({ sites }: CheckInFormProps) {
         },
     });
 
+    const { mutate, isLoading } = useApiMutation<AccessLogCreateInput>({
+        endpoint: "/api/access-logs",
+        redirectPath: "/access",
+        onError: (error) => {
+            form.setError("root", { message: error });
+        },
+    });
+
     async function onSubmit(data: AccessLogCreateInput) {
-        const response = await fetch("/api/access-logs", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            form.setError("root", { message: errorData?.error ?? "Failed to check in" });
-            return;
-        }
-
-        router.push("/access");
-        router.refresh();
+        await mutate(data);
     }
 
     return (
@@ -198,11 +192,11 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                             <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
                         )}
                         <div className="flex gap-3">
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? "Checking In..." : "Check In"}
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Checking In..." : "Check In"}
                             </Button>
-                            <Button type="button" variant="outline" onClick={() => router.push("/access")}>
-                                Cancel
+                            <Button variant="outline" asChild>
+                                <Link href="/access">Cancel</Link>
                             </Button>
                         </div>
                     </form>

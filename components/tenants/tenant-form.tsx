@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { tenantCreateSchema, type TenantCreateInput } from "@/lib/validators/tenant";
 import { generateSlug } from "@/lib/utils";
 import type { Tenant } from "@/types/entities";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 
 interface TenantFormProps {
     tenant?: Tenant;
@@ -47,25 +48,17 @@ export function TenantForm({ tenant }: TenantFormProps) {
         }
     }, [nameValue, isEditing, form]);
 
+    const { mutate, isLoading } = useApiMutation<TenantCreateInput>({
+        endpoint: isEditing ? `/api/tenants/${tenant?.id}` : "/api/tenants",
+        method: isEditing ? "PATCH" : "POST",
+        redirectPath: "/tenants",
+        onError: (errorMessage) => {
+            form.setError("root", { message: errorMessage });
+        },
+    });
+
     async function onSubmit(data: TenantCreateInput) {
-        const url = isEditing ? `/api/tenants/${tenant.id}` : "/api/tenants";
-        const method = isEditing ? "PATCH" : "POST";
-
-        const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            const message = errorData?.error ?? "Failed to save tenant";
-            form.setError("root", { message });
-            return;
-        }
-
-        router.push("/tenants");
-        router.refresh();
+        await mutate(data);
     }
 
     return (
@@ -131,9 +124,9 @@ export function TenantForm({ tenant }: TenantFormProps) {
                         <div className="flex gap-3">
                             <Button
                                 type="submit"
-                                disabled={form.formState.isSubmitting}
+                                disabled={isLoading}
                             >
-                                {form.formState.isSubmitting
+                                {isLoading
                                     ? "Saving..."
                                     : isEditing
                                       ? "Save Changes"

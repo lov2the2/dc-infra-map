@@ -1,49 +1,30 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import { CABLE_TYPES, CABLE_STATUSES } from "@/types/cable";
+import { useSearchParamsFilter } from "@/hooks/use-search-params-filter";
 
 export function CableFilters() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-
-    const updateFilter = useCallback(
-        (key: string, value: string | null) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (value) {
-                params.set(key, value);
-            } else {
-                params.delete(key);
-            }
-            router.push(`/cables?${params.toString()}`);
-        },
-        [router, searchParams],
-    );
-
-    const clearFilters = () => {
-        router.push("/cables");
-    };
+    const { updateFilter, clearFilters, getFilter } = useSearchParamsFilter("/cables");
 
     const hasFilters =
-        searchParams.get("search") ||
-        searchParams.get("cableType") ||
-        searchParams.get("status");
+        getFilter("search") ||
+        getFilter("cableType") ||
+        getFilter("status");
 
     return (
         <div className="flex flex-wrap items-center gap-3">
             <Input
                 placeholder="Search cables..."
-                defaultValue={searchParams.get("search") ?? ""}
+                defaultValue={getFilter("search") ?? ""}
                 onChange={(e) => updateFilter("search", e.target.value || null)}
                 className="w-64"
             />
             <Select
-                value={searchParams.get("cableType") ?? ""}
+                value={getFilter("cableType") ?? ""}
                 onValueChange={(v) => updateFilter("cableType", v || null)}
             >
                 <SelectTrigger className="w-44">
@@ -58,7 +39,7 @@ export function CableFilters() {
                 </SelectContent>
             </Select>
             <Select
-                value={searchParams.get("status") ?? ""}
+                value={getFilter("status") ?? ""}
                 onValueChange={(v) => updateFilter("status", v || null)}
             >
                 <SelectTrigger className="w-44">

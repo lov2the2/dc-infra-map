@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { createStatusBadge } from "@/components/common/status-badge-factory";
 
 const STATUS_COLORS: Record<string, string> = {
     active: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -11,16 +11,4 @@ const STATUS_COLORS: Record<string, string> = {
     retired: "bg-gray-500/15 text-gray-700 dark:text-gray-400",
 };
 
-interface StatusBadgeProps {
-    status: string;
-}
-
-export function StatusBadge({ status }: StatusBadgeProps) {
-    const colorClass = STATUS_COLORS[status] ?? "bg-gray-500/15 text-gray-700 dark:text-gray-400";
-
-    return (
-        <Badge variant="outline" className={colorClass}>
-            {status}
-        </Badge>
-    );
-}
+export const StatusBadge = createStatusBadge(STATUS_COLORS);

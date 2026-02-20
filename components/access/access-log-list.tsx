@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { AccessStatusBadge } from "./access-status-badge";
+import { formatDateTimeOptions } from "@/lib/data-formatters";
 import type { AccessLogWithUser } from "@/types/entities";
 
 interface AccessLogListProps {
@@ -43,7 +44,7 @@ export function AccessLogList({ logs }: AccessLogListProps) {
                             </TableCell>
                             <TableCell>{log.site?.name ?? "-"}</TableCell>
                             <TableCell>
-                                {new Date(log.checkInAt).toLocaleString("ko-KR", {
+                                {formatDateTimeOptions(log.checkInAt, {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",
@@ -51,14 +52,12 @@ export function AccessLogList({ logs }: AccessLogListProps) {
                                 })}
                             </TableCell>
                             <TableCell>
-                                {log.actualCheckOutAt
-                                    ? new Date(log.actualCheckOutAt).toLocaleString("ko-KR", {
-                                          month: "short",
-                                          day: "numeric",
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                      })
-                                    : "-"}
+                                {formatDateTimeOptions(log.actualCheckOutAt, {
+                                    month: "short",
+                                    day: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                })}
                             </TableCell>
                             <TableCell>
                                 <Button variant="ghost" size="sm" asChild>

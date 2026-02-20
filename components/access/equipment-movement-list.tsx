@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { MovementStatusBadge } from "./movement-status-badge";
+import { formatDate } from "@/lib/data-formatters";
 import type { EquipmentMovementWithRelations } from "@/types/entities";
 
 interface EquipmentMovementListProps {
@@ -46,7 +47,7 @@ export function EquipmentMovementList({ movements }: EquipmentMovementListProps)
                             </TableCell>
                             <TableCell>{m.requestedByUser?.name ?? m.requestedByUser?.email ?? "-"}</TableCell>
                             <TableCell>
-                                {new Date(m.createdAt).toLocaleDateString("ko-KR")}
+                                {formatDate(m.createdAt)}
                             </TableCell>
                             <TableCell>
                                 <Button variant="ghost" size="sm" asChild>

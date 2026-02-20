@@ -1,9 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { powerPanelCreateSchema, type PowerPanelCreateInput } from "@/lib/validators/power";
 import { generateSlug } from "@/lib/utils";
 import type { Site, PowerPanel } from "@/types/entities";
@@ -23,7 +24,6 @@ interface PowerPanelFormProps {
 }
 
 export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
-    const router = useRouter();
     const isEditing = !!panel;
 
     const form = useForm<PowerPanelCreateInput>({
@@ -48,24 +48,17 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
         }
     }, [nameValue, isEditing, form]);
 
+    const { mutate, isLoading } = useApiMutation<PowerPanelCreateInput>({
+        endpoint: isEditing ? `/api/power/panels/${panel.id}` : "/api/power/panels",
+        method: isEditing ? "PATCH" : "POST",
+        redirectPath: "/power/panels",
+        onError: (error) => {
+            form.setError("root", { message: error });
+        },
+    });
+
     async function onSubmit(data: PowerPanelCreateInput) {
-        const url = isEditing ? `/api/power/panels/${panel.id}` : "/api/power/panels";
-        const method = isEditing ? "PATCH" : "POST";
-
-        const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            form.setError("root", { message: errorData?.error ?? "Failed to save panel" });
-            return;
-        }
-
-        router.push("/power/panels");
-        router.refresh();
+        await mutate(data);
     }
 
     return (
@@ -182,10 +175,12 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                             <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
                         )}
                         <div className="flex gap-3">
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create Panel"}
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Saving..." : isEditing ? "Save Changes" : "Create Panel"}
                             </Button>
-                            <Button type="button" variant="outline" onClick={() => router.push("/power/panels")}>Cancel</Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/power/panels">Cancel</Link>
+                            </Button>
                         </div>
                     </form>
                 </Form>

@@ -1,7 +1,5 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback } from "react";
 import {
     Select,
     SelectContent,
@@ -12,36 +10,24 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import type { Site } from "@/types/entities";
+import { useSearchParamsFilter } from "@/hooks/use-search-params-filter";
 
 interface AccessLogFiltersProps {
     sites: Site[];
 }
 
 export function AccessLogFilters({ sites }: AccessLogFiltersProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    const { updateFilter, clearFilters, getFilter } = useSearchParamsFilter("");
 
-    const updateParam = useCallback(
-        (key: string, value: string | null) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (value && value !== "all") {
-                params.set(key, value);
-            } else {
-                params.delete(key);
-            }
-            router.push(`?${params.toString()}`);
-        },
-        [router, searchParams],
-    );
-
-    const clearFilters = () => {
-        router.push("?");
+    // Wrap updateFilter to treat "all" as a clear signal
+    const updateParam = (key: string, value: string | null) => {
+        updateFilter(key, value === "all" ? null : value);
     };
 
     return (
         <div className="flex flex-wrap gap-3">
             <Select
-                value={searchParams.get("siteId") ?? "all"}
+                value={getFilter("siteId") ?? "all"}
                 onValueChange={(v) => updateParam("siteId", v)}
             >
                 <SelectTrigger className="w-[180px]">
@@ -58,7 +44,7 @@ export function AccessLogFilters({ sites }: AccessLogFiltersProps) {
             </Select>
 
             <Select
-                value={searchParams.get("status") ?? "all"}
+                value={getFilter("status") ?? "all"}
                 onValueChange={(v) => updateParam("status", v)}
             >
                 <SelectTrigger className="w-[160px]">
@@ -74,7 +60,7 @@ export function AccessLogFilters({ sites }: AccessLogFiltersProps) {
             </Select>
 
             <Select
-                value={searchParams.get("accessType") ?? "all"}
+                value={getFilter("accessType") ?? "all"}
                 onValueChange={(v) => updateParam("accessType", v)}
             >
                 <SelectTrigger className="w-[160px]">
@@ -93,7 +79,7 @@ export function AccessLogFilters({ sites }: AccessLogFiltersProps) {
             <Input
                 placeholder="Search by name..."
                 className="w-[200px]"
-                defaultValue={searchParams.get("personnelName") ?? ""}
+                defaultValue={getFilter("personnelName") ?? ""}
                 onChange={(e) => updateParam("personnelName", e.target.value || null)}
             />
 

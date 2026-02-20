@@ -85,6 +85,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
   - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
+- `lib/data-formatters.ts` — Date/null/status formatting utilities (`formatDate`, `formatDateTime`, `formatNullable`, `formatStatus`, `formatUnit`)
 - `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
 - `tests/lib/auth/` — Unit tests for RBAC permission matrix
 - `tests/lib/export/` — Unit tests for export/import utilities (csv-templates, xml, csv-import)
@@ -95,13 +96,18 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/mailer/report-mailer.ts` — Nodemailer SMTP mailer for scheduled report email delivery with Excel attachments
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
+- `hooks/use-search-params-filter.ts` — URL query parameter filter management hook
+- `hooks/use-cascading-select.ts` — Dependent select data fetching hook
+- `hooks/use-api-mutation.ts` — Form submission API call wrapper hook
+- `hooks/use-delete-mutation.ts` — Delete API call wrapper hook
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
 - `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
-- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette, route-error, table-loading)
+- `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette, route-error, table-loading, status-badge-factory)
   - `route-error.tsx` — Shared error boundary for route `error.tsx` files (props: `title`, `error`, `reset`)
   - `table-loading.tsx` — Shared table skeleton loading for table-based route `loading.tsx` files (props: `rows`, `columns`)
+  - `status-badge-factory.tsx` — Factory for creating typed status badge components
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
@@ -140,6 +146,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `/api/racks/[id]` — Single rack GET/PATCH/DELETE
 - `/api/devices` — Device CRUD
 - `/api/devices/[id]` — Single device GET/PATCH/DELETE
+- `/api/devices/batch` — Batch delete/update devices (POST)
 - `/api/device-types` — Device type CRUD
 - `/api/device-types/[id]` — Single device type GET/PATCH/DELETE
 - `/api/manufacturers` — Manufacturer listing

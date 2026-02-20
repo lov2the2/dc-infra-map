@@ -1,12 +1,12 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import type { Tenant } from "@/types/entities";
+import { useSearchParamsFilter } from "@/hooks/use-search-params-filter";
 
 const DEVICE_STATUSES = [
     "active",
@@ -18,8 +18,7 @@ const DEVICE_STATUSES = [
 ];
 
 export function DeviceFilters() {
-    const router = useRouter();
-    const searchParams = useSearchParams();
+    const { updateFilter, clearFilters, getFilter } = useSearchParamsFilter("/devices");
     const [tenants, setTenants] = useState<Tenant[]>([]);
 
     useEffect(() => {
@@ -28,38 +27,21 @@ export function DeviceFilters() {
             .then((data) => setTenants(data.data ?? []));
     }, []);
 
-    const updateFilter = useCallback(
-        (key: string, value: string | null) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (value) {
-                params.set(key, value);
-            } else {
-                params.delete(key);
-            }
-            router.push(`/devices?${params.toString()}`);
-        },
-        [router, searchParams],
-    );
-
-    const clearFilters = () => {
-        router.push("/devices");
-    };
-
     const hasFilters =
-        searchParams.get("search") ||
-        searchParams.get("status") ||
-        searchParams.get("tenantId");
+        getFilter("search") ||
+        getFilter("status") ||
+        getFilter("tenantId");
 
     return (
         <div className="flex flex-wrap items-center gap-3">
             <Input
                 placeholder="Search devices..."
-                defaultValue={searchParams.get("search") ?? ""}
+                defaultValue={getFilter("search") ?? ""}
                 onChange={(e) => updateFilter("search", e.target.value || null)}
                 className="w-64"
             />
             <Select
-                value={searchParams.get("status") ?? ""}
+                value={getFilter("status") ?? ""}
                 onValueChange={(v) => updateFilter("status", v || null)}
             >
                 <SelectTrigger className="w-44">
@@ -74,7 +56,7 @@ export function DeviceFilters() {
                 </SelectContent>
             </Select>
             <Select
-                value={searchParams.get("tenantId") ?? ""}
+                value={getFilter("tenantId") ?? ""}
                 onValueChange={(v) => updateFilter("tenantId", v || null)}
             >
                 <SelectTrigger className="w-44">

@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { createStatusBadge } from "@/components/common/status-badge-factory";
 
 const CABLE_STATUS_COLORS: Record<string, string> = {
     connected: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
@@ -6,16 +6,4 @@ const CABLE_STATUS_COLORS: Record<string, string> = {
     decommissioned: "bg-gray-500/15 text-gray-700 dark:text-gray-400",
 };
 
-interface CableStatusBadgeProps {
-    status: string;
-}
-
-export function CableStatusBadge({ status }: CableStatusBadgeProps) {
-    const colorClass = CABLE_STATUS_COLORS[status] ?? "bg-gray-500/15 text-gray-700 dark:text-gray-400";
-
-    return (
-        <Badge variant="outline" className={colorClass}>
-            {status}
-        </Badge>
-    );
-}
+export const CableStatusBadge = createStatusBadge(CABLE_STATUS_COLORS);

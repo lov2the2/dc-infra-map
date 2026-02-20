@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { deviceCreateSchema, type DeviceCreateInput } from "@/lib/validators/device";
-import type { Manufacturer, DeviceType, Site, Location, Rack, Tenant } from "@/types/entities";
+import type { Manufacturer, Site, Tenant } from "@/types/entities";
 import {
     Form,
     FormControl,
@@ -25,6 +25,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
+import { useCascadingSelect } from "@/hooks/use-cascading-select";
+import type { DeviceType, Location, Rack } from "@/types/entities";
 
 interface DeviceFormProps {
     device?: {
@@ -52,13 +54,12 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
     const router = useRouter();
     const [submitting, setSubmitting] = useState(false);
 
-    // Cascading select state
+    // Static lists loaded once
     const [manufacturers, setManufacturers] = useState<Manufacturer[]>([]);
-    const [deviceTypes, setDeviceTypes] = useState<DeviceType[]>([]);
     const [sites, setSites] = useState<Site[]>([]);
-    const [locations, setLocations] = useState<Location[]>([]);
-    const [racks, setRacks] = useState<Rack[]>([]);
     const [tenants, setTenants] = useState<Tenant[]>([]);
+
+    // Cascading parent selections
     const [selectedManufacturerId, setSelectedManufacturerId] = useState(defaultManufacturerId ?? "");
     const [selectedSiteId, setSelectedSiteId] = useState("");
     const [selectedLocationId, setSelectedLocationId] = useState("");
@@ -81,7 +82,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
         },
     });
 
-    // Load initial data
+    // Load initial data (manufacturers, sites, tenants)
     useEffect(() => {
         Promise.all([
             fetch("/api/manufacturers").then((r) => r.json()),
@@ -94,40 +95,48 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
         });
     }, []);
 
-    // Cascade: manufacturer -> device types
-    useEffect(() => {
-        if (selectedManufacturerId) {
-            fetch(`/api/device-types?manufacturerId=${selectedManufacturerId}`)
-                .then((r) => r.json())
-                .then((data) => setDeviceTypes(data.data ?? []));
-        } else {
-            setDeviceTypes([]);
-        }
-    }, [selectedManufacturerId]);
+    // Cascading: manufacturer -> device types
+    const deviceTypeFetchUrl = useCallback(
+        (manufacturerId: string) => `/api/device-types?manufacturerId=${manufacturerId}`,
+        [],
+    );
+    const { items: deviceTypes } = useCascadingSelect<DeviceType>(
+        selectedManufacturerId,
+        deviceTypeFetchUrl,
+    );
 
-    // Cascade: site -> locations
-    useEffect(() => {
-        if (selectedSiteId) {
-            fetch(`/api/locations?siteId=${selectedSiteId}`)
-                .then((r) => r.json())
-                .then((data) => setLocations(data.data ?? []));
-        } else {
-            setLocations([]);
-        }
+    // Cascading: site -> locations
+    const locationFetchUrl = useCallback(
+        (siteId: string) => `/api/locations?siteId=${siteId}`,
+        [],
+    );
+    const { items: locations } = useCascadingSelect<Location>(
+        selectedSiteId,
+        locationFetchUrl,
+    );
+
+    // Cascading: location -> racks
+    const rackFetchUrl = useCallback(
+        (locationId: string) => `/api/racks?locationId=${locationId}`,
+        [],
+    );
+    const { items: racks } = useCascadingSelect<Rack>(
+        selectedLocationId,
+        rackFetchUrl,
+    );
+
+    // When site changes, reset dependent selections
+    const handleSiteChange = (siteId: string) => {
+        setSelectedSiteId(siteId);
         setSelectedLocationId("");
-        setRacks([]);
-    }, [selectedSiteId]);
+        form.setValue("rackId", null);
+    };
 
-    // Cascade: location -> racks
-    useEffect(() => {
-        if (selectedLocationId) {
-            fetch(`/api/racks?locationId=${selectedLocationId}`)
-                .then((r) => r.json())
-                .then((data) => setRacks(data.data ?? []));
-        } else {
-            setRacks([]);
-        }
-    }, [selectedLocationId]);
+    // When location changes, reset rack selection
+    const handleLocationChange = (locationId: string) => {
+        setSelectedLocationId(locationId);
+        form.setValue("rackId", null);
+    };
 
     const onSubmit = async (data: DeviceCreateInput) => {
         setSubmitting(true);
@@ -304,7 +313,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                 <label className="text-sm font-medium">Site</label>
                                 <Select
                                     value={selectedSiteId}
-                                    onValueChange={setSelectedSiteId}
+                                    onValueChange={handleSiteChange}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select site" />
@@ -323,7 +332,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                 <label className="text-sm font-medium">Location</label>
                                 <Select
                                     value={selectedLocationId}
-                                    onValueChange={setSelectedLocationId}
+                                    onValueChange={handleLocationChange}
                                     disabled={!selectedSiteId}
                                 >
                                     <SelectTrigger>

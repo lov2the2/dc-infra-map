@@ -1,4 +1,4 @@
-import { Badge } from "@/components/ui/badge";
+import { createStatusBadge } from "@/components/common/status-badge-factory";
 import type { AlertSeverity } from "@/types/alerts";
 
 const SEVERITY_STYLES: Record<AlertSeverity, string> = {
@@ -7,15 +7,8 @@ const SEVERITY_STYLES: Record<AlertSeverity, string> = {
     info: "bg-blue-500/15 text-blue-700 dark:text-blue-400",
 };
 
-interface SeverityBadgeProps {
-    severity: AlertSeverity | string;
-}
+const SeverityBadgeInner = createStatusBadge(SEVERITY_STYLES as Record<string, string>);
 
-export function SeverityBadge({ severity }: SeverityBadgeProps) {
-    const colorClass = SEVERITY_STYLES[severity as AlertSeverity] ?? "bg-gray-500/15 text-gray-700 dark:text-gray-400";
-    return (
-        <Badge variant="outline" className={colorClass}>
-            {severity}
-        </Badge>
-    );
+export function SeverityBadge({ severity }: { severity: AlertSeverity | string }) {
+    return <SeverityBadgeInner status={severity} />;
 }

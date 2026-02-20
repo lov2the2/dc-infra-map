@@ -1,8 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import {
     Form, FormControl, FormField, FormItem, FormLabel, FormMessage,
 } from "@/components/ui/form";
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
     Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { useApiMutation } from "@/hooks/use-api-mutation";
 import { powerFeedCreateSchema, type PowerFeedCreateInput } from "@/lib/validators/power";
 import type { PowerPanel, Rack, PowerFeed } from "@/types/entities";
 
@@ -22,7 +23,6 @@ interface PowerFeedFormProps {
 }
 
 export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
-    const router = useRouter();
     const isEditing = !!feed;
 
     const form = useForm<PowerFeedCreateInput>({
@@ -37,24 +37,17 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
         },
     });
 
+    const { mutate, isLoading } = useApiMutation<PowerFeedCreateInput>({
+        endpoint: isEditing ? `/api/power/feeds/${feed.id}` : "/api/power/feeds",
+        method: isEditing ? "PATCH" : "POST",
+        redirectPath: "/power/feeds",
+        onError: (error) => {
+            form.setError("root", { message: error });
+        },
+    });
+
     async function onSubmit(data: PowerFeedCreateInput) {
-        const url = isEditing ? `/api/power/feeds/${feed.id}` : "/api/power/feeds";
-        const method = isEditing ? "PATCH" : "POST";
-
-        const response = await fetch(url, {
-            method,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            form.setError("root", { message: errorData?.error ?? "Failed to save feed" });
-            return;
-        }
-
-        router.push("/power/feeds");
-        router.refresh();
+        await mutate(data);
     }
 
     return (
@@ -171,10 +164,12 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                             <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
                         )}
                         <div className="flex gap-3">
-                            <Button type="submit" disabled={form.formState.isSubmitting}>
-                                {form.formState.isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create Feed"}
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading ? "Saving..." : isEditing ? "Save Changes" : "Create Feed"}
                             </Button>
-                            <Button type="button" variant="outline" onClick={() => router.push("/power/feeds")}>Cancel</Button>
+                            <Button variant="outline" asChild>
+                                <Link href="/power/feeds">Cancel</Link>
+                            </Button>
                         </div>
                     </form>
                 </Form>
