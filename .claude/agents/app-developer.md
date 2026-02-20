@@ -72,6 +72,10 @@ When working as a teammate in Agent Teams mode:
 3. Any new shadcn/ui components installed
 4. TypeScript compilation status (`npm run build` result)
 
+**Note**: Lead will independently verify all reported files with `ls -la` and `npm run build`.
+Report file list must be complete and accurate — do not omit files or report files that were not
+actually created.
+
 **Handoff to software-tester**: List new pages/routes and user interaction flows to test.
 
 **Handoff to docs-refiner**: Provide summary of changes for README.md (Korean) and CLAUDE.md.
