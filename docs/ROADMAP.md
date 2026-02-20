@@ -2,7 +2,7 @@
 
 > **프로젝트**: 데이터센터 인프라 관리 시스템 (DCIM)
 > **작성일**: 2026-02-13
-> **최종 감사**: 2026-02-18
+> **최종 감사**: 2026-02-20
 > **데이터 보존**: 3년 (2026-02 ~ 2029-02)
 > **대상 규모**: 중형 DC (500~2,000 랙)
 
@@ -192,6 +192,7 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 - [x] 경로 추적 (서버 NIC → 패치패널 → 스위치 포트)
 - [x] 선번장 테이블 뷰 (엑셀 유사 형태)
 - [x] 네트워크 대역폭 정보 (인터페이스 타입별 속도)
+- [x] Rate Limiting (auth 10/min, export 20/min, api 200/min — 인메모리 슬라이딩 윈도우)
 
 #### 3-2. 네트워크 토폴로지 (1주)
 
@@ -212,7 +213,18 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
   - 자산 목록 XML (외부 시스템 연동용)
 - [x] CSV 일괄 가져오기 (기존 데이터 마이그레이션)
 - [x] OpenAPI 3.1 API 문서 (`@scalar/nextjs-api-reference`, `/api-docs`)
-- [ ] 정기 리포트 스케줄링 (cron + 이메일 발송)
+- [x] 정기 리포트 스케줄링 (node-cron + nodemailer — 2026-02-20 완료)
+- [x] TimescaleDB hypertable 자동 설정 + Drizzle 통합 (drizzle/0001_timescaledb_setup.sql — 2026-02-20 완료)
+
+### Phase K8s/Helm: 컨테이너 배포
+
+**기간**: 병행 | **목표**: Kubernetes 프로덕션 배포
+
+- [x] Docker 멀티스테이지 빌드 (output: 'standalone' 최적화)
+- [x] Kubernetes 매니페스트 (namespace, postgres StatefulSet, app Deployment, migration Job)
+- [x] nginx-ingress 설정 (SSE 호환, 타임아웃 조정)
+- [x] Helm Chart 구조 (values.yaml + values.{dev,staging,prod}.yaml)
+- [x] 환경별 Helm 배포 명령어 (helm:install:dev/staging/prod)
 
 ### Phase 5: 고도화
 
@@ -221,6 +233,7 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 #### 5-1. 인증/권한 고도화
 
 - [x] RBAC (관리자/운영자/조회자/고객사 역할)
+- [x] Rate Limiting (인메모리 슬라이딩 윈도우 — 2026-02-20 완료)
 - [ ] LDAP/Active Directory 연동 (Auth.js Provider)
 - [x] 감사 로그 강화 (로그인, API 호출, 자산 조회 기록)
 
@@ -249,13 +262,13 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 - [x] 라우트별 loading.tsx 추가 (12개 라우트 커버, 2026-02-18 해결)
 - [x] 라우트별 error.tsx 추가 (12개 라우트 커버, 2026-02-18 해결)
 - [x] API 라우트 auth wrapper 유틸리티 (`withAuth`/`withAuthOnly` HOF 구현 완료, 2026-02-18 해결)
-- [ ] Region 관리 UI 및 API (스키마는 존재, 관리 화면 없음)
-- [ ] 상면 도면 2D 공간 배치 (현재 카드 그리드 → SVG/Canvas 좌표 기반)
+- [x] Region 관리 UI 및 API (app/regions/ + stores/use-region-store.ts — 2026-02-20 완료)
+- [x] 상면 도면 2D 공간 배치 (SVG/Canvas 기반 floor-plan-canvas.tsx — 2026-02-20 완료)
 
 #### 5-6. 테스트 인프라
 
 - [x] Vitest 단위 테스트 (validators, RBAC, export 유틸리티 — 2026-02-18 해결)
-- [ ] Playwright E2E 테스트 (로그인, 주요 페이지 흐름)
+- [x] Playwright E2E 테스트 (auth/dashboard/devices/navigation spec — 2026-02-20 완료)
 
 ---
 
@@ -296,16 +309,24 @@ planned(발주) → staged(입고) → active(운영) → decommissioning(철거
 
 Critical/Medium/Low 기술 부채 해소, UX 개선, 미완성 기능 구현, 새 기능 추가, 테스트 인프라 모두 완료.
 
-### Step 6: 남은 작업
+### Step 6: 완료 항목 (2026-02-20)
 
 ```text
-- TimescaleDB hypertable 자동 설정 + Drizzle 통합
-- LDAP/Active Directory 연동
-- 정기 리포트 스케줄링 (cron + 이메일)
-- Region 관리 UI 및 API
-- 상면 도면 2D 공간 배치 (SVG/Canvas)
-- Playwright E2E 테스트
-- SQL 스크립트 위치 정리 (scripts/ → db/scripts/)
+[x] 1. TimescaleDB hypertable 자동 설정 + Drizzle 통합 (drizzle/0001_timescaledb_setup.sql)
+[x] 2. Region 관리 UI 및 API (app/regions/, stores/use-region-store.ts)
+[x] 3. 상면 도면 2D 공간 배치 (floor-plan-canvas.tsx + drizzle/0002_rack_floor_plan_position.sql)
+[x] 4. 정기 리포트 스케줄링 (node-cron + nodemailer, lib/scheduler/, lib/mailer/)
+[x] 5. Playwright E2E 테스트 (auth/dashboard/devices/navigation spec + fixtures)
+[x] 6. Rate Limiting 구현 (인메모리 슬라이딩 윈도우, lib/rate-limit.ts)
+[ ] 7. LDAP/Active Directory 연동 (미구현 — Step 7로 이동)
+```
+
+### Step 7: 향후 작업 (미구현)
+
+```text
+- LDAP/Active Directory 연동 (Auth.js LDAP Provider)
+- 멀티 사이트 UI (다중 DC 전환, 사이트 간 자산 이동)
+- Go 백엔드 분리 (고트래픽 시 — 초당 100+ 쓰기)
 ```
 
 ---
