@@ -23,6 +23,7 @@
     "server:start": "bash scripts/server-start.sh",
     "server:stop": "bash scripts/server-stop.sh",
     "server:restart": "bash scripts/server-restart.sh",
+    "k8s:start": "bash scripts/k8s-start.sh",
     "k8s:build": "bash scripts/k8s-build.sh",
     "k8s:deploy": "bash scripts/k8s-deploy.sh",
     "k8s:migrate": "bash scripts/k8s-migrate.sh",
