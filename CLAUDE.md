@@ -82,7 +82,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
 - `lib/auth/with-auth.ts` — `withAuth(resource, action, handler)` HOF for API route auth+RBAC boilerplate; `withAuthOnly(handler)` for auth-only routes
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
-- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable)
+- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site)
   - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
 - `lib/data-formatters.ts` — Date/null/status formatting utilities (`formatDate`, `formatDateTime`, `formatNullable`, `formatStatus`, `formatUnit`)
