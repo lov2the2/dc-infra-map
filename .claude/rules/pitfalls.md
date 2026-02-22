@@ -209,6 +209,48 @@ export default async function DevicePage({ params }: { params: { id: string } })
 
 ---
 
+## Next.js 16 Middleware: `proxy.ts` Replaces `middleware.ts`
+
+### CRITICAL: Do NOT create `middleware.ts` in this project
+
+**Next.js 16 renamed the middleware file from `middleware.ts` to `proxy.ts`.**
+These two files cannot coexist — the build will fail immediately.
+
+**Build error symptom**:
+
+```
+Error: Both middleware file "./middleware.ts" and proxy file "./proxy.ts"
+are detected. Please use "./proxy.ts" only.
+```
+
+**Rule**:
+
+- [ ] Never create `middleware.ts` at the project root
+- [ ] All middleware logic (auth, header injection, redirects) lives in `proxy.ts`
+- [ ] If you need to add middleware logic, edit `proxy.ts` only
+
+**Current `proxy.ts` responsibilities**:
+
+1. Auth guard — redirect unauthenticated users to `/login`
+2. Admin-only route protection (`/admin`, `/api/admin`)
+3. Go service header injection — sets `x-internal-secret` for `next.config.ts` rewrite targets:
+   - `/api/power/readings`
+   - `/api/power/sse`
+   - `/api/export/*`
+
+**Pattern for adding new middleware logic**:
+
+```ts
+// proxy.ts — add new logic here, never in middleware.ts
+export default auth((req) => {
+    // ... existing logic ...
+
+    // Add your new logic here
+});
+```
+
+---
+
 ## Quick Diagnosis Reference
 
 | Symptom | First Check | Location |
@@ -220,6 +262,7 @@ export default async function DevicePage({ params }: { params: { id: string } })
 | Module not found (ui component) | shadcn/ui component not installed | Run `npx shadcn@latest add <name> -y` |
 | dark: styles not working | Tailwind 4 dark variant selector | Fix `@custom-variant` in `globals.css` |
 | Dynamic route shows generic 404 | Missing `not-found.tsx` in route | Add `not-found.tsx` + call `notFound()` |
+| Build error: middleware + proxy detected | Created `middleware.ts` (forbidden) | Delete `middleware.ts`, use `proxy.ts` only |
 
 ---
 

@@ -70,6 +70,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 **Key conventions**:
 
+- `proxy.ts` — **Next.js 16 middleware file** (replaces `middleware.ts`). Handles auth guard, admin-only routes, and `x-internal-secret` header injection for go-service proxy routes. **NEVER create `middleware.ts`** — Next.js 16 build fails if both files exist. See `.claude/rules/pitfalls.md` for details.
 - `next.config.ts` — Contains `output: 'standalone'` for container deployment; enables efficient Docker image building via multi-stage builds
 - `config/site.ts` — Centralized site metadata, nav links, CTA links, footer config
 - `types/index.ts` — Shared TypeScript interfaces
