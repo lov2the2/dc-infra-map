@@ -58,18 +58,28 @@ kubectl apply -f "${K8S_DIR}/postgres/service.yaml"
 echo "==> Waiting for PostgreSQL to be ready..."
 kubectl rollout status statefulset/postgres -n "${NAMESPACE}" --timeout=120s
 
-# Deploy application
-echo "==> Deploying DCIM application..."
-kubectl apply -f "${K8S_DIR}/app/secret.yaml"
-kubectl apply -f "${K8S_DIR}/app/configmap.yaml"
-kubectl apply -f "${K8S_DIR}/app/deployment.yaml"
-kubectl apply -f "${K8S_DIR}/app/service.yaml"
+# Deploy Go service
+echo "==> Deploying Go service..."
+kubectl apply -f "${K8S_DIR}/go-service/secret.yaml"
+kubectl apply -f "${K8S_DIR}/go-service/deployment.yaml"
+kubectl apply -f "${K8S_DIR}/go-service/service.yaml"
+
+# Wait for Go service deployment
+echo "==> Waiting for Go service to be ready..."
+kubectl rollout status deployment/go-service -n "${NAMESPACE}" --timeout=60s
 
 # Run database migration
 if [ "$SKIP_MIGRATE" = false ]; then
     echo "==> Running database migration..."
     bash "${SCRIPT_DIR}/k8s-migrate.sh"
 fi
+
+# Deploy application
+echo "==> Deploying DCIM application..."
+kubectl apply -f "${K8S_DIR}/app/secret.yaml"
+kubectl apply -f "${K8S_DIR}/app/configmap.yaml"
+kubectl apply -f "${K8S_DIR}/app/deployment.yaml"
+kubectl apply -f "${K8S_DIR}/app/service.yaml"
 
 # Wait for app deployment
 echo "==> Waiting for application to be ready..."
@@ -93,4 +103,5 @@ echo ""
 echo "    Useful commands:"
 echo "      kubectl get all -n ${NAMESPACE}"
 echo "      kubectl logs -f deployment/dcim-app -n ${NAMESPACE}"
+echo "      kubectl logs -f deployment/go-service -n ${NAMESPACE}"
 echo "      kubectl logs -f statefulset/postgres -n ${NAMESPACE}"

@@ -34,7 +34,17 @@ docker build \
     "${PROJECT_DIR}"
 
 echo ""
-echo "==> Build complete: ${IMAGE_NAME}:${TAG} and ${IMAGE_NAME}:migrate"
+echo "==> Building Go service Docker image: dc-infra-map-go:${TAG}"
+docker build \
+    --tag "dc-infra-map-go:${TAG}" \
+    --file "${PROJECT_DIR}/go-service/Dockerfile" \
+    "${PROJECT_DIR}/go-service"
+
+echo ""
+echo "==> Build complete:"
+echo "    ${IMAGE_NAME}:${TAG}"
+echo "    ${IMAGE_NAME}:migrate"
+echo "    dc-infra-map-go:${TAG}"
 echo "    Images are available in docker-desktop K8s cluster"
 echo ""
 echo "Next: ./scripts/k8s-deploy.sh"

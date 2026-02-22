@@ -21,8 +21,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run test:e2e:ui` — Run Playwright E2E tests with UI mode
 - `npm run db:timescale` — Apply TimescaleDB hypertable setup via `drizzle/0001_timescaledb_setup.sql` (requires TimescaleDB extension)
 - `npm run db:setup` — Full DB initialization: `db:migrate` then `db:timescale` in sequence
-- `npm run k8s:build` — Build Docker image for Kubernetes (uses local docker-desktop daemon)
-- `npm run k8s:deploy` — Full deployment: build → namespace → postgres → app → migration
+- `npm run k8s:build` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js app) and `dc-infra-map-go:latest` (Go service) (uses local docker-desktop daemon)
+- `npm run k8s:deploy` — Full deployment: build → namespace → postgres → go-service → app → migration
 - `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (required once before using Ingress)
 - `npm run k8s:migrate` — Run DB migration Job in Kubernetes
 - `npm run k8s:destroy` — Remove Kubernetes resources (use `--all` flag to also delete PVC data)
@@ -62,8 +62,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `server-start.sh` — Starts `npm run dev` in background; checks port 3000 availability; polls for readiness (max 15s); saves PID to `.server.pid`, logs to `.server.log`
 - `server-stop.sh` — Stops server via PID file or port 3000 process lookup; SIGTERM then SIGKILL if needed; cleans up PID file
 - `server-restart.sh` — Sequentially runs stop → 1s delay → start
-- `k8s-build.sh` — Build Docker image for Kubernetes; uses local docker-desktop daemon (no registry push needed)
-- `k8s-deploy.sh` — Orchestrates full deployment: build → postgres → app → migration Job
+- `k8s-build.sh` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js app) and `dc-infra-map-go:latest` (Go service); uses local docker-desktop daemon (no registry push needed)
+- `k8s-deploy.sh` — Orchestrates full deployment: build → postgres → go-service → dcim-app → migration Job
 - `k8s-setup-ingress.sh` — Install nginx-ingress controller; enables Ingress-based domain routing
 - `k8s-migrate.sh` — Creates timestamped migration Job in Kubernetes (auto-cleaned after 5min)
 - `k8s-destroy.sh` — Removes all Kubernetes resources; `--all` flag deletes namespace + PVC data
@@ -227,16 +227,18 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 - `k8s/namespace.yaml` — Creates `dcim` namespace for all deployment resources
 - `k8s/postgres/` — TimescaleDB StatefulSet (image: `timescale/timescaledb:2.17.2-pg17`), ClusterIP Service for internal DNS, Secret for credentials, ConfigMap with initialization SQL
-- `k8s/app/` — Next.js Deployment (replicas: 3, NodePort Service on port 30300), imagePullPolicy set to `IfNotPresent` for docker-desktop local daemon, environment ConfigMap, Secret for credentials, migration Job (runs once per deploy, auto-cleans after 5min)
+- `k8s/go-service/` — Go service Deployment (image: `dc-infra-map-go:latest`), ClusterIP Service on port 8080 for internal routing, Secret for credentials (DATABASE_URL, INTERNAL_SECRET, PORT)
+- `k8s/app/` — Next.js Deployment (replicas: 3, NodePort Service on port 30300), imagePullPolicy set to `IfNotPresent` for docker-desktop local daemon, environment ConfigMap with `GO_SERVICE_URL: "http://go-service:8080"`, Secret for credentials including `INTERNAL_SECRET`, migration Job (runs once per deploy, auto-cleans after 5min)
 - `k8s/app/ingress.yaml` — nginx Ingress for domain-based access (dcim.local); includes SSE-compatible timeout annotations and upstream buffer settings
 
 **Deployment workflow**:
 
 1. `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (one-time setup; required before Ingress features work)
-2. `npm run k8s:build` — Build Docker image using local docker-desktop daemon (no registry required)
+2. `npm run k8s:build` — Build Docker images using local docker-desktop daemon (no registry required)
 3. `npm run k8s:deploy` — Execute deployment orchestration:
    - Apply namespace
    - Deploy postgres (waits for readiness)
+   - Deploy go-service (waits for rollout)
    - Deploy Next.js app (waits for rollout)
    - Deploy Ingress (if nginx-ingress controller is available)
    - Run migration Job (via `k8s-migrate.sh`)
@@ -253,6 +255,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 **Network topology**:
 
 - postgres StatefulSet (ClusterIP) accessible at `postgres.dcim.svc.cluster.local`
+- go-service Deployment (ClusterIP) accessible at `go-service.dcim.svc.cluster.local:8080` (internal routing only)
+- Next.js app Deployment proxies go-service routes via `proxy.ts` (injects `x-internal-secret` header for authentication)
 - Next.js app Deployment accessible via:
   - Ingress domain: `http://dcim.local` (requires `npm run k8s:ingress` setup and `/etc/hosts` entry)
   - kubectl port-forward: `kubectl port-forward svc/app 3000:3000`

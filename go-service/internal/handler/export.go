@@ -64,12 +64,13 @@ func (h *ExportHandler) ExportRacks(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	rows, err := h.DB.Pool.Query(ctx, `
 		SELECT r.name, l.name, s.name, r.u_height,
-		       COALESCE(d.name, ''), COALESCE(d.position, ''),
-		       COALESCE(dt.model, ''), COALESCE(d.status, '')
+		       COALESCE(d.name, ''), COALESCE(d.position::text, ''),
+		       COALESCE(dt.model, ''), COALESCE(d.status::text, '')
 		FROM racks r
 		JOIN locations l ON r.location_id = l.id
 		JOIN sites s ON l.site_id = s.id
 		LEFT JOIN devices d ON d.rack_id = r.id AND d.deleted_at IS NULL
+		LEFT JOIN device_types dt ON d.device_type_id = dt.id
 		WHERE r.deleted_at IS NULL
 		ORDER BY s.name, l.name, r.name
 	`)
@@ -107,7 +108,7 @@ func (h *ExportHandler) ExportDevices(w http.ResponseWriter, r *http.Request) {
 
 	query := `
 		SELECT d.name, dt.model, m.name,
-		       COALESCE(rk.name, ''), COALESCE(d.position, ''), d.status,
+		       COALESCE(rk.name, ''), COALESCE(d.position::text, ''), d.status,
 		       COALESCE(d.serial_number, ''), COALESCE(d.asset_tag, ''), COALESCE(t.name, '')
 		FROM devices d
 		JOIN device_types dt ON d.device_type_id = dt.id

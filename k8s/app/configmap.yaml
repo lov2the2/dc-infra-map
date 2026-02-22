@@ -12,3 +12,5 @@ data:
     AUTH_URL: "http://dcim.local"
     TIMESCALEDB_ENABLED: "true"
     NEXT_TELEMETRY_DISABLED: "1"
+    # Go service internal URL (ClusterIP service)
+    GO_SERVICE_URL: "http://go-service:8080"
