@@ -9,6 +9,7 @@ metadata:
 data:
     NODE_ENV: {{ .Values.app.env.NODE_ENV | quote }}
     NEXTAUTH_URL: {{ .Values.app.env.NEXTAUTH_URL | quote }}
+    AUTH_TRUST_HOST: {{ .Values.app.env.AUTH_TRUST_HOST | quote }}
     TIMESCALEDB_ENABLED: {{ .Values.app.env.TIMESCALEDB_ENABLED | quote }}
     NEXT_TELEMETRY_DISABLED: {{ .Values.app.env.NEXT_TELEMETRY_DISABLED | quote }}
     GO_SERVICE_URL: "http://dcim-go-service.{{ include "dcim.namespace" . }}.svc.cluster.local:8080"

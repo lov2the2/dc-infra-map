@@ -32,6 +32,7 @@ app:
     env:
         NODE_ENV: "development"
         NEXTAUTH_URL: "http://dcim-dev.local"
+        AUTH_TRUST_HOST: "true"
         TIMESCALEDB_ENABLED: "true"
         NEXT_TELEMETRY_DISABLED: "1"
     secrets:
