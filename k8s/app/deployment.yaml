@@ -41,6 +41,9 @@ spec:
                   ports:
                       - containerPort: 3000
                         name: http
+                  env:
+                      - name: NODE_EXTRA_CA_CERTS
+                        value: /usr/local/share/ca-certificates/corporate-ca.crt
                   envFrom:
                       - configMapRef:
                             name: app-config

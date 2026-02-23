@@ -41,6 +41,9 @@ spec:
                   ports:
                       - containerPort: {{ .Values.app.service.port }}
                         name: http
+                  env:
+                      - name: NODE_EXTRA_CA_CERTS
+                        value: /usr/local/share/ca-certificates/corporate-ca.crt
                   envFrom:
                       - configMapRef:
                             name: app-config

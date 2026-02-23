@@ -45,6 +45,9 @@ spec:
                           echo "Running database migrations..."
                           npx drizzle-kit migrate
                           echo "Migration complete."
+                  env:
+                      - name: NODE_EXTRA_CA_CERTS
+                        value: /usr/local/share/ca-certificates/corporate-ca.crt
                   envFrom:
                       - secretRef:
                             name: app-secret

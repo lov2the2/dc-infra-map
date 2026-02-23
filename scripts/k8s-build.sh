@@ -17,6 +17,20 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 IMAGE_NAME="dc-infra-map"
 TAG="${1:-latest}"
 
+# --- Validate corporate CA certificate ---
+if [ ! -f "${PROJECT_DIR}/corporate-ca.pem" ]; then
+    echo "ERROR: corporate-ca.pem not found in project root."
+    echo "       Export corporate CA certs first:"
+    echo "       security find-certificate -a -p /Library/Keychains/System.keychain > corporate-ca.pem"
+    exit 1
+fi
+if [ ! -f "${PROJECT_DIR}/go-service/corporate-ca.pem" ]; then
+    echo "ERROR: go-service/corporate-ca.pem not found."
+    echo "       Copy from project root:"
+    echo "       cp corporate-ca.pem go-service/corporate-ca.pem"
+    exit 1
+fi
+
 echo "==> Building Docker image: ${IMAGE_NAME}:${TAG}"
 echo "    Context: ${PROJECT_DIR}"
 echo ""

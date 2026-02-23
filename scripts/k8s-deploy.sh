@@ -68,6 +68,11 @@ kubectl apply -f "${K8S_DIR}/go-service/service.yaml"
 echo "==> Waiting for Go service to be ready..."
 kubectl rollout status deployment/go-service -n "${NAMESPACE}" --timeout=60s
 
+# Deploy application secrets and config (needed by both migration and app)
+echo "==> Deploying DCIM application config..."
+kubectl apply -f "${K8S_DIR}/app/secret.yaml"
+kubectl apply -f "${K8S_DIR}/app/configmap.yaml"
+
 # Run database migration
 if [ "$SKIP_MIGRATE" = false ]; then
     echo "==> Running database migration..."
@@ -76,8 +81,6 @@ fi
 
 # Deploy application
 echo "==> Deploying DCIM application..."
-kubectl apply -f "${K8S_DIR}/app/secret.yaml"
-kubectl apply -f "${K8S_DIR}/app/configmap.yaml"
 kubectl apply -f "${K8S_DIR}/app/deployment.yaml"
 kubectl apply -f "${K8S_DIR}/app/service.yaml"
 

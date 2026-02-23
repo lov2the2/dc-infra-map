@@ -2,6 +2,10 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
+COPY corporate-ca.pem /usr/local/share/ca-certificates/corporate-ca.crt
+RUN cat /usr/local/share/ca-certificates/corporate-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/corporate-ca.crt
+
 RUN apk add --no-cache libc6-compat
 
 COPY package.json package-lock.json ./
@@ -10,6 +14,10 @@ RUN npm ci --loglevel=error
 # Stage 2: Build the application
 FROM node:20-alpine AS builder
 WORKDIR /app
+
+COPY corporate-ca.pem /usr/local/share/ca-certificates/corporate-ca.crt
+RUN cat /usr/local/share/ca-certificates/corporate-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/corporate-ca.crt
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -25,6 +33,10 @@ RUN npm run build
 FROM node:20-alpine AS migrator
 WORKDIR /app
 
+COPY corporate-ca.pem /usr/local/share/ca-certificates/corporate-ca.crt
+RUN cat /usr/local/share/ca-certificates/corporate-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/corporate-ca.crt
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY drizzle.config.ts ./
 COPY drizzle/ ./drizzle/
@@ -36,6 +48,10 @@ CMD ["sh", "-c", "npx drizzle-kit migrate && echo 'Migration complete'"]
 # Stage 4: Production runner
 FROM node:20-alpine AS runner
 WORKDIR /app
+
+COPY corporate-ca.pem /usr/local/share/ca-certificates/corporate-ca.crt
+RUN cat /usr/local/share/ca-certificates/corporate-ca.crt >> /etc/ssl/certs/ca-certificates.crt
+ENV NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/corporate-ca.crt
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
