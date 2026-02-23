@@ -217,11 +217,8 @@ SMTP_FROM=dcim@company.com
 | 명령어 | 설명 |
 | --- | --- |
 | `npm run k8s:build` | Docker 이미지 빌드 (local docker-desktop) |
-| `npm run k8s:deploy` | K8s 전체 배포 (namespace → postgres → app → migration) |
-| `npm run k8s:migrate` | K8s migration Job 실행 |
-| `npm run k8s:destroy [--all]` | K8s 리소스 삭제 (`--all` 플래그로 PVC 포함 삭제) |
-| `npm run k8s:status` | K8s 리소스 상태 확인 |
 | `npm run k8s:ingress` | nginx-ingress controller 설치 (docker-desktop 일회성) |
+| `npm run k8s:status` | K8s 리소스 상태 확인 |
 
 ### Helm 배포
 
@@ -251,7 +248,7 @@ npm run server:start
 
 ### Kubernetes 배포 (docker-desktop)
 
-**1회 설정** (nginx-ingress controller):
+**1회 설정** (nginx-ingress controller + 호스트 파일):
 
 ```bash
 npm run k8s:ingress
@@ -259,15 +256,26 @@ npm run k8s:ingress
 # 127.0.0.1  dcim.local
 ```
 
-**배포 실행**:
+**Docker 이미지 빌드**:
 
 ```bash
-npm run k8s:deploy
+npm run k8s:build
+```
+
+**Helm 배포**:
+
+```bash
+# values 파일 생성 (최초 1회)
+cp helm/dcim/values.dev.example.yaml helm/dcim/values.dev.yaml
+
+# 배포
+npm run helm:install:dev
 ```
 
 **확인**:
 
 ```bash
+npm run helm:status
 npm run k8s:status
 # Ingress를 통한 접근:
 # http://dcim.local
@@ -279,8 +287,7 @@ npm run k8s:status
 **삭제**:
 
 ```bash
-npm run k8s:destroy          # 리소스만 삭제
-npm run k8s:destroy --all    # 리소스 + PVC 데이터 삭제
+npm run helm:uninstall
 ```
 
 ### Helm Chart 배포 (프로덕션)
@@ -408,18 +415,9 @@ scripts/                      # 셸 스크립트
   server-stop.sh              # 백그라운드 서버 중지
   server-restart.sh           # 백그라운드 서버 재시작
   k8s-build.sh                # Docker 이미지 빌드
-  k8s-deploy.sh               # K8s 배포 오케스트레이션
   k8s-setup-ingress.sh        # nginx-ingress 설치
-  k8s-migrate.sh              # K8s migration Job 실행
-  k8s-destroy.sh              # K8s 리소스 삭제
 
-k8s/                          # Kubernetes 매니페스트
-  namespace.yaml              # dcim 네임스페이스
-  postgres/                   # PostgreSQL StatefulSet
-  app/                        # Next.js Deployment + Service + Ingress
-  migration-job.yaml          # 마이그레이션 Job
-
-helm/dcim/                    # Helm Chart
+helm/dcim/                    # Helm Chart (K8s 리소스 관리)
   Chart.yaml
   values.yaml                 # 기본값
   values.dev.example.yaml     # dev 환경 예제 (실제 사용: values.dev.yaml)

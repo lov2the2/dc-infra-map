@@ -22,10 +22,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `npm run db:timescale` — Apply TimescaleDB hypertable setup via `drizzle/0001_timescaledb_setup.sql` (requires TimescaleDB extension)
 - `npm run db:setup` — Full DB initialization: `db:migrate` then `db:timescale` in sequence
 - `npm run k8s:build` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js app) and `dc-infra-map-go:latest` (Go service) (uses local docker-desktop daemon)
-- `npm run k8s:deploy` — Full deployment: build → namespace → postgres → go-service → app → migration
 - `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (required once before using Ingress)
-- `npm run k8s:migrate` — Run DB migration Job in Kubernetes
-- `npm run k8s:destroy` — Remove Kubernetes resources (use `--all` flag to also delete PVC data)
 - `npm run k8s:status` — Show all Kubernetes resources in dcim namespace
 - `npm run helm:lint` — Helm chart syntax validation (dev values)
 - `npm run helm:install:dev` — Install/upgrade to dev environment
@@ -62,11 +59,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `server-start.sh` — Starts `npm run dev` in background; checks port 3000 availability; polls for readiness (max 15s); saves PID to `.server.pid`, logs to `.server.log`
 - `server-stop.sh` — Stops server via PID file or port 3000 process lookup; SIGTERM then SIGKILL if needed; cleans up PID file
 - `server-restart.sh` — Sequentially runs stop → 1s delay → start
-- `k8s-build.sh` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js app) and `dc-infra-map-go:latest` (Go service); uses local docker-desktop daemon (no registry push needed)
-- `k8s-deploy.sh` — Orchestrates full deployment: build → postgres → go-service → dcim-app → migration Job
+- `k8s-build.sh` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js app) and `dc-infra-map-go:latest` (Go service); uses local docker-desktop daemon (no registry push needed); outputs "Next: npm run helm:install:dev"
 - `k8s-setup-ingress.sh` — Install nginx-ingress controller; enables Ingress-based domain routing
-- `k8s-migrate.sh` — Creates timestamped migration Job in Kubernetes (auto-cleaned after 5min)
-- `k8s-destroy.sh` — Removes all Kubernetes resources; `--all` flag deletes namespace + PVC data
 
 **Key conventions**:
 
@@ -224,43 +218,29 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `.dockerignore` excludes unnecessary files (git, node_modules, build artifacts)
 - Result: lightweight production image suitable for Kubernetes
 
-**Kubernetes resources** (`k8s/`):
-
-- `k8s/namespace.yaml` — Creates `dcim` namespace for all deployment resources
-- `k8s/postgres/` — TimescaleDB StatefulSet (image: `timescale/timescaledb:2.17.2-pg17`), ClusterIP Service for internal DNS, Secret for credentials, ConfigMap with initialization SQL
-- `k8s/go-service/` — Go service Deployment (image: `dc-infra-map-go:latest`), ClusterIP Service on port 8080 for internal routing, Secret for credentials (DATABASE_URL, INTERNAL_SECRET, PORT)
-- `k8s/app/` — Next.js Deployment (replicas: 3, NodePort Service on port 30300), imagePullPolicy set to `IfNotPresent` for docker-desktop local daemon, environment ConfigMap with `GO_SERVICE_URL: "http://go-service:8080"`, Secret for credentials including `INTERNAL_SECRET`, migration Job (runs once per deploy, auto-cleans after 5min)
-- `k8s/app/ingress.yaml` — nginx Ingress for domain-based access (dcim.local); includes SSE-compatible timeout annotations and upstream buffer settings
+**All Kubernetes resources are managed via the Helm chart** (`helm/dcim/`). There are no raw `k8s/` manifests — see the Helm Chart Deployment section below for resource details.
 
 **Deployment workflow**:
 
 1. `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (one-time setup; required before Ingress features work)
 2. `npm run k8s:build` — Build Docker images using local docker-desktop daemon (no registry required)
-3. `npm run k8s:deploy` — Execute deployment orchestration:
-   - Apply namespace
-   - Deploy postgres (waits for readiness)
-   - Deploy go-service (waits for rollout)
-   - Deploy Next.js app (waits for rollout)
-   - Deploy Ingress (if nginx-ingress controller is available)
-   - Run migration Job (via `k8s-migrate.sh`)
-4. `npm run k8s:status` — View deployment status
-5. `npm run k8s:destroy [--all]` — Cleanup (use `--all` to remove namespace and persistent data)
+3. `npm run helm:install:dev` — Deploy all resources via Helm (namespace, postgres, go-service, app, ingress, migration)
+4. `npm run helm:status` or `npm run k8s:status` — View deployment status
+5. `npm run helm:uninstall` — Remove Helm release and all managed resources
 
 **Database migration**:
 
-- Migration Job (`k8s/app/migration-job.yaml`) runs Drizzle migrations automatically after app deployment
-- One-time execution per deployment (Kubernetes prevents re-runs)
-- Auto-deleted 5 minutes after completion
-- Manual re-run available via `npm run k8s:migrate`
+- Migration runs automatically via Helm post-install/post-upgrade hook
+- No manual migration step needed — Helm handles it during `helm:install:*`
 
-**Network topology**:
+**Network topology** (managed by Helm templates):
 
 - postgres StatefulSet (ClusterIP) accessible at `postgres.dcim.svc.cluster.local`
-- go-service Deployment (ClusterIP) accessible at `go-service.dcim.svc.cluster.local:8080` (internal routing only)
+- go-service Deployment (ClusterIP) accessible at `dcim-go-service.dcim.svc.cluster.local:8080` (internal routing only)
 - Next.js app Deployment proxies go-service routes via `proxy.ts` (injects `x-internal-secret` header for authentication)
 - Next.js app Deployment accessible via:
   - Ingress domain: `http://dcim.local` (requires `npm run k8s:ingress` setup and `/etc/hosts` entry)
-  - kubectl port-forward: `kubectl port-forward svc/app 3000:3000`
+  - kubectl port-forward: `kubectl port-forward svc/dcim-app 3000:3000 -n dcim`
   - NodePort: port 30300
 - All components share `dcim` namespace
 - Ingress enables domain-based routing for cleaner access and SSE streaming compatibility
