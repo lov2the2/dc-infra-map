@@ -100,13 +100,37 @@ function traceToEndpoint(
     return null;
 }
 
+const STORAGE_KEY = "topology-node-positions";
+
+function loadSavedPositions(): Record<string, {x: number, y: number}> {
+    if (typeof window === "undefined") return {};
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try {
+            return JSON.parse(saved);
+        } catch {
+            return {};
+        }
+    }
+    return {};
+}
+
 export function TopologyDiagram() {
     const [devices, setDevices] = useState<DeviceNode[]>([]);
     const [connections, setConnections] = useState<Connection[]>([]);
     const [connectedInterfaceIds, setConnectedInterfaceIds] = useState<Set<string>>(new Set());
     const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+    const [nodePositions, setNodePositions] = useState<Record<string, {x: number, y: number}>>(loadSavedPositions);
+    const [draggingDeviceId, setDraggingDeviceId] = useState<string | null>(null);
+    const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (Object.keys(nodePositions).length > 0) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(nodePositions));
+        }
+    }, [nodePositions]);
 
     useEffect(() => {
         Promise.all([
@@ -231,7 +255,10 @@ export function TopologyDiagram() {
         });
     }, []);
 
-    const getDevicePosition = useCallback((index: number, total: number) => {
+    const getDevicePosition = useCallback((deviceId: string, index: number, total: number) => {
+        if (nodePositions[deviceId]) {
+            return nodePositions[deviceId];
+        }
         const cols = Math.ceil(Math.sqrt(total));
         const row = Math.floor(index / cols);
         const col = index % cols;
@@ -239,7 +266,57 @@ export function TopologyDiagram() {
             x: 60 + col * 200,
             y: 60 + row * 140,
         };
-    }, []);
+    }, [nodePositions]);
+
+    const handlePointerDown = (e: React.PointerEvent<SVGGElement>, deviceId: string) => {
+        const svg = e.currentTarget.ownerSVGElement;
+        if (!svg) return;
+
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+
+        const deviceIdx = devices.findIndex((d) => d.id === deviceId);
+        const currentPos = getDevicePosition(deviceId, deviceIdx, devices.length);
+
+        setDraggingDeviceId(deviceId);
+        setDragOffset({
+            x: svgPt.x - currentPos.x,
+            y: svgPt.y - currentPos.y,
+        });
+    };
+
+    const handlePointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+        if (!draggingDeviceId) return;
+
+        const svg = e.currentTarget;
+        const pt = svg.createSVGPoint();
+        pt.x = e.clientX;
+        pt.y = e.clientY;
+        const svgPt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+
+        setNodePositions((prev) => ({
+            ...prev,
+            [draggingDeviceId]: {
+                x: svgPt.x - dragOffset.x,
+                y: svgPt.y - dragOffset.y,
+            },
+        }));
+    };
+
+    const handlePointerUp = () => {
+        setDraggingDeviceId(null);
+    };
+
+    const handleResetLayout = () => {
+        setNodePositions({});
+        localStorage.removeItem(STORAGE_KEY);
+    };
+
+    const handleAutoLayout = () => {
+        handleResetLayout();
+    };
 
     if (loading) {
         return (
@@ -267,20 +344,36 @@ export function TopologyDiagram() {
     return (
         <div className="space-y-4">
             <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle className="text-base">Device Connections</CardTitle>
+                    <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={handleAutoLayout}>
+                            Auto Layout
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={handleResetLayout}>
+                            Reset Layout
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div ref={containerRef} className="overflow-auto rounded border bg-muted/30">
-                        <svg width={width} height={height} className="min-w-full">
+                        <svg
+                            width="100%"
+                            height={height}
+                            viewBox={`0 0 ${width} ${height}`}
+                            className="min-w-full"
+                            onPointerMove={handlePointerMove}
+                            onPointerUp={handlePointerUp}
+                            onPointerLeave={handlePointerUp}
+                        >
                             {/* Draw connection lines */}
                             {connections.map((conn) => {
                                 const srcIdx = devices.findIndex((d) => d.id === conn.sourceDeviceId);
                                 const tgtIdx = devices.findIndex((d) => d.id === conn.targetDeviceId);
                                 if (srcIdx === -1 || tgtIdx === -1) return null;
 
-                                const srcPos = getDevicePosition(srcIdx, devices.length);
-                                const tgtPos = getDevicePosition(tgtIdx, devices.length);
+                                const srcPos = getDevicePosition(conn.sourceDeviceId, srcIdx, devices.length);
+                                const tgtPos = getDevicePosition(conn.targetDeviceId, tgtIdx, devices.length);
                                 const color = CABLE_COLORS[conn.cableType] ?? "#6b7280";
                                 const isHighlighted = !selectedDeviceId ||
                                     conn.sourceDeviceId === selectedDeviceId ||
@@ -316,8 +409,9 @@ export function TopologyDiagram() {
 
                             {/* Draw device nodes */}
                             {devices.map((device, idx) => {
-                                const pos = getDevicePosition(idx, devices.length);
+                                const pos = getDevicePosition(device.id, idx, devices.length);
                                 const isSelected = selectedDeviceId === device.id;
+                                const isDragging = draggingDeviceId === device.id;
                                 const isHighlighted = !selectedDeviceId || isSelected ||
                                     connections.some(
                                         (c) =>
@@ -329,8 +423,13 @@ export function TopologyDiagram() {
                                     <g
                                         key={device.id}
                                         onClick={() => setSelectedDeviceId(isSelected ? null : device.id)}
-                                        className="cursor-pointer"
-                                        opacity={isHighlighted ? 1 : 0.3}
+                                        onPointerDown={(e) => {
+                                            e.stopPropagation();
+                                            handlePointerDown(e, device.id);
+                                        }}
+                                        className="cursor-move"
+                                        opacity={isHighlighted ? (isDragging ? 0.7 : 1) : 0.3}
+                                        style={{ cursor: isDragging ? "grabbing" : "grab" }}
                                     >
                                         <rect
                                             x={pos.x}

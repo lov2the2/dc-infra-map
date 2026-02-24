@@ -4,6 +4,11 @@ export interface NavLink {
     external?: boolean;
 }
 
+export interface NavGroup {
+    label: string;
+    items: NavLink[];
+}
+
 export interface Feature {
     title: string;
     description: string;

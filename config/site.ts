@@ -1,4 +1,4 @@
-import type { NavLink } from "@/types";
+import type { NavLink, NavGroup } from "@/types";
 
 export const GITHUB_URL = "https://github.com/lov2the2";
 
@@ -21,6 +21,39 @@ export const NAV_LINKS: NavLink[] = [
     { label: "Topology", href: "/topology" },
     { label: "Reports", href: "/reports" },
     { label: "Alerts", href: "/alerts" },
+];
+
+export const NAV_GROUPS: NavGroup[] = [
+    {
+        label: "Infrastructure",
+        items: [
+            { label: "Sites", href: "/sites" },
+            { label: "Regions", href: "/regions" },
+        ],
+    },
+    {
+        label: "Assets",
+        items: [
+            { label: "Devices", href: "/devices" },
+            { label: "Tenants", href: "/tenants" },
+        ],
+    },
+    {
+        label: "Network",
+        items: [
+            { label: "Cables", href: "/cables" },
+            { label: "Topology", href: "/topology" },
+            { label: "Power", href: "/power" },
+        ],
+    },
+    {
+        label: "Operations",
+        items: [
+            { label: "Access", href: "/access" },
+            { label: "Reports", href: "/reports" },
+            { label: "Alerts", href: "/alerts" },
+        ],
+    },
 ];
 
 export const CTA_LINKS = {

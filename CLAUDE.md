@@ -66,8 +66,8 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 - `proxy.ts` — **Next.js 16 middleware file** (replaces `middleware.ts`). Handles auth guard, admin-only routes, and `x-internal-secret` header injection for go-service proxy routes. **NEVER create `middleware.ts`** — Next.js 16 build fails if both files exist. See `.claude/rules/pitfalls.md` for details.
 - `next.config.ts` — Contains `output: 'standalone'` for container deployment; enables efficient Docker image building via multi-stage builds
-- `config/site.ts` — Centralized site metadata, nav links, CTA links, footer config
-- `types/index.ts` — Shared TypeScript interfaces
+- `config/site.ts` — Centralized site metadata, nav links (NAV_GROUPS with grouped menu structure), CTA links, footer config
+- `types/index.ts` — Shared TypeScript interfaces (includes NavGroup for navigation menu grouping)
 - `types/entities.ts` — Entity type definitions (Site, Rack, Device, Tenant, etc.)
 - `types/cable.ts` — Cable, interface, and port type definitions
 - `types/alerts.ts` — Alert type definitions
@@ -96,7 +96,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `hooks/use-api-mutation.ts` — Form submission API call wrapper hook
 - `hooks/use-delete-mutation.ts` — Delete API call wrapper hook
 - `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
-- `components/layout/` — Site-wide layout components (header, footer, mobile nav, user-nav)
+- `components/layout/` — Site-wide layout components (header, footer, desktop-nav, mobile nav, user-nav); desktop-nav provides grouped navigation menus via shadcn NavigationMenu
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
 - `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette, route-error, table-loading, status-badge-factory)
@@ -112,7 +112,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
 - `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result, schedule-table, schedule-form)
-- `components/topology/` — Network topology visualization (accurate per-interface port utilization via cable terminations, patch panel tracing with front/rear port lookup and dashed-line rendering)
+- `components/topology/` — Network topology visualization (accurate per-interface port utilization via cable terminations, patch panel tracing with front/rear port lookup and dashed-line rendering); device nodes are draggable with position persistence in localStorage; includes Auto Layout and Reset Layout buttons
 - `components/alerts/` — Alert components (severity-badge, alert-stats-card, alert-rules-table, alert-rule-form, alert-history-table, channel-config)
 
 **Database schema** (`db/schema/`):
@@ -283,7 +283,7 @@ Data Center Infrastructure Map (DCIM) — a Next.js 16 web application for data 
 
 ## shadcn/ui
 
-- Installed components: alert, badge, breadcrumb, button, card, checkbox, command, dialog, dropdown-menu, form, input, label, popover, progress, scroll-area, select, separator, sheet, skeleton, switch, table, tabs, textarea, tooltip
+- Installed components: alert, badge, breadcrumb, button, card, checkbox, command, dialog, dropdown-menu, form, input, label, navigation-menu, popover, progress, scroll-area, select, separator, sheet, skeleton, switch, table, tabs, textarea, tooltip
 - Style: new-york | Base color: neutral | CSS variables: enabled
 - Must install components before importing: `npx shadcn@latest add <component> -y`
 - Use correct Radix UI props: `onOpenChange` (not `onClose`), `onCheckedChange` (not `onChange`), `onValueChange` (not `onSelect`)
