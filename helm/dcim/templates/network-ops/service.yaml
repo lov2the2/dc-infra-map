@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: dcim-network-ops
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: network-ops
+spec:
+    type: ClusterIP
+    selector:
+        {{- include "dcim.networkOps.selectorLabels" . | nindent 8 }}
+    ports:
+        - port: {{ .Values.networkOps.service.port }}
+          targetPort: http
+          name: http

@@ -78,10 +78,28 @@ Full DATABASE_URL built from postgres credentials.
 {{- end }}
 
 {{/*
-Selector labels for the go-service Deployment.
+Selector labels for the go-service Deployment (Power Service).
 */}}
 {{- define "dcim.goService.selectorLabels" -}}
 app.kubernetes.io/name: {{ include "dcim.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/component: go-service
+{{- end }}
+
+{{/*
+Selector labels for the Core API Deployment.
+*/}}
+{{- define "dcim.coreApi.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "dcim.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: core-api
+{{- end }}
+
+{{/*
+Selector labels for the Network Ops Deployment.
+*/}}
+{{- define "dcim.networkOps.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "dcim.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/component: network-ops
 {{- end }}

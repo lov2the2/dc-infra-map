@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+    name: dcim-core-api
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: core-api
+spec:
+    type: ClusterIP
+    selector:
+        {{- include "dcim.coreApi.selectorLabels" . | nindent 8 }}
+    ports:
+        - port: {{ .Values.coreApi.service.port }}
+          targetPort: http
+          name: http

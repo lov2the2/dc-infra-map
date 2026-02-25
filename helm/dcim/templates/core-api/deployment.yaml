@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: dcim-core-api
+    namespace: {{ include "dcim.namespace" . }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+        app.kubernetes.io/component: core-api
+spec:
+    replicas: {{ .Values.coreApi.replicas }}
+    selector:
+        matchLabels:
+            {{- include "dcim.coreApi.selectorLabels" . | nindent 12 }}
+    strategy:
+        type: RollingUpdate
+        rollingUpdate:
+            maxUnavailable: 0
+            maxSurge: 1
+    template:
+        metadata:
+            labels:
+                {{- include "dcim.coreApi.selectorLabels" . | nindent 16 }}
+        spec:
+            initContainers:
+                - name: wait-for-postgres
+                  image: busybox:1.36
+                  command:
+                      - sh
+                      - -c
+                      - |
+                          until nc -z postgres {{ .Values.postgres.service.port }}; do
+                            echo "Waiting for postgres..."
+                            sleep 2
+                          done
+                          echo "Postgres is ready"
+            containers:
+                - name: dcim-core-api
+                  image: "{{ if .Values.global.imageRegistry }}{{ .Values.global.imageRegistry }}/{{ end }}{{ .Values.coreApi.image.repository }}:{{ .Values.coreApi.image.tag }}"
+                  imagePullPolicy: {{ .Values.coreApi.image.pullPolicy }}
+                  ports:
+                      - containerPort: {{ .Values.coreApi.service.port }}
+                        name: http
+                  envFrom:
+                      - configMapRef:
+                            name: core-api-config
+                      - secretRef:
+                            name: core-api-secret
+                  readinessProbe:
+                      tcpSocket:
+                          port: {{ .Values.coreApi.service.port }}
+                      initialDelaySeconds: 5
+                      periodSeconds: 10
+                      failureThreshold: 3
+                  livenessProbe:
+                      tcpSocket:
+                          port: {{ .Values.coreApi.service.port }}
+                      initialDelaySeconds: 15
+                      periodSeconds: 20
+                  resources:
+                      requests:
+                          cpu: {{ .Values.coreApi.resources.requests.cpu | quote }}
+                          memory: {{ .Values.coreApi.resources.requests.memory | quote }}
+                      limits:
+                          cpu: {{ .Values.coreApi.resources.limits.cpu | quote }}
+                          memory: {{ .Values.coreApi.resources.limits.memory | quote }}

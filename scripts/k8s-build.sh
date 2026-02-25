@@ -24,10 +24,10 @@ if [ ! -f "${PROJECT_DIR}/corporate-ca.pem" ]; then
     echo "       security find-certificate -a -p /Library/Keychains/System.keychain > corporate-ca.pem"
     exit 1
 fi
-if [ ! -f "${PROJECT_DIR}/go-service/corporate-ca.pem" ]; then
-    echo "ERROR: go-service/corporate-ca.pem not found."
+if [ ! -f "${PROJECT_DIR}/go-services/corporate-ca.pem" ]; then
+    echo "ERROR: go-services/corporate-ca.pem not found."
     echo "       Copy from project root:"
-    echo "       cp corporate-ca.pem go-service/corporate-ca.pem"
+    echo "       cp corporate-ca.pem go-services/corporate-ca.pem"
     exit 1
 fi
 
@@ -48,17 +48,36 @@ docker build \
     "${PROJECT_DIR}"
 
 echo ""
-echo "==> Building Go service Docker image: dc-infra-map-go:${TAG}"
+echo "==> Building Go services from monorepo: go-services/"
+
+echo "    Power Service: dc-infra-map-go:${TAG}"
 docker build \
+    --build-arg SERVICE=power-service \
     --tag "dc-infra-map-go:${TAG}" \
-    --file "${PROJECT_DIR}/go-service/Dockerfile" \
-    "${PROJECT_DIR}/go-service"
+    --file "${PROJECT_DIR}/go-services/Dockerfile" \
+    "${PROJECT_DIR}/go-services"
+
+echo "    Core API: dc-infra-map-core:${TAG}"
+docker build \
+    --build-arg SERVICE=core-api \
+    --tag "dc-infra-map-core:${TAG}" \
+    --file "${PROJECT_DIR}/go-services/Dockerfile" \
+    "${PROJECT_DIR}/go-services"
+
+echo "    Network Ops: dc-infra-map-netops:${TAG}"
+docker build \
+    --build-arg SERVICE=network-ops \
+    --tag "dc-infra-map-netops:${TAG}" \
+    --file "${PROJECT_DIR}/go-services/Dockerfile" \
+    "${PROJECT_DIR}/go-services"
 
 echo ""
 echo "==> Build complete:"
 echo "    ${IMAGE_NAME}:${TAG}"
 echo "    ${IMAGE_NAME}:migrate"
-echo "    dc-infra-map-go:${TAG}"
+echo "    dc-infra-map-go:${TAG}     (Power Service)"
+echo "    dc-infra-map-core:${TAG}   (Core API)"
+echo "    dc-infra-map-netops:${TAG} (Network Ops)"
 echo "    Images are available in docker-desktop K8s cluster"
 echo ""
 echo "Next: npm run helm:install:dev"

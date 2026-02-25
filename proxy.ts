@@ -21,7 +21,15 @@ export default auth((req) => {
     }
 
     // Inject internal secret for Go service proxy routes
-    const goServicePaths = ["/api/power/readings", "/api/power/sse", "/api/export/"];
+    const goServicePaths = [
+        "/api/sites", "/api/regions", "/api/locations", "/api/racks",
+        "/api/devices", "/api/device-types", "/api/manufacturers", "/api/tenants",
+        "/api/dashboard",
+        "/api/power", "/api/export",
+        "/api/cables", "/api/interfaces", "/api/console-ports", "/api/front-ports",
+        "/api/rear-ports", "/api/access-logs", "/api/equipment-movements",
+        "/api/alerts", "/api/reports", "/api/audit-logs", "/api/import",
+    ];
     if (isLoggedIn && goServicePaths.some((p) => pathname.startsWith(p))) {
         const headers = new Headers(req.headers);
         headers.set("x-internal-secret", process.env.INTERNAL_SECRET ?? "");

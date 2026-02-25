@@ -60,3 +60,8 @@ next-env.d.ts
 /helm/dcim/values.dev.yaml
 /helm/dcim/values.staging.yaml
 /helm/dcim/values.prod.yaml
+
+# Go compiled binaries
+/go-services/core-api
+/go-services/network-ops
+/go-services/power-service
