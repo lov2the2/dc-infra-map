@@ -111,7 +111,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
-- `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card, floor-plan-canvas with useMemo-based derived state instead of useEffect for performance)
+- `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card, floor-plan-canvas with useMemo-based derived state instead of useEffect for performance); floor space management (floor-space-manager, floor-space-config-form, floor-space-grid, floor-space-cell-dialog)
 - `components/rack/` — Rack elevation components (rack-elevation-client, multi-rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header); multi-rack-elevation-client provides a single DndContext for cross-rack drag-and-drop; rack-grid/rack-slot/device-block accept rackId props for multi-rack context
 - `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
@@ -124,7 +124,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 - `enums.ts` — Enums include: `userRoleEnum` (admin/operator/viewer/tenant_viewer), `auditActionTypeEnum` (login/api_call/asset_view/export), `cableTypeEnum`, `cableStatusEnum`, `interfaceTypeEnum`, `portSideEnum`, `alertRuleTypeEnum` (power_threshold/warranty_expiry/rack_capacity), `alertSeverityEnum` (critical/warning/info), `notificationChannelTypeEnum` (slack_webhook/email/in_app), `conditionOperatorEnum`
 - `auth.ts` — Tables: `users`, `accounts`, `sessions`, `verificationTokens`
-- `core.ts` — Tables: `manufacturers`, `tenants`, `sites`, `locations`, `racks`
+- `core.ts` — Tables: `manufacturers`, `tenants`, `sites`, `locations` (includes `gridCols` default 10, `gridRows` default 10 for floor space grid), `racks`, `locationFloorCells` (posX, posY, name, isUnavailable, notes — floor space cell management)
 - `devices.ts` — Tables: `deviceTypes`, `devices` (devices includes `warrantyExpiresAt` nullable timestamp)
 - `access.ts` — Tables: `accessLogs`, `equipmentMovements`
 - `power.ts` — Tables: `powerPanels`, `powerFeeds`, `powerPorts`, `powerOutlets`, `powerReadings`
@@ -132,7 +132,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `audit.ts` — `auditLogs` table with `actionType`, `ipAddress`, `userAgent` columns for enhanced audit
 - `alerts.ts` — Tables: `alertRules`, `alertHistory`, `notificationChannels`
 - `reports.ts` — Tables: `reportSchedules`
-- `relations.ts` — Drizzle ORM relation definitions (includes `powerReadingsRelations`)
+- `relations.ts` — Drizzle ORM relation definitions (includes `powerReadingsRelations`, `locationFloorCellsRelations`)
 - `index.ts` — Schema barrel export
 
 **API routes**: Next.js BFF proxies to Go microservices via `next.config.ts` rewrites. All proxied requests flow through `proxy.ts` which injects the `x-internal-secret` header. The `app/api/` directory only contains Next.js-native route handlers listed below; all other `/api/*` endpoints are handled entirely by Go microservices via rewrites (no `route.ts` files in Next.js).
@@ -145,6 +145,9 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
+- `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
+- `/api/floor-cells/[locationId]/cells` — POST create floor cell
+- `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
 
 **Proxied to Go microservices** (via `next.config.ts` rewrites, no Next.js route files):
 

@@ -7,6 +7,7 @@ import {
     sites,
     locations,
     racks,
+    locationFloorCells,
 } from "./core";
 import { deviceTypes, devices } from "./devices";
 import { auditLogs } from "./audit";
@@ -74,6 +75,14 @@ export const locationsRelations = relations(locations, ({ one, many }) => ({
         references: [tenants.id],
     }),
     racks: many(racks),
+    floorCells: many(locationFloorCells),
+}));
+
+export const locationFloorCellsRelations = relations(locationFloorCells, ({ one }) => ({
+    location: one(locations, {
+        fields: [locationFloorCells.locationId],
+        references: [locations.id],
+    }),
 }));
 
 export const racksRelations = relations(racks, ({ one, many }) => ({

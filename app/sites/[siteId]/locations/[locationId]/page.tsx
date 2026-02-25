@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/db";
-import { locations, racks, devices } from "@/db/schema";
+import { locations, racks, devices, locationFloorCells } from "@/db/schema";
 import { eq, isNull, and } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
 import { FloorPlanClient } from "./floor-plan-client";
@@ -58,6 +58,13 @@ export default async function LocationFloorPlanPage({
         }),
     );
 
+    // Fetch floor cells for this location
+    const floorCells = await db
+        .select()
+        .from(locationFloorCells)
+        .where(eq(locationFloorCells.locationId, locationId))
+        .orderBy(locationFloorCells.posY, locationFloorCells.posX);
+
     return (
         <div className="container py-8 space-y-6">
             <PageHeader
@@ -75,6 +82,9 @@ export default async function LocationFloorPlanPage({
                 racks={racksWithCounts}
                 siteId={siteId}
                 locationId={locationId}
+                gridCols={location.gridCols}
+                gridRows={location.gridRows}
+                floorCells={floorCells}
             />
         </div>
     );

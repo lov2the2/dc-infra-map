@@ -5,6 +5,7 @@ import {
     integer,
     jsonb,
     real,
+    boolean,
 } from "drizzle-orm/pg-core";
 import { siteStatusEnum, rackTypeEnum } from "./enums";
 
@@ -74,6 +75,23 @@ export const locations = pgTable("locations", {
         .references(() => sites.id),
     tenantId: text("tenant_id").references(() => tenants.id),
     description: text("description"),
+    gridCols: integer("grid_cols").default(10).notNull(),
+    gridRows: integer("grid_rows").default(10).notNull(),
+    ...timestamps,
+});
+
+export const locationFloorCells = pgTable("location_floor_cells", {
+    id: text("id")
+        .primaryKey()
+        .$defaultFn(() => crypto.randomUUID()),
+    locationId: text("location_id")
+        .notNull()
+        .references(() => locations.id),
+    posX: integer("pos_x").notNull(),
+    posY: integer("pos_y").notNull(),
+    name: text("name"),
+    isUnavailable: boolean("is_unavailable").default(false).notNull(),
+    notes: text("notes"),
     ...timestamps,
 });
 

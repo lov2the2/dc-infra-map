@@ -1,10 +1,11 @@
 'use client'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, Map } from "lucide-react";
+import { LayoutGrid, Map, Grid3x3 } from "lucide-react";
 import { FloorPlanGrid } from "@/components/floor-plan/floor-plan-grid";
 import { FloorPlanCanvas } from "@/components/floor-plan/floor-plan-canvas";
-import type { Rack } from "@/types/entities";
+import { FloorSpaceManager } from "@/components/floor-plan/floor-space-manager";
+import type { Rack, LocationFloorCell } from "@/types/entities";
 
 interface RackWithCount extends Rack {
     deviceCount: number;
@@ -14,9 +15,19 @@ interface FloorPlanClientProps {
     racks: RackWithCount[];
     siteId: string;
     locationId: string;
+    gridCols: number;
+    gridRows: number;
+    floorCells: LocationFloorCell[];
 }
 
-export function FloorPlanClient({ racks, siteId, locationId }: FloorPlanClientProps) {
+export function FloorPlanClient({
+    racks,
+    siteId,
+    locationId,
+    gridCols,
+    gridRows,
+    floorCells,
+}: FloorPlanClientProps) {
     const handlePositionChange = async (rackId: string, posX: number, posY: number) => {
         try {
             await fetch(`/api/racks/${rackId}`, {
@@ -40,6 +51,10 @@ export function FloorPlanClient({ racks, siteId, locationId }: FloorPlanClientPr
                     <Map className="h-4 w-4" />
                     2D Map
                 </TabsTrigger>
+                <TabsTrigger value="floor-spaces" className="gap-2">
+                    <Grid3x3 className="h-4 w-4" />
+                    Floor Spaces
+                </TabsTrigger>
             </TabsList>
             <TabsContent value="grid" className="mt-4">
                 <FloorPlanGrid
@@ -52,6 +67,14 @@ export function FloorPlanClient({ racks, siteId, locationId }: FloorPlanClientPr
                 <FloorPlanCanvas
                     racks={racks}
                     onPositionChange={handlePositionChange}
+                />
+            </TabsContent>
+            <TabsContent value="floor-spaces" className="mt-4">
+                <FloorSpaceManager
+                    locationId={locationId}
+                    initialGridCols={gridCols}
+                    initialGridRows={gridRows}
+                    initialCells={floorCells}
                 />
             </TabsContent>
         </Tabs>

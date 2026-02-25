@@ -15,7 +15,8 @@ export type Resource =
     | "audit_logs"
     | "alert_rules"
     | "alert_channels"
-    | "alert_history";
+    | "alert_history"
+    | "floor_spaces";
 
 export type Action = "read" | "create" | "update" | "delete";
 
@@ -86,6 +87,12 @@ const PERMISSION_MATRIX: Record<Resource, Partial<Record<UserRole, Action[]>>> =
     alert_history: {
         admin: ["read", "update", "delete"],
         operator: ["read", "update"],
+        viewer: ["read"],
+        tenant_viewer: ["read"],
+    },
+    floor_spaces: {
+        admin: ["read", "create", "update", "delete"],
+        operator: ["read", "create", "update", "delete"],
         viewer: ["read"],
         tenant_viewer: ["read"],
     },

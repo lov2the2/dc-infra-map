@@ -6,6 +6,7 @@ import {
     sites,
     locations,
     racks,
+    locationFloorCells,
 } from "@/db/schema/core";
 import { deviceTypes, devices } from "@/db/schema/devices";
 import { auditLogs } from "@/db/schema/audit";
@@ -18,6 +19,7 @@ export type Tenant = InferSelectModel<typeof tenants>;
 export type Region = InferSelectModel<typeof regions>;
 export type Site = InferSelectModel<typeof sites>;
 export type Location = InferSelectModel<typeof locations>;
+export type LocationFloorCell = InferSelectModel<typeof locationFloorCells>;
 export type Rack = InferSelectModel<typeof racks>;
 export type DeviceType = InferSelectModel<typeof deviceTypes>;
 export type Device = InferSelectModel<typeof devices>;
@@ -42,6 +44,11 @@ export interface RackWithDevices extends Rack {
 
 export interface LocationWithRacks extends Location {
     racks: Rack[];
+    site?: Site;
+}
+
+export interface LocationWithFloorCells extends Location {
+    floorCells: LocationFloorCell[];
     site?: Site;
 }
 
