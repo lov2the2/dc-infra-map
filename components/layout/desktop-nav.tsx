@@ -15,7 +15,7 @@ import {
 
 export function DesktopNav() {
     return (
-        <NavigationMenu>
+        <NavigationMenu viewport={false}>
             <NavigationMenuList>
                 <NavigationMenuItem>
                     <Link href="/dashboard" legacyBehavior passHref>

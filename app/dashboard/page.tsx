@@ -54,7 +54,7 @@ export default async function DashboardPage() {
             title: "Racks",
             description: "Infrastructure racks",
             count: racksCount[0]?.count ?? 0,
-            href: "/racks",
+            href: "/sites",
             icon: Server,
         },
         {
