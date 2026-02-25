@@ -285,6 +285,12 @@ go-services/
 | Memory (request/limit) | 256Mi/512Mi | 512Mi/1Gi | 1Gi/2Gi |
 | DB Storage | 10Gi | 20Gi | 50Gi |
 
+**Automatic Pod Rolling Restart**:
+
+- Deployment and StatefulSet pod templates include checksum annotations (`checksum/config` and `checksum/secret`) that hash ConfigMap and Secret contents
+- When `helm upgrade` is executed, checksum changes automatically trigger a rolling restart of pods, ensuring configuration updates take effect without manual pod deletion
+- This pattern guarantees that configuration changes (database credentials, feature flags, etc.) are propagated immediately across all instances
+
 ## Tailwind 4 Specifics
 
 - CSS-first configuration in `app/globals.css` (no `tailwind.config.ts`)
