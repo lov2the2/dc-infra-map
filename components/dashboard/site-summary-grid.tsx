@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Building2, Server, HardDrive, Zap } from "lucide-react";
-import type { SiteSummary } from "@/app/api/dashboard/summary/route";
+import type { SiteSummary } from "@/types/entities";
 
 /**
  * Renders a per-site summary grid when "All Sites" is selected.
@@ -20,25 +20,20 @@ import type { SiteSummary } from "@/app/api/dashboard/summary/route";
  */
 export function SiteSummaryGrid() {
     const activeSiteId = useSiteStore((s) => s.activeSiteId);
-    const [summaries, setSummaries] = useState<SiteSummary[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [summaries, setSummaries] = useState<SiteSummary[] | null>(null);
 
     useEffect(() => {
-        // Only fetch when viewing all sites
         if (activeSiteId !== null) return;
 
-        setIsLoading(true);
         fetch("/api/dashboard/summary")
             .then((r) => r.json())
             .then((data) => setSummaries(data.data ?? []))
-            .catch(() => setSummaries([]))
-            .finally(() => setIsLoading(false));
+            .catch(() => setSummaries([]));
     }, [activeSiteId]);
 
-    // Hide when a specific site is selected
     if (activeSiteId !== null) return null;
 
-    if (isLoading) {
+    if (summaries === null) {
         return (
             <div className="text-center text-muted-foreground py-6">
                 Loading site summaries...

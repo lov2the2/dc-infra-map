@@ -22,9 +22,9 @@ func main() {
 		log.Fatal("DATABASE_URL environment variable is required")
 	}
 
-	internalSecret := os.Getenv("INTERNAL_SECRET")
+	internalSecret := os.Getenv("X_INTERNAL_SECRET")
 	if internalSecret == "" {
-		log.Fatal("INTERNAL_SECRET environment variable is required")
+		log.Fatal("X_INTERNAL_SECRET environment variable is required")
 	}
 
 	ctx := context.Background()

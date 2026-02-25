@@ -87,7 +87,7 @@ goService:
             cpu: "500m"
             memory: "256Mi"
     secrets:
-        INTERNAL_SECRET: "dev-secret-change-in-production"
+        X_INTERNAL_SECRET: "dev-secret-change-in-production"
 
 coreApi:
     image:
@@ -105,7 +105,7 @@ coreApi:
             cpu: "500m"
             memory: "256Mi"
     secrets:
-        INTERNAL_SECRET: "dev-secret-change-in-production"
+        X_INTERNAL_SECRET: "dev-secret-change-in-production"
 
 networkOps:
     image:
@@ -123,4 +123,4 @@ networkOps:
             cpu: "500m"
             memory: "256Mi"
     secrets:
-        INTERNAL_SECRET: "dev-secret-change-in-production"
+        X_INTERNAL_SECRET: "dev-secret-change-in-production"

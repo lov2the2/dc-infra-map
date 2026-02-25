@@ -2,7 +2,7 @@
 
 데이터센터 인프라 관리 및 시각화를 위한 웹 기반 DCIM(Data Center Infrastructure Management) 시스템입니다.
 
-랙 배치, 자산 추적, 전력 모니터링, 케이블 관리(선번장), 입출입 관리, 정기 리포트 스케줄링을 하나의 플랫폼에서 제공합니다.
+Next.js 16 BFF(Backend for Frontend) + Go 마이크로서비스 아키텍처로, 랙 배치, 자산 추적, 전력 모니터링, 케이블 관리(선번장), 입출입 관리, 정기 리포트 스케줄링을 하나의 플랫폼에서 제공합니다.
 
 **현재 버전**: 0.1.0 (Step 6 완료, 2026-02-20)
 
@@ -97,6 +97,7 @@
 | **Scheduling** | node-cron | ^4.2.1 | 서버사이드 스케줄링 |
 | **Email** | nodemailer | ^7.0.13 | SMTP 이메일 발송 |
 | **Testing** | Vitest + Playwright | ^4.0.18 / ^1.50.0 | 단위테스트 + E2E 테스트 |
+| **Backend** | Go (마이크로서비스) | 1.24+ | BFF 패턴, 3개 서비스 (Core API, Power, Network Ops) |
 | **Container** | Docker + Kubernetes | 최신 | 멀티스테이지 빌드, Helm 배포 |
 
 ---
@@ -352,7 +353,18 @@ app/                          # Next.js App Router
   sites/                      # 사이트/랙 관리
   tenants/                    # 고객사 관리
   topology/                   # 네트워크 토폴로지
-  api/                        # API 라우트
+  api/                        # API 라우트 (인증, 관리자만 Next.js에 존재)
+
+go-services/                  # Go 마이크로서비스 모노레포
+  cmd/
+    power-service/            # 전력 서비스 (포트 8080)
+    core-api/                 # 코어 API (포트 8081)
+    network-ops/              # 네트워크 운영 (포트 8082)
+  internal/
+    shared/                   # 공유 유틸리티 (DB, 미들웨어, 응답 포매터)
+    power/handler/            # 전력 서비스 핸들러
+    core/handler/             # 코어 API 핸들러
+    netops/handler/           # 네트워크 운영 핸들러
 
 components/
   ui/                         # shadcn/ui 프리미티브
@@ -446,7 +458,7 @@ config/
   site.ts                     # 사이트 메타데이터, 네비게이션
 
 instrumentation.ts            # Next.js 계측 (report scheduler 초기화)
-next.config.ts                # Next.js 설정 (output: 'standalone')
+next.config.ts                # Next.js 설정 (output: 'standalone', Go 서비스 rewrites)
 drizzle.config.ts             # Drizzle 설정
 playwright.config.ts          # Playwright 설정
 vitest.config.ts              # Vitest 설정
@@ -480,6 +492,8 @@ tailwind.config.ts            # Tailwind 설정
 ## API 엔드포인트
 
 **기본 URL**: `http://localhost:3000/api`
+
+> **아키텍처 참고**: 인증(`/auth`)과 관리자(`/admin`) 엔드포인트만 Next.js에서 직접 처리합니다. 나머지 모든 엔드포인트는 Go 마이크로서비스(Core API, Power Service, Network Ops)가 처리하며, `next.config.ts`의 rewrites를 통해 프록시됩니다. 클라이언트 관점에서는 모든 API가 `/api/*` 경로를 통해 동일하게 접근됩니다.
 
 ### 인증
 

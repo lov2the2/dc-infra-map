@@ -4,7 +4,7 @@ const nextConfig: NextConfig = {
     output: "standalone",
     async rewrites() {
         const coreApiUrl = process.env.CORE_API_URL ?? "http://localhost:8081";
-        const powerServiceUrl = process.env.GO_SERVICE_URL ?? "http://localhost:8080";
+        const powerServiceUrl = process.env.POWER_SERVICE_URL ?? "http://localhost:8080";
         const netopsUrl = process.env.NETWORK_OPS_URL ?? "http://localhost:8082";
         return [
             // Core API Service

@@ -32,7 +32,7 @@ export default auth((req) => {
     ];
     if (isLoggedIn && goServicePaths.some((p) => pathname.startsWith(p))) {
         const headers = new Headers(req.headers);
-        headers.set("x-internal-secret", process.env.INTERNAL_SECRET ?? "");
+        headers.set("x-internal-secret", process.env.X_INTERNAL_SECRET ?? "");
         return NextResponse.next({ request: { headers } });
     }
 

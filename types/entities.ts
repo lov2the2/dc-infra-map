@@ -120,3 +120,12 @@ export interface PowerReadingEvent {
     powerFactor: number;
     energyKwh: number;
 }
+
+export interface SiteSummary {
+    siteId: string;
+    siteName: string;
+    siteSlug: string;
+    rackCount: number;
+    deviceCount: number;
+    powerUtilizationPercent: number;
+}

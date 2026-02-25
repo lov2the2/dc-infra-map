@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Building2 } from "lucide-react";
 import {
     Select,
@@ -14,11 +14,12 @@ import type { Site } from "@/types/entities";
 
 // Sentinel value used in <Select> to represent "All Sites" (activeSiteId = null)
 const ALL_SITES_VALUE = "__all__";
+const emptySubscribe = () => () => {};
 
 export function SiteSelector() {
     const { activeSiteId, setActiveSite } = useSiteStore();
     const [sites, setSites] = useState<Site[]>([]);
-    const [hydrated, setHydrated] = useState(false);
+    const hydrated = useSyncExternalStore(emptySubscribe, () => true, () => false);
 
     // Fetch site list on mount
     useEffect(() => {
@@ -26,11 +27,6 @@ export function SiteSelector() {
             .then((r) => r.json())
             .then((data) => setSites(data.data ?? []))
             .catch(() => setSites([]));
-    }, []);
-
-    // Mark as hydrated after first render to avoid SSR mismatch
-    useEffect(() => {
-        setHydrated(true);
     }, []);
 
     function handleValueChange(value: string) {

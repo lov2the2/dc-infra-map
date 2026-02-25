@@ -26,7 +26,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `npm run test:e2e:ui` — Run Playwright E2E tests with UI mode
 - `npm run db:timescale` — Apply TimescaleDB hypertable setup via `drizzle/0001_timescaledb_setup.sql` (requires TimescaleDB extension)
 - `npm run db:setup` — Full DB initialization: `db:migrate` then `db:timescale` in sequence
-- `npm run k8s:build` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js BFF app), `power-service:latest`, `core-api:latest`, and `network-ops:latest` (Go microservices from `go-services/` monorepo) (uses local docker-desktop daemon)
+- `npm run k8s:build` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js BFF), `dc-infra-map:migrate` (DB migration), `dc-infra-map-go:latest` (Power Service), `dc-infra-map-core:latest` (Core API), `dc-infra-map-netops:latest` (Network Ops) (uses local docker-desktop daemon)
 - `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (required once before using Ingress)
 - `npm run k8s:status` — Show all Kubernetes resources in dcim namespace
 - `npm run helm:lint` — Helm chart syntax validation (dev values)
@@ -64,13 +64,13 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `server-start.sh` — Starts `npm run dev` in background; checks port 3000 availability; polls for readiness (max 15s); saves PID to `.server.pid`, logs to `.server.log`
 - `server-stop.sh` — Stops server via PID file or port 3000 process lookup; SIGTERM then SIGKILL if needed; cleans up PID file
 - `server-restart.sh` — Sequentially runs stop → 1s delay → start
-- `k8s-build.sh` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js BFF app), `power-service:latest`, `core-api:latest`, and `network-ops:latest` (Go microservices from `go-services/` monorepo); uses local docker-desktop daemon (no registry push needed); outputs "Next: npm run helm:install:dev"
+- `k8s-build.sh` — Build Docker images for Kubernetes: `dc-infra-map:latest` (Next.js BFF), `dc-infra-map:migrate` (DB migration), `dc-infra-map-go:latest` (Power Service), `dc-infra-map-core:latest` (Core API), `dc-infra-map-netops:latest` (Network Ops); uses local docker-desktop daemon (no registry push needed); outputs "Next: npm run helm:install:dev"
 - `k8s-setup-ingress.sh` — Install nginx-ingress controller; enables Ingress-based domain routing
 
 **Key conventions**:
 
 - `proxy.ts` — **Next.js 16 middleware file** (replaces `middleware.ts`). Handles auth guard, admin-only routes, and `x-internal-secret` header injection for all Go microservice proxy routes (power-service, core-api, network-ops). **NEVER create `middleware.ts`** — Next.js 16 build fails if both files exist. See `.claude/rules/pitfalls.md` for details.
-- `next.config.ts` — Contains `output: 'standalone'` for container deployment; enables efficient Docker image building via multi-stage builds
+- `next.config.ts` — Contains `output: 'standalone'` for container deployment and `rewrites()` mapping all `/api/*` paths to Go microservices (Core API, Power Service, Network Ops). This is the sole routing mechanism for Go service proxying — there are no Next.js `route.ts` files for proxied endpoints
 - `config/site.ts` — Centralized site metadata, nav links (NAV_GROUPS with grouped menu structure), CTA links, footer config
 - `types/index.ts` — Shared TypeScript interfaces (includes NavGroup for navigation menu grouping)
 - `types/entities.ts` — Entity type definitions (Site, Rack, Device, Tenant, etc.)
@@ -84,16 +84,16 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
 - `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site)
   - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
-- `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts)
+- `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts) — **legacy**: used by tests, no longer serves API routes directly
 - `lib/data-formatters.ts` — Date/null/status formatting utilities (`formatDate`, `formatDateTime`, `formatNullable`, `formatStatus`, `formatUnit`)
 - `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
 - `tests/lib/auth/` — Unit tests for RBAC permission matrix
 - `tests/lib/export/` — Unit tests for export/import utilities (csv-templates, xml, csv-import)
 - `tests/lib/alerts/` — Unit tests for alert evaluators (power threshold, warranty expiry, rack capacity)
 - `lib/rate-limit.ts` — In-memory sliding window rate limiter (`checkRateLimit`, `getClientIdentifier`, `rateLimitResponse`, `RATE_LIMITS` presets: auth 10/min, exportImport 20/min, api 200/min)
-- `lib/alerts/` — Alert evaluation engine and notification service
-- `lib/scheduler/report-scheduler.ts` — Cron-based report scheduler (initScheduler, stopScheduler, reloadSchedule); loads active schedules from DB on startup
-- `lib/mailer/report-mailer.ts` — Nodemailer SMTP mailer for scheduled report email delivery with Excel attachments
+- `lib/alerts/` — Alert evaluation engine and notification service — **legacy**: used by tests, no longer serves API routes directly
+- `lib/scheduler/report-scheduler.ts` — Cron-based report scheduler (initScheduler, stopScheduler, reloadSchedule); loads active schedules from DB on startup — **legacy**: referenced by `instrumentation.ts`, may be removed in future cleanup
+- `lib/mailer/report-mailer.ts` — Nodemailer SMTP mailer for scheduled report email delivery with Excel attachments — **legacy**: referenced by scheduler, may be removed in future cleanup
 - `lib/swagger/openapi.ts` — OpenAPI 3.1.1 specification for all API routes
 - `lib/power/mock-generator.ts` — Power mock data generator for development
 - `hooks/use-search-params-filter.ts` — URL query parameter filter management hook
@@ -135,73 +135,22 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `relations.ts` — Drizzle ORM relation definitions (includes `powerReadingsRelations`)
 - `index.ts` — Schema barrel export
 
-**API routes** (Next.js BFF proxies to Go microservices via `next.config.ts` rewrites; all requests flow through `proxy.ts` which injects `x-internal-secret` header):
+**API routes**: Next.js BFF proxies to Go microservices via `next.config.ts` rewrites. All proxied requests flow through `proxy.ts` which injects the `x-internal-secret` header. The `app/api/` directory only contains Next.js-native route handlers listed below; all other `/api/*` endpoints are handled entirely by Go microservices via rewrites (no `route.ts` files in Next.js).
 
-**Authentication & Admin** (Next.js):
+**Next.js route handlers** (files in `app/api/`):
+
 - `/api/auth/[...nextauth]` — NextAuth authentication (login/logout/session)
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
 
-**Core API Service** (proxied to `core-api:8081`):
-- `/api/sites` — Site CRUD
-- `/api/sites/[id]` — Single site GET/PATCH/DELETE
-- `/api/regions` — Region CRUD
-- `/api/regions/[id]` — Single region GET/PATCH/DELETE
-- `/api/racks` — Rack CRUD
-- `/api/racks/[id]` — Single rack GET/PATCH/DELETE
-- `/api/devices` — Device CRUD
-- `/api/devices/[id]` — Single device GET/PATCH/DELETE
-- `/api/devices/batch` — Batch delete/update devices (POST)
-- `/api/device-types` — Device type CRUD
-- `/api/device-types/[id]` — Single device type GET/PATCH/DELETE
-- `/api/manufacturers` — Manufacturer listing
-- `/api/tenants` — Tenant CRUD
-- `/api/tenants/[id]` — Single tenant GET/PATCH/DELETE
-- `/api/locations` — Location CRUD
-- `/api/locations/[id]` — Single location GET/PATCH/DELETE
+**Proxied to Go microservices** (via `next.config.ts` rewrites, no Next.js route files):
 
-**Power Service** (proxied to `power-service:8080`):
-- `/api/power/panels` — Power panel CRUD
-- `/api/power/panels/[id]` — Single power panel GET/PATCH/DELETE
-- `/api/power/feeds` — Power feed CRUD
-- `/api/power/feeds/[id]` — Single power feed GET/PATCH/DELETE
-- `/api/power/readings` — Power readings CRUD (POST inserts to DB, GET queries DB with mock fallback)
-- `/api/power/sse` — Power SSE real-time streaming
-- `/api/power/summary` — Power summary GET
+- **Core API** (port 8081): `/api/sites`, `/api/regions`, `/api/locations`, `/api/racks`, `/api/devices`, `/api/device-types`, `/api/manufacturers`, `/api/tenants`, `/api/dashboard` — see Go Microservices Architecture for endpoint details
+- **Power Service** (port 8080): `/api/power/panels`, `/api/power/feeds`, `/api/power/readings`, `/api/power/sse`, `/api/power/summary`, `/api/export/*` — see Go Microservices Architecture for endpoint details
+- **Network Ops** (port 8082): `/api/cables`, `/api/interfaces`, `/api/console-ports`, `/api/front-ports`, `/api/rear-ports`, `/api/access-logs`, `/api/equipment-movements`, `/api/alerts/*`, `/api/reports/*`, `/api/audit-logs`, `/api/import/*` — see Go Microservices Architecture for endpoint details
 
-**Network Ops Service** (proxied to `network-ops:8082`):
-- `/api/access-logs` — Access log CRUD
-- `/api/access-logs/[id]` — Single access log GET/PATCH/DELETE
-- `/api/equipment-movements` — Equipment movement CRUD
-- `/api/equipment-movements/[id]` — Single equipment movement GET/PATCH/DELETE
-- `/api/interfaces` — Interface CRUD
-- `/api/interfaces/[id]` — Single interface GET/PATCH/DELETE
-- `/api/console-ports` — Console port CRUD
-- `/api/console-ports/[id]` — Single console port GET/PATCH/DELETE
-- `/api/front-ports` — Front port CRUD
-- `/api/front-ports/[id]` — Single front port GET/PATCH/DELETE
-- `/api/rear-ports` — Rear port CRUD
-- `/api/rear-ports/[id]` — Single rear port GET/PATCH/DELETE
-- `/api/cables` — Cable CRUD
-- `/api/cables/[id]` — Single cable GET/PATCH/DELETE
-- `/api/cables/trace/[id]` — Cable path tracing
-- `/api/audit-logs` — Audit log listing
-- `/api/export/{racks,devices,cables,access,power}` — Excel export endpoints
-- `/api/export/xml/{racks,devices}` — XML export endpoints
-- `/api/import/{devices,cables}` — CSV import endpoints
-- `/api/import/templates/[type]` — CSV template downloads
-- `/api/alerts/rules` — Alert rule CRUD
-- `/api/alerts/rules/[id]` — Single alert rule GET/PATCH/DELETE
-- `/api/alerts/history` — Alert history GET
-- `/api/alerts/history/[id]/acknowledge` — Acknowledge alert PATCH
-- `/api/alerts/channels` — Notification channel CRUD
-- `/api/alerts/channels/[id]` — Single channel GET/PATCH/DELETE
-- `/api/alerts/evaluate` — Manual alert evaluation trigger POST
-- `/api/reports/schedules` — Report schedule CRUD (GET list, POST create)
-- `/api/reports/schedules/[id]` — Single schedule GET/PATCH/DELETE
-- `/api/reports/schedules/[id]/run` — Immediate schedule execution POST
+**Documentation** (Next.js page, not API route):
 
-**Documentation** (Next.js):
 - `/api-docs` — Interactive API reference (Scalar UI, serves OpenAPI spec)
 
 **State management**:
@@ -214,7 +163,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `stores/use-cable-store.ts` — Cable management Zustand store
 - `stores/use-alert-store.ts` — Alert management Zustand store
 
-**RBAC**: All API routes use `withAuth(resource, action, handler)` from `lib/auth/with-auth.ts`, which wraps auth + RBAC permission checking. Permission matrix (in `lib/auth/rbac.ts`) covers 13 resources × 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by middleware role check. Alert resources: `alert_rules` (admin/operator/viewer), `alert_channels` (admin only), `alert_history` (admin/operator/viewer).
+**RBAC**: Next.js admin API routes use `withAuth(resource, action, handler)` from `lib/auth/with-auth.ts` for auth + RBAC permission checking. Permission matrix (in `lib/auth/rbac.ts`) covers 13 resources x 4 roles. Admin routes (`/admin/*`, `/api/admin/*`) are protected by `proxy.ts` role check. Go microservices verify requests via the `x-internal-secret` header injected by `proxy.ts`.
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
@@ -261,11 +210,11 @@ go-services/
 
 **Authentication**: Services receive `x-internal-secret` header from Next.js `proxy.ts` for inter-service verification (BFF → microservice trust). Session/user auth remains Next.js responsibility.
 
-**Docker build** (`Dockerfile`):
+**Docker build** (`go-services/Dockerfile`):
 
-- Multi-stage build compiles all 3 services
-- `go-services/` monorepo → 3 binaries: `power-service`, `core-api`, `network-ops`
-- Deployed separately as `power-service:latest`, `core-api:latest`, `network-ops:latest` images
+- Multi-stage build compiles all 3 services from `go-services/` monorepo
+- Produces 3 images: `dc-infra-map-go:latest` (Power Service), `dc-infra-map-core:latest` (Core API), `dc-infra-map-netops:latest` (Network Ops)
+- Build uses `--build-arg SERVICE=<name>` to select which binary to include
 - No registry push needed for docker-desktop development
 
 ## Kubernetes Deployment
@@ -281,7 +230,7 @@ go-services/
 **Deployment workflow**:
 
 1. `npm run k8s:ingress` — Install nginx-ingress controller on docker-desktop (one-time setup; required before Ingress features work)
-2. `npm run k8s:build` — Build Docker images using local docker-desktop daemon: `dc-infra-map`, `power-service`, `core-api`, `network-ops` (no registry required)
+2. `npm run k8s:build` — Build Docker images using local docker-desktop daemon: `dc-infra-map:latest`, `dc-infra-map:migrate`, `dc-infra-map-go:latest`, `dc-infra-map-core:latest`, `dc-infra-map-netops:latest` (no registry required)
 3. `npm run helm:install:dev` — Deploy all resources via Helm (namespace, postgres, power-service, core-api, network-ops, app, ingress, migration)
 4. `npm run helm:status` or `npm run k8s:status` — View deployment status
 5. `npm run helm:uninstall` — Remove Helm release and all managed resources
