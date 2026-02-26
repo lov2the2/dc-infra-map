@@ -24,7 +24,7 @@ type alertRuleRow struct {
 	ThresholdValue       string  `json:"thresholdValue"`
 	Severity             string  `json:"severity"`
 	Enabled              bool    `json:"enabled"`
-	NotificationChannels string  `json:"notificationChannels"`
+	NotificationChannels json.RawMessage `json:"notificationChannels"`
 	CooldownMinutes      int     `json:"cooldownMinutes"`
 	CreatedBy            *string `json:"createdBy"`
 	CreatedAt            string  `json:"createdAt"`
@@ -51,6 +51,9 @@ func (h *AlertRuleHandler) List(w http.ResponseWriter, r *http.Request) {
 			&a.NotificationChannels, &a.CooldownMinutes, &a.CreatedBy, &ca, &ua); err != nil {
 			continue
 		}
+		if a.NotificationChannels == nil {
+			a.NotificationChannels = json.RawMessage("[]")
+		}
 		a.CreatedAt = ca.UTC().Format(time.RFC3339)
 		a.UpdatedAt = ua.UTC().Format(time.RFC3339)
 		results = append(results, a)
@@ -70,6 +73,9 @@ func (h *AlertRuleHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.NotFound(w, "Alert rule")
 		return
+	}
+	if a.NotificationChannels == nil {
+		a.NotificationChannels = json.RawMessage("[]")
 	}
 	a.CreatedAt = ca.UTC().Format(time.RFC3339)
 	a.UpdatedAt = ua.UTC().Format(time.RFC3339)
@@ -126,6 +132,9 @@ func (h *AlertRuleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		log.Printf("alert_rule create error: %v", err)
 		response.InternalError(w, "create failed")
 		return
+	}
+	if a.NotificationChannels == nil {
+		a.NotificationChannels = json.RawMessage("[]")
 	}
 	a.CreatedAt = ca.UTC().Format(time.RFC3339)
 	a.UpdatedAt = ua.UTC().Format(time.RFC3339)
@@ -188,6 +197,9 @@ func (h *AlertRuleHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.NotFound(w, "Alert rule")
 		return
+	}
+	if a.NotificationChannels == nil {
+		a.NotificationChannels = json.RawMessage("[]")
 	}
 	a.CreatedAt = ca.UTC().Format(time.RFC3339)
 	a.UpdatedAt = ua.UTC().Format(time.RFC3339)

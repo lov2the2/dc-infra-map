@@ -18,7 +18,7 @@ type channelRow struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	ChannelType string `json:"channelType"`
-	Config      string `json:"config"`
+	Config      json.RawMessage `json:"config"`
 	Enabled     bool   `json:"enabled"`
 	CreatedAt   string `json:"createdAt"`
 	UpdatedAt   string `json:"updatedAt"`
@@ -42,6 +42,9 @@ func (h *ChannelHandler) List(w http.ResponseWriter, r *http.Request) {
 		if err := rows.Scan(&c.ID, &c.Name, &c.ChannelType, &c.Config, &c.Enabled, &ca, &ua); err != nil {
 			continue
 		}
+		if c.Config == nil {
+			c.Config = json.RawMessage("{}")
+		}
 		c.CreatedAt = ca.UTC().Format(time.RFC3339)
 		c.UpdatedAt = ua.UTC().Format(time.RFC3339)
 		results = append(results, c)
@@ -59,6 +62,9 @@ func (h *ChannelHandler) Get(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.NotFound(w, "Notification channel")
 		return
+	}
+	if c.Config == nil {
+		c.Config = json.RawMessage("{}")
 	}
 	c.CreatedAt = ca.UTC().Format(time.RFC3339)
 	c.UpdatedAt = ua.UTC().Format(time.RFC3339)
@@ -98,6 +104,9 @@ func (h *ChannelHandler) Create(w http.ResponseWriter, r *http.Request) {
 		log.Printf("channel create error: %v", err)
 		response.InternalError(w, "create failed")
 		return
+	}
+	if c.Config == nil {
+		c.Config = json.RawMessage("{}")
 	}
 	c.CreatedAt = ca.UTC().Format(time.RFC3339)
 	c.UpdatedAt = ua.UTC().Format(time.RFC3339)
@@ -149,6 +158,9 @@ func (h *ChannelHandler) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		response.NotFound(w, "Notification channel")
 		return
+	}
+	if c.Config == nil {
+		c.Config = json.RawMessage("{}")
 	}
 	c.CreatedAt = ca.UTC().Format(time.RFC3339)
 	c.UpdatedAt = ua.UTC().Format(time.RFC3339)
