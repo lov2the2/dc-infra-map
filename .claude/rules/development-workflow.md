@@ -88,6 +88,54 @@ Use `/dev-workflow` skill for end-to-end automation. See `.claude/skills/dev-wor
 
 ---
 
+## Microservice Contract Validation
+
+Go 핸들러 필드를 추가/수정할 때 **TypeScript 타입과 OpenAPI 스펙이 일치하는지** 반드시 검증해야 합니다.
+
+### JSONB 컬럼 처리 규칙
+
+PostgreSQL JSONB 컬럼을 Go에서 스캔할 때 **반드시 `json.RawMessage`를 사용**하세요:
+
+```go
+// ❌ 잘못된 방법 — 이중 직렬화 발생
+type row struct {
+    Config string `json:"config"` // JSONB → string → JSON 재직렬화
+}
+
+// ✅ 올바른 방법
+type row struct {
+    Config json.RawMessage `json:"config"` // JSONB → raw bytes → 그대로 응답
+}
+
+// nil 가드 필수
+if r.Config == nil {
+    r.Config = json.RawMessage("{}")
+}
+```
+
+**이중 직렬화 증상**: API 응답에서 객체/배열이 아닌 문자열이 오는 경우
+- 배열: `"[\"id1\",\"id2\"]"` (string) → `["id1","id2"]` (array)가 되어야 함
+- 객체: `"{\"url\":\"...\"}"` (string) → `{"url":"..."}` (object)가 되어야 함
+
+### Go 핸들러 변경 시 체크리스트
+
+- [ ] JSONB 컬럼 → `json.RawMessage` (NOT `string`)
+- [ ] nil 가드 추가: 배열은 `json.RawMessage("[]")`, 객체는 `json.RawMessage("{}")`
+- [ ] `lib/swagger/openapi.ts` OpenAPI 스펙 업데이트
+- [ ] `types/` TypeScript 타입 업데이트
+- [ ] curl로 실제 응답 검증:
+
+```bash
+# config 필드가 string이 아닌 object로 오는지 확인
+curl http://localhost:8082/api/alerts/channels | jq '.data[0].config | type'
+# Expected: "object" (not "string")
+
+curl http://localhost:8082/api/alerts/rules | jq '.data[0].notificationChannels | type'
+# Expected: "array" (not "string")
+```
+
+---
+
 ## Markdown Lint Rules (markdownlint)
 
 All `.md` files in this project must pass markdownlint with zero warnings.
