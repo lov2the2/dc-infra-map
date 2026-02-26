@@ -140,6 +140,9 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 **Next.js route handlers** (files in `app/api/`):
 
 - `/api/auth/[...nextauth]` — NextAuth authentication (login/logout/session)
+- `/api/auth/register` — User self-registration (creates viewer role account with bcrypt password hashing)
+- `/api/auth/forgot-password` — Generate password reset token (stored in verificationTokens table with 1hr TTL; returns token in development mode)
+- `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
 
@@ -167,7 +170,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/dashboard` (overview), `/sites` (site management), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 

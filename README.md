@@ -147,6 +147,19 @@ npm run dev
 | --- | --- | --- |
 | **관리자** | `admin@dcim.local` | `admin1234` |
 
+### 회원가입
+
+회원가입을 통해 새 계정을 생성할 수 있습니다. 기본값으로 **Viewer 역할**이 자동 할당됩니다.
+
+- **회원가입 페이지**: `/(auth)/register`
+- **필수 정보**: 이름, 이메일, 비밀번호, 비밀번호 확인
+- **권한 관리**: 관리자(`/admin/users`)에서 역할 변경 가능 (Admin, Operator, Viewer, Tenant Viewer)
+
+**비밀번호 복구**:
+
+- **비밀번호 찾기**: `/(auth)/forgot-password` — 가입한 이메일로 비밀번호 재설정 링크 발송
+- **비밀번호 재설정**: `/(auth)/reset-password` — 이메일 링크를 통해 새 비밀번호 설정 (토큰 1시간 유효)
+
 ### 환경 변수 (.env.local)
 
 ```bash
@@ -473,6 +486,9 @@ tailwind.config.ts            # Tailwind 설정
 | --- | --- | --- |
 | `/` | 랜딩 페이지 | 전체 |
 | `/(auth)/login` | 로그인 | 비로그인 |
+| `/(auth)/register` | 회원가입 (Viewer 역할로 자동 생성) | 비로그인 |
+| `/(auth)/forgot-password` | 비밀번호 찾기 (이메일 토큰 발급) | 비로그인 |
+| `/(auth)/reset-password` | 비밀번호 재설정 | 비로그인 |
 | `/dashboard` | 대시보드 (개요) | 로그인 필수 |
 | `/sites` | 사이트/랙 관리 | Operator+ |
 | `/regions` | 지역 관리 (Step 6) | Operator+ |
@@ -500,6 +516,9 @@ tailwind.config.ts            # Tailwind 설정
 - `POST /auth/signin` — 로그인
 - `POST /auth/signout` — 로그아웃
 - `GET /auth/session` — 현재 세션
+- `POST /auth/register` — 회원가입 (Viewer 역할로 자동 생성)
+- `POST /auth/forgot-password` — 비밀번호 재설정 토큰 발급 (verificationTokens 테이블 저장, 1시간 만료)
+- `POST /auth/reset-password` — 비밀번호 재설정 (토큰 검증 후 업데이트)
 
 ### 사이트/지역/랙
 

@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -116,6 +117,23 @@ function LoginForm() {
                         >
                             {isLoading ? "Signing in..." : "Sign In"}
                         </Button>
+                        <div className="flex flex-col gap-1 text-center">
+                            <Link
+                                href="/forgot-password"
+                                className="text-sm text-muted-foreground hover:underline"
+                            >
+                                Forgot your password?
+                            </Link>
+                            <p className="text-sm text-muted-foreground">
+                                Don&apos;t have an account?{" "}
+                                <Link
+                                    href="/register"
+                                    className="hover:underline text-foreground"
+                                >
+                                    Register
+                                </Link>
+                            </p>
+                        </div>
                     </form>
                 </CardContent>
             </Card>

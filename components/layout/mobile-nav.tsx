@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Menu } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 import { NAV_GROUPS, SITE_CONFIG } from "@/config/site";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { SiteSelector } from "@/components/layout/site-selector";
 
 export function MobileNav() {
     const [open, setOpen] = useState(false);
+    const { data: session } = useSession();
 
     return (
         <Sheet open={open} onOpenChange={setOpen}>
@@ -59,6 +61,22 @@ export function MobileNav() {
                             ))}
                         </div>
                     ))}
+
+                    {session?.user?.role === "admin" && (
+                        <div className="space-y-1">
+                            <Separator />
+                            <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                Admin
+                            </div>
+                            <Link
+                                href="/admin/users"
+                                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground block"
+                                onClick={() => setOpen(false)}
+                            >
+                                User Management
+                            </Link>
+                        </div>
+                    )}
 
                     <Separator />
                     <div className="px-3 py-2">
