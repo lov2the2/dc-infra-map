@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/dcim/go-services/internal/shared/audit"
@@ -285,6 +286,155 @@ func (h *AlertHistoryHandler) Acknowledge(w http.ResponseWriter, r *http.Request
 
 // Evaluate handles POST /alerts/evaluate — triggers manual alert evaluation.
 func (h *AlertRuleHandler) Evaluate(w http.ResponseWriter, r *http.Request) {
-	// Simplified: just return OK as actual evaluation logic will depend on business rules
-	response.OK(w, map[string]string{"status": "evaluation triggered"})
+	ctx := r.Context()
+
+	// Fetch all enabled rules
+	rows, err := h.DB.Pool.Query(ctx,
+		`SELECT id, name, rule_type, resource, condition_field, condition_operator, threshold_value, severity, cooldown_minutes, notification_channels
+         FROM alert_rules WHERE enabled = true`)
+	if err != nil {
+		log.Printf("evaluate: fetch rules error: %v", err)
+		response.InternalError(w, "database error")
+		return
+	}
+	defer rows.Close()
+
+	type ruleData struct {
+		ID                   string
+		Name                 string
+		RuleType             string
+		Resource             string
+		ConditionField       string
+		ConditionOperator    string
+		ThresholdValue       string
+		Severity             string
+		CooldownMinutes      int
+		NotificationChannels json.RawMessage
+	}
+
+	var rules []ruleData
+	for rows.Next() {
+		var rd ruleData
+		if err := rows.Scan(&rd.ID, &rd.Name, &rd.RuleType, &rd.Resource, &rd.ConditionField,
+			&rd.ConditionOperator, &rd.ThresholdValue, &rd.Severity, &rd.CooldownMinutes, &rd.NotificationChannels); err != nil {
+			continue
+		}
+		if rd.NotificationChannels == nil {
+			rd.NotificationChannels = json.RawMessage("[]")
+		}
+		rules = append(rules, rd)
+	}
+	rows.Close()
+
+	triggered := 0
+
+	for _, rule := range rules {
+		// Check cooldown
+		var cooldownCount int
+		cooldownErr := h.DB.Pool.QueryRow(ctx,
+			`SELECT COUNT(*) FROM alert_history WHERE rule_id = $1 AND triggered_at > NOW() - ($2 * INTERVAL '1 minute')`,
+			rule.ID, rule.CooldownMinutes).Scan(&cooldownCount)
+		if cooldownErr == nil && cooldownCount > 0 {
+			continue // In cooldown, skip
+		}
+
+		threshold, _ := strconv.ParseFloat(rule.ThresholdValue, 64)
+
+		switch rule.RuleType {
+		case "power_threshold":
+			prRows, prErr := h.DB.Pool.Query(ctx,
+				`SELECT rack_id::text, AVG(watts_used) as avg_watts
+                 FROM power_readings
+                 WHERE created_at > NOW() - INTERVAL '5 minutes' AND rack_id IS NOT NULL
+                 GROUP BY rack_id
+                 HAVING AVG(watts_used) > $1`, threshold)
+			if prErr != nil {
+				log.Printf("evaluate power_threshold error: %v", prErr)
+				continue
+			}
+			for prRows.Next() {
+				var resourceID string
+				var avgWatts float64
+				if err := prRows.Scan(&resourceID, &avgWatts); err != nil {
+					continue
+				}
+				msg := fmt.Sprintf("Average power %.1f W exceeds threshold %.1f W", avgWatts, threshold)
+				_, _ = h.DB.Pool.Exec(ctx,
+					`INSERT INTO alert_history (rule_id, rule_name, severity, message, resource_type, resource_id, triggered_value)
+                     VALUES ($1, $2, $3, $4, 'rack', $5, $6)`,
+					rule.ID, rule.Name, rule.Severity, msg, resourceID, fmt.Sprintf("%.2f", avgWatts))
+				triggered++
+			}
+			prRows.Close()
+
+		case "warranty_expiry":
+			daysAhead := int(threshold)
+			if daysAhead <= 0 {
+				daysAhead = 30
+			}
+			wRows, wErr := h.DB.Pool.Query(ctx,
+				`SELECT id, name FROM devices
+                 WHERE warranty_expires_at IS NOT NULL
+                 AND warranty_expires_at <= NOW() + ($1 * INTERVAL '1 day')
+                 AND deleted_at IS NULL`, daysAhead)
+			if wErr != nil {
+				log.Printf("evaluate warranty_expiry error: %v", wErr)
+				continue
+			}
+			for wRows.Next() {
+				var devID, devName string
+				if err := wRows.Scan(&devID, &devName); err != nil {
+					continue
+				}
+				msg := fmt.Sprintf("Device '%s' warranty expires within %d days", devName, daysAhead)
+				_, _ = h.DB.Pool.Exec(ctx,
+					`INSERT INTO alert_history (rule_id, rule_name, severity, message, resource_type, resource_id, triggered_value)
+                     VALUES ($1, $2, $3, $4, 'device', $5, $6)`,
+					rule.ID, rule.Name, rule.Severity, msg, devID, fmt.Sprintf("%d days", daysAhead))
+				triggered++
+			}
+			wRows.Close()
+
+		case "rack_capacity":
+			capacityThreshold := threshold
+			if capacityThreshold <= 0 {
+				capacityThreshold = 80.0
+			}
+			cRows, cErr := h.DB.Pool.Query(ctx,
+				`SELECT r.id, r.name, r.u_height,
+                        COALESCE(SUM(dt.u_height), 0) as used_u
+                 FROM racks r
+                 LEFT JOIN devices d ON d.rack_id = r.id AND d.deleted_at IS NULL
+                 LEFT JOIN device_types dt ON dt.id = d.device_type_id
+                 WHERE r.deleted_at IS NULL
+                 GROUP BY r.id, r.name, r.u_height
+                 HAVING r.u_height > 0 AND (CAST(COALESCE(SUM(dt.u_height), 0) AS FLOAT) / r.u_height * 100) > $1`,
+				capacityThreshold)
+			if cErr != nil {
+				log.Printf("evaluate rack_capacity error: %v", cErr)
+				continue
+			}
+			for cRows.Next() {
+				var rackID, rackName string
+				var totalU, usedU int
+				if err := cRows.Scan(&rackID, &rackName, &totalU, &usedU); err != nil {
+					continue
+				}
+				pct := float64(usedU) / float64(totalU) * 100
+				msg := fmt.Sprintf("Rack '%s' capacity at %.1f%% (used %dU / total %dU)", rackName, pct, usedU, totalU)
+				_, _ = h.DB.Pool.Exec(ctx,
+					`INSERT INTO alert_history (rule_id, rule_name, severity, message, resource_type, resource_id, triggered_value)
+                     VALUES ($1, $2, $3, $4, 'rack', $5, $6)`,
+					rule.ID, rule.Name, rule.Severity, msg, rackID, fmt.Sprintf("%.1f%%", pct))
+				triggered++
+			}
+			cRows.Close()
+		}
+	}
+
+	response.OK(w, map[string]interface{}{
+		"status":    "evaluation complete",
+		"triggered": triggered,
+		"rules":     len(rules),
+	})
 }

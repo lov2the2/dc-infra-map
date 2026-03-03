@@ -38,7 +38,7 @@ export default async function PowerFeedsPage() {
                     </Button>
                 }
             />
-            <PowerFeedList feeds={feeds as unknown as PowerFeedWithRelations[]} />
+            <PowerFeedList feeds={feeds as PowerFeedWithRelations[]} />
         </div>
     );
 }

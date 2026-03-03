@@ -20,8 +20,8 @@ app:
         enabled: true
         host: dcim-staging.example.com
         tls:
-            enabled: false
-            secretName: ""
+            enabled: true
+            secretName: "dcim-staging-tls"
     resources:
         requests:
             cpu: "250m"
@@ -31,7 +31,7 @@ app:
             memory: "1Gi"
     env:
         NODE_ENV: "production"
-        NEXTAUTH_URL: "http://dcim-staging.example.com"
+        NEXTAUTH_URL: "https://dcim-staging.example.com"
         AUTH_TRUST_HOST: "true"
         TIMESCALEDB_ENABLED: "true"
         NEXT_TELEMETRY_DISABLED: "1"

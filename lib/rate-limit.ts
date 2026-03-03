@@ -4,6 +4,16 @@
  * For multi-instance/distributed deployments, use Redis-backed solution.
  */
 
+// Warn if running in multi-replica mode without Redis backend.
+if (
+    process.env.RATE_LIMIT_BACKEND !== "redis" &&
+    parseInt(process.env.REPLICA_COUNT ?? "1", 10) > 1
+) {
+    console.warn(
+        "[rate-limit] In-memory limiter is per-replica. Use Redis for multi-replica deployments."
+    );
+}
+
 interface RateLimitEntry {
     count: number;
     resetAt: number;

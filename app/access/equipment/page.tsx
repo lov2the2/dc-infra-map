@@ -45,7 +45,7 @@ export default async function EquipmentPage() {
                     </Button>
                 }
             />
-            <EquipmentMovementList movements={movements as unknown as EquipmentMovementWithRelations[]} />
+            <EquipmentMovementList movements={movements as EquipmentMovementWithRelations[]} />
         </div>
     );
 }

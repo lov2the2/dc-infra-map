@@ -18,29 +18,35 @@ type SiteHandler struct {
 }
 
 type siteRow struct {
-    ID          string  `json:"id"`
-    Name        string  `json:"name"`
-    Slug        string  `json:"slug"`
-    Status      string  `json:"status"`
-    RegionID    *string `json:"regionId"`
-    TenantID    *string `json:"tenantId"`
-    Facility    *string `json:"facility"`
-    Address     *string `json:"address"`
-    Latitude    *string `json:"latitude"`
-    Longitude   *string `json:"longitude"`
-    Description *string `json:"description"`
-    CreatedAt   string  `json:"createdAt"`
-    UpdatedAt   string  `json:"updatedAt"`
+    ID           string          `json:"id"`
+    Name         string          `json:"name"`
+    Slug         string          `json:"slug"`
+    Status       string          `json:"status"`
+    RegionID     *string         `json:"regionId"`
+    TenantID     *string         `json:"tenantId"`
+    Facility     *string         `json:"facility"`
+    Address      *string         `json:"address"`
+    Latitude     *string         `json:"latitude"`
+    Longitude    *string         `json:"longitude"`
+    Description  *string         `json:"description"`
+    CustomFields json.RawMessage `json:"customFields"`
+    CreatedAt    string          `json:"createdAt"`
+    UpdatedAt    string          `json:"updatedAt"`
+}
+
+const siteCols = `id, name, slug, status, region_id, tenant_id, facility, address, latitude, longitude, description, custom_fields, created_at, updated_at`
+
+func scanSite(s *siteRow, createdAt, updatedAt *time.Time) {
+    s.CreatedAt = createdAt.UTC().Format(time.RFC3339)
+    s.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+    if s.CustomFields == nil {
+        s.CustomFields = json.RawMessage("{}")
+    }
 }
 
 // List handles GET /sites
 func (h *SiteHandler) List(w http.ResponseWriter, r *http.Request) {
-    query := `
-        SELECT id, name, slug, status, region_id, tenant_id, facility, address,
-               latitude, longitude, description, created_at, updated_at
-        FROM sites
-        WHERE deleted_at IS NULL
-        ORDER BY name`
+    query := fmt.Sprintf(`SELECT %s FROM sites WHERE deleted_at IS NULL ORDER BY name`, siteCols)
 
     rows, err := h.DB.Pool.Query(r.Context(), query)
     if err != nil {
@@ -56,12 +62,11 @@ func (h *SiteHandler) List(w http.ResponseWriter, r *http.Request) {
         var createdAt, updatedAt time.Time
         if err := rows.Scan(&s.ID, &s.Name, &s.Slug, &s.Status, &s.RegionID, &s.TenantID,
             &s.Facility, &s.Address, &s.Latitude, &s.Longitude, &s.Description,
-            &createdAt, &updatedAt); err != nil {
+            &s.CustomFields, &createdAt, &updatedAt); err != nil {
             log.Printf("site scan error: %v", err)
             continue
         }
-        s.CreatedAt = createdAt.UTC().Format(time.RFC3339)
-        s.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+        scanSite(&s, &createdAt, &updatedAt)
         results = append(results, s)
     }
 
@@ -79,20 +84,16 @@ func (h *SiteHandler) Get(w http.ResponseWriter, r *http.Request) {
     var s siteRow
     var createdAt, updatedAt time.Time
 
-    err := h.DB.Pool.QueryRow(r.Context(), `
-        SELECT id, name, slug, status, region_id, tenant_id, facility, address,
-               latitude, longitude, description, created_at, updated_at
-        FROM sites
-        WHERE id = $1 AND deleted_at IS NULL`, id).Scan(
+    err := h.DB.Pool.QueryRow(r.Context(),
+        fmt.Sprintf(`SELECT %s FROM sites WHERE id = $1 AND deleted_at IS NULL`, siteCols), id).Scan(
         &s.ID, &s.Name, &s.Slug, &s.Status, &s.RegionID, &s.TenantID,
         &s.Facility, &s.Address, &s.Latitude, &s.Longitude, &s.Description,
-        &createdAt, &updatedAt)
+        &s.CustomFields, &createdAt, &updatedAt)
     if err != nil {
         response.NotFound(w, "Site")
         return
     }
-    s.CreatedAt = createdAt.UTC().Format(time.RFC3339)
-    s.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+    scanSite(&s, &createdAt, &updatedAt)
 
     response.OK(w, s)
 }
@@ -124,25 +125,30 @@ func (h *SiteHandler) Create(w http.ResponseWriter, r *http.Request) {
     longitude, _ := body["longitude"].(string)
     description, _ := body["description"].(string)
 
+    var customFields interface{}
+    if cf, ok := body["customFields"]; ok && cf != nil {
+        cfBytes, _ := json.Marshal(cf)
+        customFields = cfBytes
+    }
+
     var s siteRow
     var createdAt, updatedAt time.Time
 
-    err := h.DB.Pool.QueryRow(r.Context(), `
-        INSERT INTO sites (name, slug, status, region_id, tenant_id, facility, address, latitude, longitude, description)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-        RETURNING id, name, slug, status, region_id, tenant_id, facility, address, latitude, longitude, description, created_at, updated_at`,
+    err := h.DB.Pool.QueryRow(r.Context(),
+        fmt.Sprintf(`INSERT INTO sites (name, slug, status, region_id, tenant_id, facility, address, latitude, longitude, description, custom_fields)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        RETURNING %s`, siteCols),
         name, slug, status, nilIfEmpty(regionID), nilIfEmpty(tenantID), nilIfEmpty(facility),
-        nilIfEmpty(address), nilIfEmpty(latitude), nilIfEmpty(longitude), nilIfEmpty(description)).Scan(
+        nilIfEmpty(address), nilIfEmpty(latitude), nilIfEmpty(longitude), nilIfEmpty(description), customFields).Scan(
         &s.ID, &s.Name, &s.Slug, &s.Status, &s.RegionID, &s.TenantID,
         &s.Facility, &s.Address, &s.Latitude, &s.Longitude, &s.Description,
-        &createdAt, &updatedAt)
+        &s.CustomFields, &createdAt, &updatedAt)
     if err != nil {
         log.Printf("site create error: %v", err)
         response.InternalError(w, "create failed")
         return
     }
-    s.CreatedAt = createdAt.UTC().Format(time.RFC3339)
-    s.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+    scanSite(&s, &createdAt, &updatedAt)
 
     _ = audit.LogEntry(r.Context(), h.DB.Pool, "", "create", "sites", s.ID, nil, s)
 
@@ -217,6 +223,12 @@ func (h *SiteHandler) Update(w http.ResponseWriter, r *http.Request) {
         args = append(args, nilIfEmpty(v))
         argIdx++
     }
+    if cf, ok := body["customFields"]; ok && cf != nil {
+        cfBytes, _ := json.Marshal(cf)
+        setClauses = append(setClauses, fmt.Sprintf("custom_fields = $%d", argIdx))
+        args = append(args, cfBytes)
+        argIdx++
+    }
 
     setClauses = append(setClauses, fmt.Sprintf("updated_at = $%d", argIdx))
     args = append(args, time.Now().UTC())
@@ -228,11 +240,8 @@ func (h *SiteHandler) Update(w http.ResponseWriter, r *http.Request) {
     }
 
     args = append(args, id)
-    query := fmt.Sprintf(`
-        UPDATE sites SET %s
-        WHERE id = $%d AND deleted_at IS NULL
-        RETURNING id, name, slug, status, region_id, tenant_id, facility, address, latitude, longitude, description, created_at, updated_at`,
-        joinStrings(setClauses, ", "), argIdx)
+    query := fmt.Sprintf(`UPDATE sites SET %s WHERE id = $%d AND deleted_at IS NULL RETURNING %s`,
+        joinStrings(setClauses, ", "), argIdx, siteCols)
 
     var s siteRow
     var createdAt, updatedAt time.Time
@@ -240,13 +249,12 @@ func (h *SiteHandler) Update(w http.ResponseWriter, r *http.Request) {
     err := h.DB.Pool.QueryRow(r.Context(), query, args...).Scan(
         &s.ID, &s.Name, &s.Slug, &s.Status, &s.RegionID, &s.TenantID,
         &s.Facility, &s.Address, &s.Latitude, &s.Longitude, &s.Description,
-        &createdAt, &updatedAt)
+        &s.CustomFields, &createdAt, &updatedAt)
     if err != nil {
         response.NotFound(w, "Site")
         return
     }
-    s.CreatedAt = createdAt.UTC().Format(time.RFC3339)
-    s.UpdatedAt = updatedAt.UTC().Format(time.RFC3339)
+    scanSite(&s, &createdAt, &updatedAt)
 
     _ = audit.LogEntry(r.Context(), h.DB.Pool, "", "update", "sites", id, nil, s)
 

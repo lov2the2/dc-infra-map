@@ -91,10 +91,12 @@ func main() {
 	mux.Handle("PATCH /device-types/{id}", auth(http.HandlerFunc(dtH.Update)))
 	mux.Handle("DELETE /device-types/{id}", auth(http.HandlerFunc(dtH.Delete)))
 
-	// Manufacturers
+	// Manufacturers CRUD
 	mux.Handle("GET /manufacturers", auth(http.HandlerFunc(mfH.List)))
 	mux.Handle("GET /manufacturers/{id}", auth(http.HandlerFunc(mfH.Get)))
 	mux.Handle("POST /manufacturers", auth(http.HandlerFunc(mfH.Create)))
+	mux.Handle("PATCH /manufacturers/{id}", auth(http.HandlerFunc(mfH.Update)))
+	mux.Handle("DELETE /manufacturers/{id}", auth(http.HandlerFunc(mfH.Delete)))
 
 	// Tenants CRUD
 	mux.Handle("GET /tenants", auth(http.HandlerFunc(tenantH.List)))

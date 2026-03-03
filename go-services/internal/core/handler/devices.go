@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/dcim/go-services/internal/shared/audit"
+	"github.com/dcim/go-services/internal/shared/crud"
 	"github.com/dcim/go-services/internal/shared/db"
 	"github.com/dcim/go-services/internal/shared/response"
 )
@@ -53,30 +54,43 @@ func scanDevice(scan func(dest ...interface{}) error) (deviceRow, error) {
 }
 
 func (h *DeviceHandler) List(w http.ResponseWriter, r *http.Request) {
-	query := fmt.Sprintf(`SELECT %s FROM devices WHERE deleted_at IS NULL`, deviceCols)
+	pg := crud.ParsePagination(r)
+	where := `WHERE deleted_at IS NULL`
 	args := []interface{}{}
 	ai := 1
 	if v := r.URL.Query().Get("rackId"); v != "" {
-		query += fmt.Sprintf(" AND rack_id = $%d", ai)
+		where += fmt.Sprintf(" AND rack_id = $%d", ai)
 		args = append(args, v)
 		ai++
 	}
 	if v := r.URL.Query().Get("status"); v != "" {
-		query += fmt.Sprintf(" AND status = $%d", ai)
+		where += fmt.Sprintf(" AND status = $%d", ai)
 		args = append(args, v)
 		ai++
 	}
 	if v := r.URL.Query().Get("tenantId"); v != "" {
-		query += fmt.Sprintf(" AND tenant_id = $%d", ai)
+		where += fmt.Sprintf(" AND tenant_id = $%d", ai)
 		args = append(args, v)
 		ai++
 	}
 	if v := r.URL.Query().Get("search"); v != "" {
-		query += fmt.Sprintf(" AND name ILIKE $%d", ai)
+		where += fmt.Sprintf(" AND name ILIKE $%d", ai)
 		args = append(args, "%"+v+"%")
 		ai++
 	}
-	query += " ORDER BY name"
+
+	var total int
+	countArgs := make([]interface{}, len(args))
+	copy(countArgs, args)
+	if err := h.DB.Pool.QueryRow(r.Context(), `SELECT COUNT(*) FROM devices `+where, countArgs...).Scan(&total); err != nil {
+		log.Printf("device count error: %v", err)
+		response.InternalError(w, "database error")
+		return
+	}
+
+	query := fmt.Sprintf(`SELECT %s FROM devices %s ORDER BY name LIMIT $%d OFFSET $%d`, deviceCols, where, ai, ai+1)
+	args = append(args, pg.Limit, pg.Offset)
+
 	rows, err := h.DB.Pool.Query(r.Context(), query, args...)
 	if err != nil {
 		log.Printf("device list error: %v", err)
@@ -92,7 +106,7 @@ func (h *DeviceHandler) List(w http.ResponseWriter, r *http.Request) {
 		}
 		results = append(results, d)
 	}
-	response.OK(w, results)
+	response.OK(w, map[string]interface{}{"data": results, "total": total, "limit": pg.Limit, "offset": pg.Offset})
 }
 
 func (h *DeviceHandler) Get(w http.ResponseWriter, r *http.Request) {

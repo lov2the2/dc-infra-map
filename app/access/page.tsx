@@ -52,7 +52,7 @@ export default async function AccessPage() {
                 }
             />
             <AccessLogFilters sites={siteList} />
-            <AccessLogList logs={logs as unknown as AccessLogWithUser[]} />
+            <AccessLogList logs={logs as AccessLogWithUser[]} />
         </div>
     );
 }

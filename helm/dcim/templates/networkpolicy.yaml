@@ -1,0 +1,41 @@
+{{- if .Values.networkPolicy.enabled }}
+# NetworkPolicy for postgres: only allow ingress from app and go-service pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    name: {{ include "dcim.fullname" . }}-postgres
+    namespace: {{ .Release.Namespace }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+spec:
+    podSelector:
+        matchLabels:
+            app.kubernetes.io/component: postgres
+    policyTypes:
+        - Ingress
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app.kubernetes.io/instance: {{ .Release.Name }}
+---
+# NetworkPolicy for Go services: only allow ingress from app (BFF) pod
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    name: {{ include "dcim.fullname" . }}-go-services
+    namespace: {{ .Release.Namespace }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+spec:
+    podSelector:
+        matchLabels:
+            app.kubernetes.io/component: go-service
+    policyTypes:
+        - Ingress
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app.kubernetes.io/component: app
+{{- end }}

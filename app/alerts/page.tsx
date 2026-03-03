@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { PageHeader } from "@/components/common/page-header";
 import { AlertStatsCard } from "@/components/alerts/alert-stats-card";
 import { AlertRulesTable } from "@/components/alerts/alert-rules-table";
@@ -12,9 +13,6 @@ import { Button } from "@/components/ui/button";
 import { useAlertStore } from "@/stores/use-alert-store";
 import type { AlertRule } from "@/types/alerts";
 import { Play, Plus } from "lucide-react";
-
-// Hardcoded mock session role for demo — in production, read from session cookie/context
-const DEMO_ROLE = "admin";
 
 function canWriteAlertRules(role: string): boolean {
     return role === "admin" || role === "operator";
@@ -33,6 +31,8 @@ function canAcknowledge(role: string): boolean {
 }
 
 export default function AlertsPage() {
+    const { data: session } = useSession();
+    const role = session?.user?.role ?? "viewer";
     const { rules, history, channels, fetchRules, fetchHistory, fetchChannels, evaluateRules, getStats } = useAlertStore();
     const [ruleFormOpen, setRuleFormOpen] = useState(false);
     const [editingRule, setEditingRule] = useState<AlertRule | null>(null);
@@ -70,10 +70,10 @@ export default function AlertsPage() {
     };
 
     const stats = getStats();
-    const writeRules = canWriteAlertRules(DEMO_ROLE);
-    const deleteRules = canDeleteAlertRules(DEMO_ROLE);
-    const manageChannels = canManageChannels(DEMO_ROLE);
-    const acknowledge = canAcknowledge(DEMO_ROLE);
+    const writeRules = canWriteAlertRules(role);
+    const deleteRules = canDeleteAlertRules(role);
+    const manageChannels = canManageChannels(role);
+    const acknowledge = canAcknowledge(role);
 
     return (
         <div className="space-y-6">
@@ -86,7 +86,7 @@ export default function AlertsPage() {
                 ]}
                 action={
                     <div className="flex items-center gap-2">
-                        {DEMO_ROLE === "admin" && (
+                        {role === "admin" && (
                             <Button
                                 variant="outline"
                                 onClick={handleEvaluate}

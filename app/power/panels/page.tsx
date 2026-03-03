@@ -38,7 +38,7 @@ export default async function PowerPanelsPage() {
                     </Button>
                 }
             />
-            <PowerPanelList panels={panels as unknown as PowerPanelWithFeeds[]} />
+            <PowerPanelList panels={panels as PowerPanelWithFeeds[]} />
         </div>
     );
 }

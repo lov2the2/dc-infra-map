@@ -18,18 +18,56 @@ services:
             timeout: 5s
             retries: 5
 
-    go-service:
+    power-service:
         build:
-            context: ./go-service
+            context: ./go-services
             dockerfile: Dockerfile
-        container_name: dcim-go-service
+            args:
+                SERVICE: power-service
+        container_name: dcim-power-service
         restart: unless-stopped
         ports:
             - "8080:8080"
         environment:
             DATABASE_URL: postgresql://dcim:dcim_local_password@postgres:5432/dcim
-            INTERNAL_SECRET: dev-internal-secret
+            X_INTERNAL_SECRET: dev-internal-secret
             PORT: "8080"
+        depends_on:
+            postgres:
+                condition: service_healthy
+
+    core-api:
+        build:
+            context: ./go-services
+            dockerfile: Dockerfile
+            args:
+                SERVICE: core-api
+        container_name: dcim-core-api
+        restart: unless-stopped
+        ports:
+            - "8081:8081"
+        environment:
+            DATABASE_URL: postgresql://dcim:dcim_local_password@postgres:5432/dcim
+            X_INTERNAL_SECRET: dev-internal-secret
+            PORT: "8081"
+        depends_on:
+            postgres:
+                condition: service_healthy
+
+    network-ops:
+        build:
+            context: ./go-services
+            dockerfile: Dockerfile
+            args:
+                SERVICE: network-ops
+        container_name: dcim-network-ops
+        restart: unless-stopped
+        ports:
+            - "8082:8082"
+        environment:
+            DATABASE_URL: postgresql://dcim:dcim_local_password@postgres:5432/dcim
+            X_INTERNAL_SECRET: dev-internal-secret
+            PORT: "8082"
         depends_on:
             postgres:
                 condition: service_healthy
