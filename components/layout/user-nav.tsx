@@ -21,8 +21,8 @@ export function UserNav() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                    <span className="hidden sm:inline text-sm">
+                <Button variant="ghost" size="sm" className="gap-2 max-w-[220px]">
+                    <span className="hidden sm:inline text-sm truncate max-w-[160px]">
                         {session.user.email}
                     </span>
                     <UserRoleBadge role={session.user.role} />
