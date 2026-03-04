@@ -97,7 +97,7 @@ export default async function DashboardPage() {
                 {stats.map((stat) => {
                     const Icon = stat.icon;
                     return (
-                        <Link key={stat.href} href={stat.href} className="block">
+                        <Link key={stat.title} href={stat.href} className="block">
                             <Card className="hover:bg-muted/50 transition-colors">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">

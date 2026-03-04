@@ -21,11 +21,9 @@ export function DesktopNav() {
         <NavigationMenu viewport={false}>
             <NavigationMenuList>
                 <NavigationMenuItem>
-                    <Link href="/dashboard" legacyBehavior passHref>
-                        <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                            Dashboard
-                        </NavigationMenuLink>
-                    </Link>
+                    <NavigationMenuLink asChild className={navigationMenuTriggerStyle()}>
+                        <Link href="/dashboard">Dashboard</Link>
+                    </NavigationMenuLink>
                 </NavigationMenuItem>
 
                 {NAV_GROUPS.map((group) => (
