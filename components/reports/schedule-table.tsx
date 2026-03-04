@@ -49,7 +49,7 @@ export function ScheduleTable() {
             const response = await fetch("/api/reports/schedules");
             if (!response.ok) throw new Error("Failed to load schedules");
             const data = await response.json();
-            setSchedules(data);
+            setSchedules(data.data ?? []);
         } catch {
             setError("Failed to load schedules.");
         } finally {

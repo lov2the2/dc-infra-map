@@ -15,18 +15,18 @@ import (
 type ReportScheduleHandler struct{ DB *db.DB }
 
 type reportScheduleRow struct {
-	ID              string  `json:"id"`
-	Name            string  `json:"name"`
-	ReportType      string  `json:"reportType"`
-	Frequency       string  `json:"frequency"`
-	CronExpression  string  `json:"cronExpression"`
-	RecipientEmails string  `json:"recipientEmails"`
-	IsActive        bool    `json:"isActive"`
-	LastRunAt       *string `json:"lastRunAt"`
-	NextRunAt       *string `json:"nextRunAt"`
-	CreatedBy       *string `json:"createdBy"`
-	CreatedAt       string  `json:"createdAt"`
-	UpdatedAt       string  `json:"updatedAt"`
+	ID              string          `json:"id"`
+	Name            string          `json:"name"`
+	ReportType      string          `json:"reportType"`
+	Frequency       string          `json:"frequency"`
+	CronExpression  string          `json:"cronExpression"`
+	RecipientEmails json.RawMessage `json:"recipientEmails"`
+	IsActive        bool            `json:"isActive"`
+	LastRunAt       *string         `json:"lastRunAt"`
+	NextRunAt       *string         `json:"nextRunAt"`
+	CreatedBy       *string         `json:"createdBy"`
+	CreatedAt       string          `json:"createdAt"`
+	UpdatedAt       string          `json:"updatedAt"`
 }
 
 const rsCols = `id, name, report_type, frequency, cron_expression, recipient_emails, is_active, last_run_at, next_run_at, created_by, created_at, updated_at`
@@ -42,6 +42,9 @@ func scanSchedule(scan func(dest ...interface{}) error) (reportScheduleRow, erro
 	}
 	r.CreatedAt = ca.UTC().Format(time.RFC3339)
 	r.UpdatedAt = ua.UTC().Format(time.RFC3339)
+	if r.RecipientEmails == nil {
+		r.RecipientEmails = json.RawMessage("[]")
+	}
 	if lastRun != nil {
 		s := lastRun.UTC().Format(time.RFC3339)
 		r.LastRunAt = &s
