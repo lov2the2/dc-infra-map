@@ -44,9 +44,9 @@ test.describe("Dashboard (authenticated)", () => {
 
     test("site header navigation is visible", async ({ page }) => {
         await page.goto("/dashboard");
-        // Desktop nav links rendered in <nav>
+        // Desktop nav uses grouped dropdown buttons — check top-level nav buttons
         const nav = page.locator("header nav");
-        await expect(nav.getByRole("link", { name: "Devices" })).toBeVisible();
-        await expect(nav.getByRole("link", { name: "Sites" })).toBeVisible();
+        await expect(nav.getByRole("button", { name: "Infrastructure" })).toBeVisible();
+        await expect(nav.getByRole("button", { name: "Assets" })).toBeVisible();
     });
 });

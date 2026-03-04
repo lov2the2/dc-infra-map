@@ -122,10 +122,14 @@ test.describe("JSONB double-serialization regression (channels API contract)", (
         let capturedChannels: unknown = null;
 
         await page.route("**/api/alerts/channels", async (route) => {
-            const response = await route.fetch();
-            const body = await response.json();
-            capturedChannels = body;
-            await route.fulfill({ response });
+            try {
+                const response = await route.fetch();
+                const body = await response.json();
+                capturedChannels = body;
+                await route.fulfill({ response });
+            } catch {
+                // Page may have navigated away; ignore errors from aborted requests
+            }
         });
 
         await page.goto("/alerts");
@@ -161,16 +165,23 @@ test.describe("JSONB double-serialization regression (channels API contract)", (
                 }
             }
         }
+
+        // Clean up route handlers to prevent "Target page has been closed" errors
+        await page.unrouteAll({ behavior: "ignoreErrors" });
     });
 
     test("alert rules API returns notificationChannels as an array, not a double-serialized string", async ({ page }) => {
         let capturedRules: unknown = null;
 
         await page.route("**/api/alerts/rules", async (route) => {
-            const response = await route.fetch();
-            const body = await response.json();
-            capturedRules = body;
-            await route.fulfill({ response });
+            try {
+                const response = await route.fetch();
+                const body = await response.json();
+                capturedRules = body;
+                await route.fulfill({ response });
+            } catch {
+                // Page may have navigated away; ignore errors from aborted requests
+            }
         });
 
         await page.goto("/alerts");
@@ -192,5 +203,8 @@ test.describe("JSONB double-serialization regression (channels API contract)", (
                 ).toBe(true);
             }
         }
+
+        // Clean up route handlers to prevent "Target page has been closed" errors
+        await page.unrouteAll({ behavior: "ignoreErrors" });
     });
 });

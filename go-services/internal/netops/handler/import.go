@@ -92,6 +92,14 @@ func (h *ImportHandler) ImportDevices(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// device_type_id is NOT NULL — validate before attempting insert
+		if deviceTypeID == "" {
+			importErrors = append(importErrors, map[string]string{
+				"row": strconv.Itoa(rowNum), "error": "deviceTypeId is required",
+			})
+			continue
+		}
+
 		nilStr := func(s string) interface{} {
 			if s == "" {
 				return nil
@@ -100,9 +108,9 @@ func (h *ImportHandler) ImportDevices(w http.ResponseWriter, r *http.Request) {
 		}
 
 		_, insertErr := h.DB.Pool.Exec(r.Context(),
-			`INSERT INTO devices (name, device_type_id, rack_id, status, face, position, serial_number, asset_tag, description)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-			name, nilStr(deviceTypeID), nilStr(rackID), status,
+			`INSERT INTO devices (id, name, device_type_id, rack_id, status, face, position, serial_number, asset_tag, description)
+             VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+			name, deviceTypeID, nilStr(rackID), status,
 			nilStr(face), position, nilStr(serialNumber), nilStr(assetTag), nilStr(description))
 		if insertErr != nil {
 			importErrors = append(importErrors, map[string]string{
@@ -113,10 +121,11 @@ func (h *ImportHandler) ImportDevices(w http.ResponseWriter, r *http.Request) {
 		imported++
 	}
 
-	response.OK(w, map[string]interface{}{
+	// Return flat response (no "data" wrapper) so callers can access imported/errors directly.
+	response.JSON(w, map[string]interface{}{
 		"imported": imported,
 		"errors":   importErrors,
-	})
+	}, http.StatusOK)
 }
 
 // ImportCables handles POST /import/cables — CSV import for cables.
@@ -190,10 +199,15 @@ func (h *ImportHandler) ImportCables(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// label, termination_a_type/id, termination_b_type/id are NOT NULL
+		if label == "" {
+			label = ""
+		}
+
 		_, insertErr := h.DB.Pool.Exec(r.Context(),
-			`INSERT INTO cables (cable_type, status, label, length, color, termination_a_type, termination_a_id, termination_b_type, termination_b_id, description)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
-			cableType, status, nilStr(label), lengthVal, nilStr(color),
+			`INSERT INTO cables (id, cable_type, status, label, length, color, termination_a_type, termination_a_id, termination_b_type, termination_b_id, description)
+             VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+			cableType, status, label, lengthVal, nilStr(color),
 			nilStr(termAType), nilStr(termAID), nilStr(termBType), nilStr(termBID), nilStr(description))
 		if insertErr != nil {
 			importErrors = append(importErrors, map[string]string{
@@ -204,10 +218,11 @@ func (h *ImportHandler) ImportCables(w http.ResponseWriter, r *http.Request) {
 		imported++
 	}
 
-	response.OK(w, map[string]interface{}{
+	// Return flat response (no "data" wrapper) so callers can access imported/errors directly.
+	response.JSON(w, map[string]interface{}{
 		"imported": imported,
 		"errors":   importErrors,
-	})
+	}, http.StatusOK)
 }
 
 // Template handles GET /import/templates/{type} — CSV template download.

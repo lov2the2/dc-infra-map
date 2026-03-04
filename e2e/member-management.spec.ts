@@ -11,7 +11,7 @@ test.describe("Registration page", () => {
         await expect(page.locator('[data-slot="card-title"]')).toContainText("Register");
         // Form fields visible
         await expect(page.getByLabel(/email/i)).toBeVisible();
-        await expect(page.getByLabel("Password")).toBeVisible();
+        await expect(page.getByLabel("Password", { exact: true })).toBeVisible();
         await expect(page.getByLabel(/confirm password/i)).toBeVisible();
         // Submit button visible
         await expect(page.getByRole("button", { name: /register/i })).toBeVisible();
@@ -37,15 +37,18 @@ test.describe("Registration page", () => {
     test("shows validation error when password is too short", async ({ page }) => {
         await page.goto("/register");
         await page.fill("#email", "test@example.com");
-        // minLength=8 enforced by browser and JS — override minlength via JS eval
+        // minLength=8 enforced by browser and JS — override minlength on both fields via JS eval
         await page.evaluate(() => {
-            const input = document.getElementById("password") as HTMLInputElement;
-            if (input) input.removeAttribute("minlength");
+            const pwd = document.getElementById("password") as HTMLInputElement;
+            if (pwd) pwd.removeAttribute("minlength");
+            const confirm = document.getElementById("confirmPassword") as HTMLInputElement;
+            if (confirm) confirm.removeAttribute("minlength");
         });
         await page.fill("#password", "short");
         await page.fill("#confirmPassword", "short");
         await page.click('button[type="submit"]');
-        await expect(page.getByText(/at least 8 characters/i)).toBeVisible();
+        // Actual validation message: "Password must be at least 8 characters."
+        await expect(page.getByText(/password must be at least 8 characters/i)).toBeVisible();
     });
 });
 

@@ -5,6 +5,6 @@ test.describe("Cables", () => {
         await page.goto("/cables");
         await expect(page).toHaveURL(/\/cables/);
         // Page should have cable table or empty state
-        await expect(page.locator("table, [data-testid=\"empty-state\"], h1")).toBeVisible();
+        await expect(page.locator("table, [data-testid=\"empty-state\"], h1").first()).toBeVisible();
     });
 });
