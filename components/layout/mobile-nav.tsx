@@ -34,26 +34,26 @@ export function MobileNav() {
                 <SheetHeader>
                     <SheetTitle>{SITE_CONFIG.name}</SheetTitle>
                 </SheetHeader>
-                <nav className="flex flex-col gap-4 px-4 flex-1 overflow-auto">
+                <nav className="flex flex-col gap-1 px-4 flex-1 overflow-auto">
                     <Link
                         href="/dashboard"
-                        className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                        className="rounded-md px-3 py-2.5 text-sm font-semibold text-foreground transition-colors hover:bg-accent block"
                         onClick={() => setOpen(false)}
                     >
                         Dashboard
                     </Link>
 
                     {NAV_GROUPS.map((group) => (
-                        <div key={group.label} className="space-y-1">
-                            <Separator />
-                            <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <div key={group.label} className="mt-3">
+                            <Separator className="mb-3" />
+                            <div className="px-3 mb-1 text-sm font-bold text-foreground">
                                 {group.label}
                             </div>
                             {group.items.map((item) => (
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground block"
+                                    className="rounded-md px-3 py-2 pl-6 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground block"
                                     onClick={() => setOpen(false)}
                                 >
                                     {item.label}
@@ -63,14 +63,14 @@ export function MobileNav() {
                     ))}
 
                     {session?.user?.role === "admin" && (
-                        <div className="space-y-1">
-                            <Separator />
-                            <div className="px-3 py-1 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        <div className="mt-3">
+                            <Separator className="mb-3" />
+                            <div className="px-3 mb-1 text-sm font-bold text-foreground">
                                 Admin
                             </div>
                             <Link
                                 href="/admin/users"
-                                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground block"
+                                className="rounded-md px-3 py-2 pl-6 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-foreground block"
                                 onClick={() => setOpen(false)}
                             >
                                 User Management
@@ -78,12 +78,13 @@ export function MobileNav() {
                         </div>
                     )}
 
-                    <Separator />
+                    <Separator className="mt-3" />
                     <div className="px-3 py-2">
                         <SiteSelector />
                     </div>
                 </nav>
-                <div className="mt-auto border-t px-4 py-4">
+                <div className="mt-auto border-t px-4 py-4 flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">{SITE_CONFIG.name}</span>
                     <ThemeToggle />
                 </div>
             </SheetContent>
