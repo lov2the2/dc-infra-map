@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { db } from "@/db";
-import { locations, racks, devices, locationFloorCells } from "@/db/schema";
+import { locations, racks, devices, deviceTypes, locationFloorCells } from "@/db/schema";
 import { eq, isNull, and } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
 import { FloorPlanClient } from "./floor-plan-client";
@@ -39,12 +39,13 @@ export default async function LocationFloorPlanPage({
         orderBy: (racks, { asc }) => [asc(racks.name)],
     });
 
-    // Count devices per rack (non-deleted)
+    // Count devices per rack (non-deleted) and sum actual U-heights used
     const racksWithCounts = await Promise.all(
         locationRacks.map(async (rack) => {
             const deviceRows = await db
-                .select({ id: devices.id })
+                .select({ id: devices.id, uHeight: deviceTypes.uHeight })
                 .from(devices)
+                .innerJoin(deviceTypes, eq(devices.deviceTypeId, deviceTypes.id))
                 .where(
                     and(
                         eq(devices.rackId, rack.id),
@@ -54,6 +55,7 @@ export default async function LocationFloorPlanPage({
             return {
                 ...rack,
                 deviceCount: deviceRows.length,
+                usedU: deviceRows.reduce((sum, d) => sum + d.uHeight, 0),
             };
         }),
     );

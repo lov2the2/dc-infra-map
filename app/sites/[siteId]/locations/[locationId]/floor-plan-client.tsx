@@ -9,6 +9,7 @@ import type { Rack, LocationFloorCell } from "@/types/entities";
 
 interface RackWithCount extends Rack {
     deviceCount: number;
+    usedU: number;
 }
 
 interface FloorPlanClientProps {
@@ -75,6 +76,7 @@ export function FloorPlanClient({
                     initialGridCols={gridCols}
                     initialGridRows={gridRows}
                     initialCells={floorCells}
+                    racks={racks}
                 />
             </TabsContent>
         </Tabs>

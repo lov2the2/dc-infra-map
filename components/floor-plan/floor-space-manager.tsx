@@ -6,11 +6,19 @@ import { FloorSpaceGrid } from "./floor-space-grid";
 import { FloorSpaceCellDialog } from "./floor-space-cell-dialog";
 import type { LocationFloorCell } from "@/types/entities";
 
+interface RackPosition {
+    id: string;
+    name: string;
+    posX: number | null;
+    posY: number | null;
+}
+
 interface FloorSpaceManagerProps {
     locationId: string;
     initialGridCols: number;
     initialGridRows: number;
     initialCells: LocationFloorCell[];
+    racks: RackPosition[];
 }
 
 export function FloorSpaceManager({
@@ -18,6 +26,7 @@ export function FloorSpaceManager({
     initialGridCols,
     initialGridRows,
     initialCells,
+    racks,
 }: FloorSpaceManagerProps) {
     const [gridCols, setGridCols] = useState(initialGridCols);
     const [gridRows, setGridRows] = useState(initialGridRows);
@@ -75,6 +84,7 @@ export function FloorSpaceManager({
                 gridCols={gridCols}
                 gridRows={gridRows}
                 cells={cells}
+                racks={racks}
                 onCellClick={handleCellClick}
             />
 

@@ -17,6 +17,7 @@ interface RackPosition {
     posY: number | null;
     rotation: number | null;
     deviceCount: number;
+    usedU: number;
 }
 
 interface FloorPlanCanvasProps {
@@ -178,7 +179,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
     const canvasHeight = GRID_ROWS * CELL_SIZE;
 
     const getUtilizationColor = (rack: RackPosition) => {
-        const util = rack.deviceCount / rack.uHeight;
+        const util = rack.usedU / rack.uHeight;
         if (util > 0.9) return "#ef4444";
         if (util > 0.7) return "#f59e0b";
         return "#22c55e";
@@ -258,7 +259,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                             const isDragging = draggingId === rack.id;
                             const isSelected = selectedRack?.id === rack.id;
                             const utilization = Math.round(
-                                (rack.deviceCount / rack.uHeight) * 100,
+                                (rack.usedU / rack.uHeight) * 100,
                             );
                             const utilColor = getUtilizationColor(rack);
                             const px = pos.x * CELL_SIZE;
@@ -393,7 +394,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                 </span>
                                 <span>
                                     {Math.round(
-                                        (selectedRack.deviceCount /
+                                        (selectedRack.usedU /
                                             selectedRack.uHeight) *
                                             100,
                                     )}
@@ -402,7 +403,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                             </div>
                             <Progress
                                 value={Math.round(
-                                    (selectedRack.deviceCount /
+                                    (selectedRack.usedU /
                                         selectedRack.uHeight) *
                                         100,
                                 )}

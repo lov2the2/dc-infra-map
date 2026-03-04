@@ -7,10 +7,11 @@ import { Progress } from "@/components/ui/progress";
 interface RackCardProps {
     rack: Rack;
     deviceCount: number;
+    usedU: number;
 }
 
-export function RackCard({ rack, deviceCount }: RackCardProps) {
-    const utilization = Math.round((deviceCount / rack.uHeight) * 100);
+export function RackCard({ rack, deviceCount, usedU }: RackCardProps) {
+    const utilization = Math.round((usedU / rack.uHeight) * 100);
 
     return (
         <Link href={`/racks/${rack.id}`}>

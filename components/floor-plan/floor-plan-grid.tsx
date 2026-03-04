@@ -4,6 +4,7 @@ import { Server } from "lucide-react";
 
 interface RackWithCount extends Rack {
     deviceCount: number;
+    usedU: number;
 }
 
 interface FloorPlanGridProps {
@@ -28,7 +29,7 @@ export function FloorPlanGrid({ racks }: FloorPlanGridProps) {
     return (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {racks.map((rack) => (
-                <RackCard key={rack.id} rack={rack} deviceCount={rack.deviceCount} />
+                <RackCard key={rack.id} rack={rack} deviceCount={rack.deviceCount} usedU={rack.usedU} />
             ))}
         </div>
     );
