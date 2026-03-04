@@ -42,23 +42,29 @@ async function seed() {
     console.log("  Created manufacturers");
 
     // Tenant
-    const [tenant] = await db
+    const [tenantInserted] = await db
         .insert(schema.tenants)
         .values({ name: "DCIM Operations", slug: "dcim-ops" })
         .onConflictDoNothing()
         .returning();
+    const tenant =
+        tenantInserted ??
+        (await db.query.tenants.findFirst({ where: (t, { eq }) => eq(t.slug, "dcim-ops") }));
     console.log("  Created tenant");
 
     // Region
-    const [region] = await db
+    const [regionInserted] = await db
         .insert(schema.regions)
         .values({ name: "Seoul Metropolitan", slug: "seoul-metro" })
         .onConflictDoNothing()
         .returning();
+    const region =
+        regionInserted ??
+        (await db.query.regions.findFirst({ where: (r, { eq }) => eq(r.slug, "seoul-metro") }));
     console.log("  Created region");
 
     // Sites
-    const [gasanSite, _pangyo] = await db
+    const sitesInserted = await db
         .insert(schema.sites)
         .values([
             {
@@ -86,10 +92,13 @@ async function seed() {
         ])
         .onConflictDoNothing()
         .returning();
+    const gasanSite =
+        sitesInserted.find((s) => s.slug === "gasan-idc") ??
+        (await db.query.sites.findFirst({ where: (s, { eq }) => eq(s.slug, "gasan-idc") }));
     console.log("  Created sites");
 
     // Location (server room)
-    const [serverRoom] = await db
+    const [serverRoomInserted] = await db
         .insert(schema.locations)
         .values({
             name: "Server Room A",
@@ -99,6 +108,9 @@ async function seed() {
         })
         .onConflictDoNothing()
         .returning();
+    const serverRoom =
+        serverRoomInserted ??
+        (await db.query.locations.findFirst({ where: (l, { eq }) => eq(l.slug, "server-room-a") }));
     console.log("  Created location");
 
     // Racks (10 racks)
@@ -110,12 +122,19 @@ async function seed() {
         uHeight: 42,
     }));
 
-    const createdRacks = await db
+    const racksInserted = await db
         .insert(schema.racks)
         .values(rackValues)
         .onConflictDoNothing()
         .returning();
-    console.log(`  Created ${createdRacks.length} racks`);
+    // If racks already exist (idempotent re-run), fetch them from DB
+    const createdRacks =
+        racksInserted.length > 0
+            ? racksInserted
+            : await db.query.racks.findMany({
+                  where: (r, { eq }) => eq(r.locationId, serverRoom?.id ?? ""),
+              });
+    console.log(`  Created/found ${createdRacks.length} racks`);
 
     // Device Types
     const manufacturerRows = await db.query.manufacturers.findMany();
@@ -149,17 +168,21 @@ async function seed() {
         },
     ];
 
-    const createdTypes = await db
+    const typesInserted = await db
         .insert(schema.deviceTypes)
         .values(deviceTypeValues)
         .onConflictDoNothing()
         .returning();
-    console.log(`  Created ${createdTypes.length} device types`);
+    // Fetch all relevant device types (handles idempotent re-runs)
+    const allDeviceTypes = await db.query.deviceTypes.findMany();
+    const createdTypes = allDeviceTypes;
+    console.log(`  Created/found device types`);
 
     // Devices
     const r750Type = createdTypes.find((t) => t.slug === "dell-r750");
     const r650Type = createdTypes.find((t) => t.slug === "dell-r650");
     const c9300Type = createdTypes.find((t) => t.slug === "cisco-c9300");
+    void typesInserted; // used above via allDeviceTypes
 
     const deviceValues = createdRacks.flatMap((rack, rackIdx) => {
         if (rackIdx >= 7) {
@@ -199,16 +222,24 @@ async function seed() {
         ];
     });
 
-    const createdDevices = await db
+    const devicesInserted = await db
         .insert(schema.devices)
         .values(deviceValues)
         .onConflictDoNothing()
         .returning();
-    console.log(`  Created ${createdDevices.length} devices`);
+    // Fetch all devices in these racks for idempotent re-runs
+    const allRackIds = createdRacks.map((r) => r.id);
+    const createdDevices =
+        devicesInserted.length > 0
+            ? devicesInserted
+            : await db.query.devices.findMany({
+                  where: (d, { inArray }) => inArray(d.rackId, allRackIds),
+              });
+    console.log(`  Created/found ${createdDevices.length} devices`);
 
     // Patch Panel device type
     const genericMfr = manufacturerRows[0]; // Use first manufacturer
-    const [patchPanelType] = await db
+    const [patchPanelTypeInserted] = await db
         .insert(schema.deviceTypes)
         .values({
             manufacturerId: genericMfr?.id ?? "",
@@ -220,6 +251,9 @@ async function seed() {
         })
         .onConflictDoNothing()
         .returning();
+    const patchPanelType =
+        patchPanelTypeInserted ??
+        (await db.query.deviceTypes.findFirst({ where: (t, { eq }) => eq(t.slug, "patch-panel-24") }));
     console.log("  Created patch panel device type");
 
     // Patch panel devices in network racks
@@ -234,12 +268,19 @@ async function seed() {
         position: 3,
     }));
 
-    const createdPatchPanels = await db
+    const patchPanelsInserted = await db
         .insert(schema.devices)
         .values(patchPanelValues)
         .onConflictDoNothing()
         .returning();
-    console.log(`  Created ${createdPatchPanels.length} patch panels`);
+    const networkRackIds = networkRacks.map((r) => r.id);
+    const createdPatchPanels =
+        patchPanelsInserted.length > 0
+            ? patchPanelsInserted
+            : await db.query.devices.findMany({
+                  where: (d, { inArray }) => inArray(d.rackId, networkRackIds),
+              });
+    console.log(`  Created/found ${createdPatchPanels.length} patch panels`);
 
     // Interfaces: 4 per server (eth0-eth3), 48 per switch
     const serverDevices = createdDevices.filter((d) => d.name.includes("-SRV"));
@@ -372,6 +413,386 @@ async function seed() {
             .returning();
         console.log(`  Created ${createdCables.length} cables`);
     }
+
+    // ── Additional Tenants ────────────────────────────────────────────
+    await db
+        .insert(schema.tenants)
+        .values([
+            { name: "Cloud Provider A", slug: "cloud-provider-a" },
+            { name: "Finance Dept", slug: "finance-dept" },
+        ])
+        .onConflictDoNothing();
+    console.log("  Created additional tenants");
+
+    // ── Additional Region & Site ──────────────────────────────────────
+    const [gyeonggiRegion] = await db
+        .insert(schema.regions)
+        .values({ name: "Gyeonggi Province", slug: "gyeonggi" })
+        .onConflictDoNothing()
+        .returning();
+    console.log("  Created Gyeonggi region");
+
+    // Look up region in case it already existed (onConflictDoNothing returns nothing)
+    const gyeonggiRegionRow =
+        gyeonggiRegion ??
+        (await db.query.regions.findFirst({ where: (r, { eq }) => eq(r.slug, "gyeonggi") }));
+
+    await db
+        .insert(schema.sites)
+        .values({
+            name: "Pangyo Tech IDC",
+            slug: "pangyo-tech-idc",
+            status: "active",
+            regionId: gyeonggiRegionRow?.id,
+            tenantId: tenant?.id,
+            facility: "Pangyo Techno Valley 2",
+            address: "Seongnam, Bundang-gu, Baekhyeon-dong",
+            latitude: 37.3945,
+            longitude: 127.1112,
+        })
+        .onConflictDoNothing();
+    console.log("  Created Pangyo Tech IDC site");
+
+    // ── Power Section ─────────────────────────────────────────────────
+    // Resolve gasanSite (may already exist from a previous seed run)
+    const gasanSiteRow =
+        gasanSite ??
+        (await db.query.sites.findFirst({ where: (s, { eq }) => eq(s.slug, "gasan-idc") }));
+
+    const [ppA01, ppA02] = await db
+        .insert(schema.powerPanels)
+        .values([
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                name: "PP-A01",
+                slug: "pp-a01",
+                location: "Server Room A",
+                ratedCapacityKw: 30,
+                voltageV: 220,
+                phaseType: "single",
+            },
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                name: "PP-A02",
+                slug: "pp-a02",
+                location: "Server Room A",
+                ratedCapacityKw: 20,
+                voltageV: 220,
+                phaseType: "single",
+            },
+        ])
+        .onConflictDoNothing()
+        .returning();
+    console.log("  Created power panels");
+
+    // Resolve panels if they already existed
+    const panelA01 =
+        ppA01 ??
+        (await db.query.powerPanels.findFirst({ where: (p, { eq }) => eq(p.slug, "pp-a01") }));
+    const panelA02 =
+        ppA02 ??
+        (await db.query.powerPanels.findFirst({ where: (p, { eq }) => eq(p.slug, "pp-a02") }));
+
+    // Use first rack for power feeds
+    const firstRack = createdRacks[0] ?? (await db.query.racks.findFirst());
+
+    const feedInsertResult = await db
+        .insert(schema.powerFeeds)
+        .values([
+            {
+                panelId: panelA01?.id ?? "",
+                rackId: firstRack?.id,
+                name: "Feed-A01",
+                feedType: "primary",
+                maxAmps: 15,
+                ratedKw: 3.3,
+            },
+            {
+                panelId: panelA01?.id ?? "",
+                rackId: firstRack?.id,
+                name: "Feed-A02",
+                feedType: "redundant",
+                maxAmps: 15,
+                ratedKw: 3.3,
+            },
+            {
+                panelId: panelA02?.id ?? "",
+                rackId: firstRack?.id,
+                name: "Feed-A03",
+                feedType: "primary",
+                maxAmps: 15,
+                ratedKw: 3.3,
+            },
+            {
+                panelId: panelA02?.id ?? "",
+                rackId: firstRack?.id,
+                name: "Feed-A04",
+                feedType: "redundant",
+                maxAmps: 15,
+                ratedKw: 3.3,
+            },
+        ])
+        .onConflictDoNothing()
+        .returning();
+    console.log(`  Created ${feedInsertResult.length} power feeds`);
+
+    // Resolve at least one feed for readings
+    const feedForReadings =
+        feedInsertResult[0] ??
+        (await db.query.powerFeeds.findFirst());
+
+    if (feedForReadings) {
+        const now = new Date();
+        const readingValues = Array.from({ length: 10 }, (_, i) => {
+            const recordedAt = new Date(now.getTime() - i * 5 * 60 * 1000);
+            // Amperage varies between 8 and 12 in a deterministic pattern
+            const amperage = 8 + (i % 5);
+            const voltageV = 220 + (i % 3) - 1; // 219-221
+            const powerKw = (voltageV * amperage) / 1000;
+            return {
+                feedId: feedForReadings.id,
+                voltageV,
+                currentA: amperage,
+                powerKw,
+                powerFactor: 0.95,
+                energyKwh: powerKw * (5 / 60),
+                recordedAt,
+            };
+        });
+
+        await db
+            .insert(schema.powerReadings)
+            .values(readingValues)
+            .onConflictDoNothing();
+        console.log("  Created 10 power readings");
+    }
+
+    // ── Access Section ────────────────────────────────────────────────
+    const adminUser =
+        admin ??
+        (await db.query.users.findFirst({ where: (u, { eq }) => eq(u.email, adminEmail) }));
+
+    const now = new Date();
+    await db
+        .insert(schema.accessLogs)
+        .values([
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                personnelName: "Kim Minsu",
+                company: "IDC Engineering",
+                contactPhone: "010-1234-5678",
+                accessType: "maintenance",
+                status: "checked_in",
+                purpose: "Scheduled server maintenance",
+                badgeNumber: "B-001",
+                checkInAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+                expectedCheckOutAt: new Date(now.getTime() + 2 * 60 * 60 * 1000),
+                createdBy: adminUser?.id,
+            },
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                personnelName: "Lee Jisu",
+                company: "Vendor Corp",
+                contactPhone: "010-9876-5432",
+                accessType: "delivery",
+                status: "checked_out",
+                purpose: "Hardware delivery",
+                badgeNumber: "B-002",
+                checkInAt: new Date(now.getTime() - 4 * 60 * 60 * 1000),
+                expectedCheckOutAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+                actualCheckOutAt: new Date(now.getTime() - 2 * 60 * 60 * 1000),
+                checkOutNote: "All equipment delivered successfully",
+                createdBy: adminUser?.id,
+            },
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                personnelName: "Park Sejin",
+                company: "DCIM Operations",
+                contactPhone: "010-5555-6666",
+                accessType: "visit",
+                status: "checked_in",
+                purpose: "Executive inspection tour",
+                badgeNumber: "B-003",
+                checkInAt: new Date(now.getTime() - 30 * 60 * 1000),
+                expectedCheckOutAt: new Date(now.getTime() + 60 * 60 * 1000),
+                createdBy: adminUser?.id,
+            },
+        ])
+        .onConflictDoNothing();
+    console.log("  Created 3 access logs");
+
+    const firstDevice = createdDevices[0] ?? (await db.query.devices.findFirst());
+
+    await db
+        .insert(schema.equipmentMovements)
+        .values([
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                rackId: firstRack?.id,
+                deviceId: firstDevice?.id,
+                movementType: "install",
+                status: "approved",
+                description: "New server delivery and rack installation",
+                requestedBy: adminUser?.id ?? "",
+                approvedBy: adminUser?.id,
+                approvedAt: new Date(now.getTime() - 24 * 60 * 60 * 1000),
+                serialNumber: "SN-2024-001",
+                assetTag: "AT-001",
+                notes: "Dell PowerEdge R750 server",
+            },
+            {
+                siteId: gasanSiteRow?.id ?? "",
+                rackId: firstRack?.id,
+                movementType: "remove",
+                status: "pending",
+                description: "Decommissioned switch removal",
+                requestedBy: adminUser?.id ?? "",
+                serialNumber: "SN-2020-045",
+                assetTag: "AT-045",
+                notes: "EOL equipment pending RMA processing",
+            },
+        ])
+        .onConflictDoNothing();
+    console.log("  Created 2 equipment movements");
+
+    // ── Alerts Section ────────────────────────────────────────────────
+    const [inAppChannel] = await db
+        .insert(schema.notificationChannels)
+        .values({
+            name: "In-App Alerts",
+            channelType: "in_app",
+            config: { url: "internal" },
+            enabled: true,
+        })
+        .onConflictDoNothing()
+        .returning();
+    console.log("  Created notification channel");
+
+    const channelRow =
+        inAppChannel ??
+        (await db.query.notificationChannels.findFirst({
+            where: (c, { eq }) => eq(c.name, "In-App Alerts"),
+        }));
+
+    const [ruleHighPower, _ruleRackFull, ruleWarranty] = await db
+        .insert(schema.alertRules)
+        .values([
+            {
+                name: "High Power Usage",
+                ruleType: "power_threshold",
+                resource: "power_feeds",
+                conditionField: "utilization_pct",
+                conditionOperator: "gt",
+                thresholdValue: "90",
+                severity: "warning",
+                enabled: true,
+                notificationChannels: channelRow ? [channelRow.id] : [],
+                cooldownMinutes: 60,
+                createdBy: adminUser?.id,
+            },
+            {
+                name: "Rack Near Full",
+                ruleType: "rack_capacity",
+                resource: "racks",
+                conditionField: "fill_pct",
+                conditionOperator: "gt",
+                thresholdValue: "85",
+                severity: "warning",
+                enabled: true,
+                notificationChannels: channelRow ? [channelRow.id] : [],
+                cooldownMinutes: 60,
+                createdBy: adminUser?.id,
+            },
+            {
+                name: "Warranty Expiring Soon",
+                ruleType: "warranty_expiry",
+                resource: "devices",
+                conditionField: "days_until_expiry",
+                conditionOperator: "lt",
+                thresholdValue: "30",
+                severity: "info",
+                enabled: true,
+                notificationChannels: channelRow ? [channelRow.id] : [],
+                cooldownMinutes: 1440,
+                createdBy: adminUser?.id,
+            },
+        ])
+        .onConflictDoNothing()
+        .returning();
+    console.log("  Created 3 alert rules");
+
+    // Resolve rules if they already existed
+    const powerRule =
+        ruleHighPower ??
+        (await db.query.alertRules.findFirst({
+            where: (r, { eq }) => eq(r.name, "High Power Usage"),
+        }));
+    const warrantyRule =
+        ruleWarranty ??
+        (await db.query.alertRules.findFirst({
+            where: (r, { eq }) => eq(r.name, "Warranty Expiring Soon"),
+        }));
+
+    const alertHistoryValues = [];
+    if (powerRule) {
+        alertHistoryValues.push({
+            ruleId: powerRule.id,
+            severity: "warning" as const,
+            message: "Power feed Feed-A01 utilization exceeded 90% threshold",
+            resourceType: "power_feeds",
+            resourceId: feedForReadings?.id ?? "unknown",
+            resourceName: "Feed-A01",
+            thresholdValue: "90",
+            actualValue: "93.5",
+        });
+    }
+    if (warrantyRule) {
+        alertHistoryValues.push({
+            ruleId: warrantyRule.id,
+            severity: "info" as const,
+            message: "Device Rack-A01-SRV01 warranty expires in 15 days",
+            resourceType: "devices",
+            resourceId: firstDevice?.id ?? "unknown",
+            resourceName: firstDevice?.name ?? "Rack-A01-SRV01",
+            thresholdValue: "30",
+            actualValue: "15",
+            resolvedAt: new Date(now.getTime() - 60 * 60 * 1000),
+        });
+    }
+
+    if (alertHistoryValues.length > 0) {
+        await db
+            .insert(schema.alertHistory)
+            .values(alertHistoryValues)
+            .onConflictDoNothing();
+        console.log(`  Created ${alertHistoryValues.length} alert history entries`);
+    }
+
+    // ── Reports Section ───────────────────────────────────────────────
+    await db
+        .insert(schema.reportSchedules)
+        .values([
+            {
+                name: "Weekly Device Report",
+                reportType: "devices",
+                frequency: "weekly",
+                cronExpression: "0 9 * * 1",
+                recipientEmails: ["admin@dcim.local"],
+                isActive: true,
+                createdBy: adminUser?.id,
+            },
+            {
+                name: "Monthly Power Report",
+                reportType: "power",
+                frequency: "monthly",
+                cronExpression: "0 9 1 * *",
+                recipientEmails: ["admin@dcim.local"],
+                isActive: true,
+                createdBy: adminUser?.id,
+            },
+        ])
+        .onConflictDoNothing();
+    console.log("  Created 2 report schedules");
 
     console.log("Seeding complete!");
     await client.end();
