@@ -78,32 +78,44 @@ export const useRackStore = create<RackState>()(
                     body: JSON.stringify({ rackId: targetRackId, position: newPosition }),
                 });
                 if (!res.ok) {
+                    try {
+                        const [srcRes, tgtRes] = await Promise.all([
+                            fetch(`/api/racks/${sourceRackId}`),
+                            fetch(`/api/racks/${targetRackId}`),
+                        ]);
+                        if (srcRes.ok && tgtRes.ok) {
+                            const srcData = await srcRes.json();
+                            const tgtData = await tgtRes.json();
+                            set((state) => {
+                                const srcIdx = state.racks.findIndex((r) => r.id === sourceRackId);
+                                const tgtIdx = state.racks.findIndex((r) => r.id === targetRackId);
+                                if (srcIdx !== -1) state.racks[srcIdx] = srcData.data;
+                                if (tgtIdx !== -1) state.racks[tgtIdx] = tgtData.data;
+                            });
+                        }
+                    } catch {
+                        // Rollback fetch failed silently
+                    }
+                }
+            } catch {
+                try {
                     const [srcRes, tgtRes] = await Promise.all([
                         fetch(`/api/racks/${sourceRackId}`),
                         fetch(`/api/racks/${targetRackId}`),
                     ]);
-                    const srcData = await srcRes.json();
-                    const tgtData = await tgtRes.json();
-                    set((state) => {
-                        const srcIdx = state.racks.findIndex((r) => r.id === sourceRackId);
-                        const tgtIdx = state.racks.findIndex((r) => r.id === targetRackId);
-                        if (srcIdx !== -1) state.racks[srcIdx] = srcData.data;
-                        if (tgtIdx !== -1) state.racks[tgtIdx] = tgtData.data;
-                    });
+                    if (srcRes.ok && tgtRes.ok) {
+                        const srcData = await srcRes.json();
+                        const tgtData = await tgtRes.json();
+                        set((state) => {
+                            const srcIdx = state.racks.findIndex((r) => r.id === sourceRackId);
+                            const tgtIdx = state.racks.findIndex((r) => r.id === targetRackId);
+                            if (srcIdx !== -1) state.racks[srcIdx] = srcData.data;
+                            if (tgtIdx !== -1) state.racks[tgtIdx] = tgtData.data;
+                        });
+                    }
+                } catch {
+                    // Rollback fetch failed silently
                 }
-            } catch {
-                const [srcRes, tgtRes] = await Promise.all([
-                    fetch(`/api/racks/${sourceRackId}`),
-                    fetch(`/api/racks/${targetRackId}`),
-                ]);
-                const srcData = await srcRes.json();
-                const tgtData = await tgtRes.json();
-                set((state) => {
-                    const srcIdx = state.racks.findIndex((r) => r.id === sourceRackId);
-                    const tgtIdx = state.racks.findIndex((r) => r.id === targetRackId);
-                    if (srcIdx !== -1) state.racks[srcIdx] = srcData.data;
-                    if (tgtIdx !== -1) state.racks[tgtIdx] = tgtData.data;
-                });
             }
         },
         updateRackPosition: async (rackId, posX, posY) => {
