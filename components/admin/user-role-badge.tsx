@@ -9,9 +9,10 @@ const ROLE_CONFIG: Record<string, { label: string; variant: "default" | "seconda
 
 interface UserRoleBadgeProps {
     role: string;
+    className?: string;
 }
 
-export function UserRoleBadge({ role }: UserRoleBadgeProps) {
+export function UserRoleBadge({ role, className }: UserRoleBadgeProps) {
     const config = ROLE_CONFIG[role] ?? { label: role, variant: "outline" as const };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={config.variant} className={className}>{config.label}</Badge>;
 }

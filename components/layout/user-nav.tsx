@@ -2,6 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
+import { User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
@@ -21,11 +22,14 @@ export function UserNav() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2 max-w-[220px]">
-                    <span className="hidden sm:inline text-sm truncate max-w-[160px]">
+                <Button variant="ghost" size="sm" className="gap-2">
+                    {/* Below xl: icon only */}
+                    <User className="h-4 w-4 xl:hidden" />
+                    {/* xl and above: email + role badge */}
+                    <span className="hidden xl:inline text-sm truncate max-w-[160px]">
                         {session.user.email}
                     </span>
-                    <UserRoleBadge role={session.user.role} />
+                    <UserRoleBadge role={session.user.role} className="hidden xl:inline-flex" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
