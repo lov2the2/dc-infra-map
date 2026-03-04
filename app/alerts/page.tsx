@@ -76,7 +76,7 @@ export default function AlertsPage() {
     const acknowledge = canAcknowledge(role);
 
     return (
-        <div className="space-y-6">
+        <div className="container py-8 space-y-6">
             <PageHeader
                 title="Alerts"
                 description="Monitor and manage infrastructure alerts and notification channels."

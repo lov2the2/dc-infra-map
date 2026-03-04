@@ -11,7 +11,7 @@ import { SiteSelector } from "@/components/layout/site-selector";
 export function SiteHeader() {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-14 items-center px-4">
+            <div className="container flex h-14 items-center">
                 <MobileNav />
                 <Link href="/" className="mr-4 shrink-0 text-sm font-bold lg:mr-6">
                     {SITE_CONFIG.name}

@@ -3,7 +3,7 @@ import { UserTable } from "@/components/admin/user-table";
 
 export default function AdminUsersPage() {
     return (
-        <div className="space-y-6">
+        <div className="container py-8 space-y-6">
             <PageHeader
                 title="User Management"
                 description="Manage user accounts and role assignments."

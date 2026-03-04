@@ -48,7 +48,7 @@ export default function RegionsPage() {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="container py-8 space-y-6">
             <PageHeader
                 title="Regions"
                 breadcrumbs={[
