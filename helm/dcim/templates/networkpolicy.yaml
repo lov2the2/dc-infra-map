@@ -19,11 +19,11 @@ spec:
                 matchLabels:
                     app.kubernetes.io/instance: {{ .Release.Name }}
 ---
-# NetworkPolicy for Go services: only allow ingress from app (BFF) pod
+# NetworkPolicy for power-service: only allow ingress from app (BFF) pod
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-    name: {{ include "dcim.fullname" . }}-go-services
+    name: {{ include "dcim.fullname" . }}-go-service
     namespace: {{ .Release.Namespace }}
     labels:
         {{- include "dcim.labels" . | nindent 8 }}
@@ -31,6 +31,46 @@ spec:
     podSelector:
         matchLabels:
             app.kubernetes.io/component: go-service
+    policyTypes:
+        - Ingress
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app.kubernetes.io/component: app
+---
+# NetworkPolicy for core-api: only allow ingress from app (BFF) pod
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    name: {{ include "dcim.fullname" . }}-core-api
+    namespace: {{ .Release.Namespace }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+spec:
+    podSelector:
+        matchLabels:
+            app.kubernetes.io/component: core-api
+    policyTypes:
+        - Ingress
+    ingress:
+        - from:
+            - podSelector:
+                matchLabels:
+                    app.kubernetes.io/component: app
+---
+# NetworkPolicy for network-ops: only allow ingress from app (BFF) pod
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+    name: {{ include "dcim.fullname" . }}-network-ops
+    namespace: {{ .Release.Namespace }}
+    labels:
+        {{- include "dcim.labels" . | nindent 8 }}
+spec:
+    podSelector:
+        matchLabels:
+            app.kubernetes.io/component: network-ops
     policyTypes:
         - Ingress
     ingress:

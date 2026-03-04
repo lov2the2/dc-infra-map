@@ -137,3 +137,7 @@ networkOps:
             memory: "256Mi"
     secrets:
         X_INTERNAL_SECRET: "dev-secret-change-in-production"
+
+# NetworkPolicy
+networkPolicy:
+    enabled: false  # Enable to restrict Go service ingress to BFF only

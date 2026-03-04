@@ -20,6 +20,9 @@ spec:
         metadata:
             labels:
                 {{- include "dcim.coreApi.selectorLabels" . | nindent 16 }}
+            annotations:
+                checksum/config: {{ include (print $.Template.BasePath "/core-api/configmap.yaml") . | sha256sum }}
+                checksum/secret: {{ include (print $.Template.BasePath "/core-api/secret.yaml") . | sha256sum }}
         spec:
             initContainers:
                 - name: wait-for-postgres
