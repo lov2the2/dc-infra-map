@@ -13,7 +13,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { MapPin, Building2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { MapPin, Building2, Plus } from "lucide-react";
 
 
 export default async function SitesPage() {
@@ -40,6 +41,14 @@ export default async function SitesPage() {
                     { label: "Dashboard", href: "/" },
                     { label: "Sites" },
                 ]}
+                action={
+                    <Button asChild>
+                        <Link href="/sites/new">
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Site
+                        </Link>
+                    </Button>
+                }
             />
 
             {allSites.length === 0 ? (

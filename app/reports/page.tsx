@@ -80,6 +80,18 @@ export default async function ReportsPage() {
                             importEndpoint="/api/import/cables"
                             type="cables"
                         />
+                        <ImportDialog
+                            title="Sites"
+                            templateEndpoint="/api/bulk-import/sites/template"
+                            importEndpoint="/api/bulk-import/sites"
+                            type="sites"
+                        />
+                        <ImportDialog
+                            title="Tenants"
+                            templateEndpoint="/api/bulk-import/tenants/template"
+                            importEndpoint="/api/bulk-import/tenants"
+                            type="tenants"
+                        />
                     </div>
                 </TabsContent>
 

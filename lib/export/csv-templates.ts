@@ -11,3 +11,17 @@ export function getCableTemplate(): string {
         "cable-001,cat6a,connected,interface,<interface-uuid>,interface,<interface-uuid>,3,,<tenant-uuid>",
     ].join("\n");
 }
+
+export function getSiteTemplate(): string {
+    return [
+        "name,slug,status,facility,address,latitude,longitude,description",
+        "Seoul IDC,seoul-idc,active,Seoul Digital Complex,Seoul Geumcheon-gu,37.4779,126.8878,Main DC",
+    ].join("\n");
+}
+
+export function getTenantTemplate(): string {
+    return [
+        "name,slug,description",
+        "Acme Corp,acme-corp,Primary tenant organization",
+    ].join("\n");
+}

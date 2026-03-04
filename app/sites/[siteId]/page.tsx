@@ -6,6 +6,7 @@ import { sites, locations } from "@/db/schema";
 import { eq, isNull } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
 import { StatusBadge } from "@/components/common/status-badge";
+import { SiteActions } from "@/components/sites/site-actions";
 import {
     Card,
     CardContent,
@@ -53,7 +54,12 @@ export default async function SiteDetailPage({
                     { label: "Sites", href: "/sites" },
                     { label: site.name },
                 ]}
-                action={<StatusBadge status={site.status} />}
+                action={
+                    <div className="flex items-center gap-3">
+                        <StatusBadge status={site.status} />
+                        <SiteActions siteId={siteId} />
+                    </div>
+                }
             />
 
             {/* Site details */}
