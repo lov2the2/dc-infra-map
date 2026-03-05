@@ -49,6 +49,7 @@ export function MultiRackElevationClient({ initialRacks }: Props) {
     }, [initialRacks, setRacks]);
 
     const displayRacks = racks.length > 0 ? racks : initialRacks;
+    const locationId = displayRacks[0]?.locationId ?? undefined;
 
     function handleDragStart(event: DragStartEvent) {
         setDraggingDevice(event.active.id as string);
@@ -105,7 +106,7 @@ export function MultiRackElevationClient({ initialRacks }: Props) {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
             >
-                <div className="flex gap-6 overflow-x-auto pb-4">
+                <div className="flex gap-6">
                     {displayRacks.map((rack) => (
                         <div key={rack.id} className="flex-shrink-0 space-y-2">
                             <div className="text-sm font-semibold text-center">{rack.name}</div>
@@ -122,6 +123,7 @@ export function MultiRackElevationClient({ initialRacks }: Props) {
                 device={editingDevice}
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
+                locationId={locationId}
             />
         </div>
     );

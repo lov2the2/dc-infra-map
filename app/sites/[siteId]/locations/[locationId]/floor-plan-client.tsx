@@ -31,21 +31,25 @@ export function FloorPlanClient({
     floorCells,
 }: FloorPlanClientProps) {
     const [rackPositions, setRackPositions] = useState<RackWithCount[]>(racks);
+    const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
 
     const handlePositionChange = async (rackId: string, posX: number, posY: number) => {
+        // Optimistic update: reflect new position immediately in Grid View and 2D Map
+        setRackPositions((prev) =>
+            prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
+        );
         try {
-            const res = await fetch(`/api/racks/${rackId}`, {
+            // Dedicated position route uses Drizzle ORM — works without Go Core API
+            const res = await fetch(`/api/racks/${rackId}/position`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ posX, posY }),
             });
-            if (res.ok) {
-                setRackPositions((prev) =>
-                    prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
-                );
+            if (!res.ok) {
+                console.error("Failed to save rack position:", await res.text());
             }
-        } catch {
-            // silently ignore
+        } catch (err) {
+            console.error("Network error saving rack position:", err);
         }
     };
 
@@ -70,12 +74,16 @@ export function FloorPlanClient({
                     racks={rackPositions}
                     siteId={siteId}
                     locationId={locationId}
+                    selectedRackId={selectedRackId}
+                    onSelectRack={setSelectedRackId}
                 />
             </TabsContent>
             <TabsContent value="2d" className="mt-4">
                 <FloorPlanCanvas
                     racks={rackPositions}
                     onPositionChange={handlePositionChange}
+                    selectedRackId={selectedRackId}
+                    onRackSelect={setSelectedRackId}
                 />
             </TabsContent>
             <TabsContent value="floor-spaces" className="mt-4">

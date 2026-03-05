@@ -176,12 +176,12 @@ Tenant management components (tenant-table, tenant-form, tenant-delete-button).
 
 ### `components/floor-plan/`
 
-Floor plan visualization (floor-plan-grid, rack-card, floor-plan-canvas with useMemo-based derived state instead of useEffect for performance); floor space management:
-- `floor-plan-client.tsx` — Server component wrapper; manages rack position state via `useState(racks)`; `handlePositionChange` updates state on PATCH success and propagates changes to all three tabs (Grid View, 2D Map, Floor Spaces)
-- `floor-space-manager.tsx` — Manages floor space UI with 3 tabs (Grid View, 2D Map, Floor Spaces); `handleRackClick` routes rack cells to `/racks/{id}` page
-- `floor-space-grid.tsx` — Floor space grid visualization; rack cells trigger `onRackClick(rack)` (→ `/racks/{id}`); empty cells trigger `onCellClick(cell)` (→ cell creation dialog)
-- `floor-space-cell-dialog.tsx` — Context-aware dialog: for empty cells, displays "Place Rack Here" mode with unplaced racks Select dropdown; on confirm, PATCHes rack `posX`/`posY` instead of creating a floor cell
-- `floor-space-config-form.tsx` — Grid size (gridCols/gridRows) configuration
+Floor plan visualization with rack selection and responsive views:
+- `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; `handlePositionChange` updates state on PATCH success and propagates changes to all tabs
+- `floor-plan-grid.tsx` — Horizontal scrollable rack card row (responsive layout); user-configurable racks-per-view setting (localStorage: `dcim:floor-plan:racks-per-view`, default 4); settings bar position toggle (localStorage: `dcim:floor-plan:settings-pos`); selected rack smooth-scrolls to center
+- `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected
+- `floor-plan-canvas.tsx` — 2D SVG drag-and-drop visualization (useMemo-based derived state); includes "Saving..." badge during PATCH request; syncs cross-tab rack selection via `selectedRackId` prop
+- floor space management: `floor-space-manager.tsx` (3-tab UI with Grid View, 2D Map, Floor Spaces), `floor-space-config-form.tsx` (grid size configuration), `floor-space-grid.tsx` (cell visualization), `floor-space-cell-dialog.tsx` (context-aware placement dialog)
 
 ### `components/rack/`
 

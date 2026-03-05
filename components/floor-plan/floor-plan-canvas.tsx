@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import { FloorPlanToolbar } from "./floor-plan-toolbar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -23,6 +23,8 @@ interface RackPosition {
 interface FloorPlanCanvasProps {
     racks: RackPosition[];
     onPositionChange: (rackId: string, posX: number, posY: number) => Promise<void>;
+    selectedRackId?: string | null;
+    onRackSelect?: (rackId: string | null) => void;
 }
 
 const CELL_SIZE = 60;
@@ -48,7 +50,7 @@ function computeDefaultPositions(
     return result;
 }
 
-export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProps) {
+export function FloorPlanCanvas({ racks, onPositionChange, selectedRackId, onRackSelect }: FloorPlanCanvasProps) {
     const [zoom, setZoom] = useState(INITIAL_ZOOM);
     const [pan, setPan] = useState({ x: 40, y: 40 });
     const [showGrid, setShowGrid] = useState(true);
@@ -60,6 +62,20 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
         py: number;
     } | null>(null);
     const [selectedRack, setSelectedRack] = useState<RackPosition | null>(null);
+    const [savingId, setSavingId] = useState<string | null>(null);
+
+    // Sync internal selectedRack state from the selectedRackId prop
+    useEffect(() => {
+        if (selectedRackId === null || selectedRackId === undefined) {
+            setSelectedRack(null);
+            return;
+        }
+        const found = racks.find((r) => r.id === selectedRackId);
+        if (found && found.id !== selectedRack?.id) {
+            setSelectedRack(found);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [selectedRackId, racks]);
     // Stores only user-initiated drag overrides keyed by rack ID.
     // Positions not present here fall back to the values derived from the racks prop.
     const [dragOverrides, setDragOverrides] = useState<Record<string, { x: number; y: number }>>({});
@@ -156,7 +172,12 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
             setDraggingId(null);
             const pos = positions[rack.id];
             if (pos) {
-                await onPositionChange(rack.id, pos.x, pos.y);
+                setSavingId(rack.id);
+                try {
+                    await onPositionChange(rack.id, pos.x, pos.y);
+                } finally {
+                    setSavingId(null);
+                }
             }
         },
         [draggingId, positions, onPositionChange],
@@ -166,14 +187,19 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
         (e: React.MouseEvent, rack: RackPosition) => {
             if (draggingId) return;
             e.stopPropagation();
-            setSelectedRack((prev) => (prev?.id === rack.id ? null : rack));
+            // Compute next selection directly (event handler context — not during render),
+            // so calling onRackSelect here is safe and avoids the setState-in-render error.
+            const next = selectedRack?.id === rack.id ? null : rack;
+            setSelectedRack(next);
+            onRackSelect?.(next?.id ?? null);
         },
-        [draggingId],
+        [draggingId, selectedRack, onRackSelect],
     );
 
     const handleBgClick = useCallback(() => {
         setSelectedRack(null);
-    }, []);
+        if (onRackSelect) onRackSelect(null);
+    }, [onRackSelect]);
 
     const canvasWidth = GRID_COLS * CELL_SIZE;
     const canvasHeight = GRID_ROWS * CELL_SIZE;
@@ -356,6 +382,34 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                     >
                                         {rack.uHeight}U
                                     </text>
+                                    {/* Saving indicator badge */}
+                                    {savingId === rack.id && (
+                                        <>
+                                            <rect
+                                                x={rw / 2 - 22}
+                                                y={-18}
+                                                width={44}
+                                                height={14}
+                                                rx={3}
+                                                fill="rgba(0,0,0,0.65)"
+                                                style={{ pointerEvents: "none" }}
+                                            />
+                                            <text
+                                                x={rw / 2}
+                                                y={-11}
+                                                textAnchor="middle"
+                                                dominantBaseline="middle"
+                                                fontSize={8}
+                                                fill="white"
+                                                style={{
+                                                    userSelect: "none",
+                                                    pointerEvents: "none",
+                                                }}
+                                            >
+                                                Saving...
+                                            </text>
+                                        </>
+                                    )}
                                 </g>
                             );
                         })}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useRackStore } from "@/stores/use-rack-store";
 import type { Device, DeviceType } from "@/types/entities";
 import {
@@ -21,6 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 
 const DEVICE_STATUSES = [
     "active",
@@ -31,13 +33,20 @@ const DEVICE_STATUSES = [
     "decommissioned",
 ];
 
+interface RackOption {
+    id: string;
+    name: string;
+}
+
 interface DeviceEditDialogProps {
     device: (Device & { deviceType: DeviceType }) | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    locationId?: string;
 }
 
-export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialogProps) {
+export function DeviceEditDialog({ device, open, onOpenChange, locationId }: DeviceEditDialogProps) {
+    const router = useRouter();
     const { updateDevice } = useRackStore();
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -49,6 +58,11 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
     const [primaryIp, setPrimaryIp] = useState("");
     const [description, setDescription] = useState("");
 
+    // Rack move state
+    const [rackOptions, setRackOptions] = useState<RackOption[]>([]);
+    const [rackSearch, setRackSearch] = useState("");
+    const [targetRackId, setTargetRackId] = useState<string>("");
+
     // Sync form fields when device changes
     useEffect(() => {
         if (device) {
@@ -58,9 +72,35 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
             setAssetTag(device.assetTag ?? "");
             setPrimaryIp(device.primaryIp ?? "");
             setDescription(device.description ?? "");
+            setTargetRackId(device.rackId ?? "");
+            setRackSearch("");
             setError(null);
         }
     }, [device]);
+
+    // Fetch racks in the same location when dialog opens
+    const fetchRacks = useCallback(async () => {
+        if (!locationId) return;
+        try {
+            const res = await fetch(`/api/racks/location/${locationId}`);
+            if (res.ok) {
+                const json = await res.json();
+                setRackOptions(json.data ?? []);
+            }
+        } catch {
+            // Non-critical — rack move feature just won't show options
+        }
+    }, [locationId]);
+
+    useEffect(() => {
+        if (open && locationId) {
+            fetchRacks();
+        }
+    }, [open, locationId, fetchRacks]);
+
+    const filteredRacks = rackOptions.filter((r) =>
+        r.name.toLowerCase().includes(rackSearch.toLowerCase()),
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,15 +109,26 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
         setSubmitting(true);
         setError(null);
         try {
-            await updateDevice(device.id, {
+            const updates: Record<string, unknown> = {
                 name: name.trim(),
                 status,
                 serialNumber: serialNumber.trim() || null,
                 assetTag: assetTag.trim() || null,
                 primaryIp: primaryIp.trim() || null,
                 description: description.trim() || null,
-            });
+            };
+
+            const isMovingRack = targetRackId && targetRackId !== device.rackId;
+            if (isMovingRack) {
+                updates.rackId = targetRackId;
+            }
+
+            await updateDevice(device.id, updates);
             onOpenChange(false);
+
+            if (isMovingRack) {
+                router.push(`/racks/${targetRackId}`);
+            }
         } catch {
             setError("저장에 실패했습니다. 다시 시도해주세요.");
         } finally {
@@ -86,6 +137,10 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
     };
 
     if (!device) return null;
+
+    const currentRackName = rackOptions.find((r) => r.id === device.rackId)?.name;
+    const targetRackName = rackOptions.find((r) => r.id === targetRackId)?.name;
+    const isMovingRack = targetRackId && targetRackId !== device.rackId;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -151,6 +206,52 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
                             rows={3}
                         />
                     </div>
+
+                    {locationId && rackOptions.length > 0 && (
+                        <>
+                            <Separator />
+                            <div className="space-y-2">
+                                <Label>랙 이동</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    현재 랙: <span className="font-medium">{currentRackName ?? device.rackId}</span>
+                                </p>
+                                <Input
+                                    placeholder="랙 이름 검색..."
+                                    value={rackSearch}
+                                    onChange={(e) => setRackSearch(e.target.value)}
+                                />
+                                {rackSearch && (
+                                    <div className="max-h-40 overflow-y-auto rounded-md border bg-popover text-sm shadow-md">
+                                        {filteredRacks.length === 0 ? (
+                                            <p className="p-2 text-muted-foreground text-center">결과 없음</p>
+                                        ) : (
+                                            filteredRacks.map((r) => (
+                                                <button
+                                                    key={r.id}
+                                                    type="button"
+                                                    className={`w-full px-3 py-2 text-left hover:bg-accent hover:text-accent-foreground transition-colors ${
+                                                        targetRackId === r.id ? "bg-accent font-medium" : ""
+                                                    }`}
+                                                    onClick={() => {
+                                                        setTargetRackId(r.id);
+                                                        setRackSearch("");
+                                                    }}
+                                                >
+                                                    {r.name}
+                                                </button>
+                                            ))
+                                        )}
+                                    </div>
+                                )}
+                                {isMovingRack && (
+                                    <p className="text-xs text-primary">
+                                        → <span className="font-medium">{targetRackName}</span>으로 이동 예정
+                                    </p>
+                                )}
+                            </div>
+                        </>
+                    )}
+
                     {error && (
                         <p className="text-sm text-destructive">{error}</p>
                     )}
@@ -164,7 +265,7 @@ export function DeviceEditDialog({ device, open, onOpenChange }: DeviceEditDialo
                             취소
                         </Button>
                         <Button type="submit" disabled={submitting || !name.trim()}>
-                            {submitting ? "저장 중..." : "저장"}
+                            {submitting ? "저장 중..." : isMovingRack ? "저장 및 이동" : "저장"}
                         </Button>
                     </DialogFooter>
                 </form>

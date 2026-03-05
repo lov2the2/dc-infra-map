@@ -111,7 +111,12 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
-- `components/floor-plan/` — Floor plan visualization (floor-plan-grid, rack-card, floor-plan-canvas with useMemo-based derived state instead of useEffect for performance); floor space management (floor-space-manager, floor-space-config-form, floor-space-grid, floor-space-cell-dialog)
+- `components/floor-plan/` — Floor plan visualization with rack selection and responsive views:
+  - `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; `handlePositionChange` updates state on PATCH success and propagates changes to all tabs
+  - `floor-plan-grid.tsx` — Horizontal scrollable rack card row (responsive layout); user-configurable racks-per-view setting (localStorage: `dcim:floor-plan:racks-per-view`, default 4); settings bar position toggle (localStorage: `dcim:floor-plan:settings-pos`); selected rack smooth-scrolls to center
+  - `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected
+  - `floor-plan-canvas.tsx` — 2D SVG drag-and-drop visualization (useMemo-based derived state); includes "Saving..." badge during PATCH request; syncs cross-tab rack selection via `selectedRackId` prop
+  - floor space management: `floor-space-manager.tsx` (3-tab UI), `floor-space-config-form.tsx` (grid size), `floor-space-grid.tsx` (cell visualization), `floor-space-cell-dialog.tsx` (context-aware placement dialog)
 - `components/rack/` — Rack elevation components (rack-elevation-client, multi-rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header); multi-rack-elevation-client provides a single DndContext for cross-rack drag-and-drop; rack-grid/rack-slot/device-block accept rackId props for multi-rack context
 - `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)

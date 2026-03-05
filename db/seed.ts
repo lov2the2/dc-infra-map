@@ -2,6 +2,7 @@ import "dotenv/config";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import bcrypt from "bcryptjs";
+import { eq } from "drizzle-orm";
 import * as schema from "./schema";
 
 async function seed() {
@@ -114,12 +115,31 @@ async function seed() {
     console.log("  Created location");
 
     // Racks (10 racks)
+    // Floor grid layout (posX = col, posY = row):
+    //   Row 0: A01(0,0)  A02(1,0)  A03(2,0)  A04(3,0)   ← server racks
+    //   Row 1: A05(0,1)  A06(1,1)  A07(2,1)             ← server racks
+    //   Row 2: A08(0,2)  A09(1,2)  A10(2,2)             ← network racks
+    const rackLayout = [
+        { posX: 0, posY: 0 }, // A01
+        { posX: 1, posY: 0 }, // A02
+        { posX: 2, posY: 0 }, // A03
+        { posX: 3, posY: 0 }, // A04
+        { posX: 0, posY: 1 }, // A05
+        { posX: 1, posY: 1 }, // A06
+        { posX: 2, posY: 1 }, // A07
+        { posX: 0, posY: 2 }, // A08
+        { posX: 1, posY: 2 }, // A09
+        { posX: 2, posY: 2 }, // A10
+    ];
+
     const rackValues = Array.from({ length: 10 }, (_, i) => ({
         name: `Rack-A${String(i + 1).padStart(2, "0")}`,
         locationId: serverRoom?.id ?? "",
         tenantId: tenant?.id,
         type: i < 7 ? ("server" as const) : ("network" as const),
         uHeight: 42,
+        posX: rackLayout[i].posX,
+        posY: rackLayout[i].posY,
     }));
 
     const racksInserted = await db
@@ -135,6 +155,19 @@ async function seed() {
                   where: (r, { eq }) => eq(r.locationId, serverRoom?.id ?? ""),
               });
     console.log(`  Created/found ${createdRacks.length} racks`);
+
+    // Apply grid positions to existing racks that have no position set yet (idempotent)
+    const sortedRacks = [...createdRacks].sort((a, b) => a.name.localeCompare(b.name));
+    for (let i = 0; i < sortedRacks.length && i < rackLayout.length; i++) {
+        const rack = sortedRacks[i];
+        if (rack.posX === null || rack.posY === null) {
+            await db
+                .update(schema.racks)
+                .set({ posX: rackLayout[i].posX, posY: rackLayout[i].posY })
+                .where(eq(schema.racks.id, rack.id));
+        }
+    }
+    console.log("  Applied floor positions to racks");
 
     // Device Types
     const manufacturerRows = await db.query.manufacturers.findMany();
