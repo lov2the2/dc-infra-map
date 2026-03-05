@@ -178,7 +178,8 @@ Tenant management components (tenant-table, tenant-form, tenant-delete-button).
 
 Floor plan visualization (floor-plan-grid, rack-card, floor-plan-canvas with useMemo-based derived state instead of useEffect for performance); floor space management:
 - `floor-plan-client.tsx` — Server component wrapper; manages rack position state via `useState(racks)`; `handlePositionChange` updates state on PATCH success and propagates changes to all three tabs (Grid View, 2D Map, Floor Spaces)
-- `floor-space-manager.tsx` — Manages floor space UI with 3 tabs (Grid View, 2D Map, Floor Spaces); `handleRackClick` routes rack cells to `/racks/{id}` page
+- `floor-plan-canvas.tsx` — 2D visualization with unplaced racks (posX/posY = null) rendered as 50% opacity boxes with dashed borders and "(unplaced)" text label; placed racks rendered with solid style; legend indicates unplaced state
+- `floor-space-manager.tsx` — Manages floor space UI with 3 tabs (Grid View, 2D Map, Floor Spaces); displays "Unplaced Racks (N)" section above grid with Badge chips for each unplaced rack; `handleRackClick` routes rack cells to `/racks/{id}` page
 - `floor-space-grid.tsx` — Floor space grid visualization; rack cells trigger `onRackClick(rack)` (→ `/racks/{id}`); empty cells trigger `onCellClick(cell)` (→ cell creation dialog)
 - `floor-space-cell-dialog.tsx` — Context-aware dialog: for empty cells, displays "Place Rack Here" mode with unplaced racks Select dropdown; on confirm, PATCHes rack `posX`/`posY` instead of creating a floor cell
 - `floor-space-config-form.tsx` — Grid size (gridCols/gridRows) configuration
