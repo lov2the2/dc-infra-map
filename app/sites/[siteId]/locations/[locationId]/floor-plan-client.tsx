@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LayoutGrid, Map, Grid3x3 } from "lucide-react";
 import { FloorPlanGrid } from "@/components/floor-plan/floor-plan-grid";
@@ -29,13 +30,20 @@ export function FloorPlanClient({
     gridRows,
     floorCells,
 }: FloorPlanClientProps) {
+    const [rackPositions, setRackPositions] = useState<RackWithCount[]>(racks);
+
     const handlePositionChange = async (rackId: string, posX: number, posY: number) => {
         try {
-            await fetch(`/api/racks/${rackId}`, {
+            const res = await fetch(`/api/racks/${rackId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ posX, posY }),
             });
+            if (res.ok) {
+                setRackPositions((prev) =>
+                    prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
+                );
+            }
         } catch {
             // silently ignore
         }
@@ -59,14 +67,14 @@ export function FloorPlanClient({
             </TabsList>
             <TabsContent value="grid" className="mt-4">
                 <FloorPlanGrid
-                    racks={racks}
+                    racks={rackPositions}
                     siteId={siteId}
                     locationId={locationId}
                 />
             </TabsContent>
             <TabsContent value="2d" className="mt-4">
                 <FloorPlanCanvas
-                    racks={racks}
+                    racks={rackPositions}
                     onPositionChange={handlePositionChange}
                 />
             </TabsContent>
@@ -76,7 +84,8 @@ export function FloorPlanClient({
                     initialGridCols={gridCols}
                     initialGridRows={gridRows}
                     initialCells={floorCells}
-                    racks={racks}
+                    racks={rackPositions}
+                    onRackPositionUpdate={handlePositionChange}
                 />
             </TabsContent>
         </Tabs>

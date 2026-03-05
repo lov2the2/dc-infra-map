@@ -13,6 +13,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { Loader2, Trash2 } from "lucide-react";
 import type { LocationFloorCell } from "@/types/entities";
 
@@ -34,6 +41,9 @@ interface FloorSpaceCellDialogProps {
     createPosition?: { posX: number; posY: number } | null;
     onSaved: (cell: LocationFloorCell) => void;
     onDeleted?: (cellId: string) => void;
+    // Rack placement (only shown for new floor spaces)
+    availableRacks?: Array<{ id: string; name: string }>;
+    onRackPositionUpdate?: (rackId: string, posX: number, posY: number) => Promise<void>;
 }
 
 export function FloorSpaceCellDialog({
@@ -44,6 +54,8 @@ export function FloorSpaceCellDialog({
     createPosition,
     onSaved,
     onDeleted,
+    availableRacks,
+    onRackPositionUpdate,
 }: FloorSpaceCellDialogProps) {
     const isEditing = !!cell;
     const posX = cell?.posX ?? createPosition?.posX ?? 0;
@@ -55,6 +67,7 @@ export function FloorSpaceCellDialog({
     const [saving, setSaving] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
 
     // Reset form when dialog opens
     useEffect(() => {
@@ -63,6 +76,7 @@ export function FloorSpaceCellDialog({
             setIsUnavailable(cell?.isUnavailable ?? false);
             setNotes(cell?.notes ?? "");
             setError(null);
+            setSelectedRackId(null);
         }
     }, [open, cell]);
 
@@ -138,6 +152,20 @@ export function FloorSpaceCellDialog({
         }
     };
 
+    const handlePlaceRack = async () => {
+        if (!selectedRackId || !onRackPositionUpdate) return;
+        setSaving(true);
+        setError(null);
+        try {
+            await onRackPositionUpdate(selectedRackId, posX, posY);
+            onOpenChange(false);
+        } catch {
+            setError("Failed to place rack");
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const title = isEditing
         ? `Edit Floor Space (Col ${posX + 1}, Row ${posY + 1})`
         : `New Floor Space at (Col ${posX + 1}, Row ${posY + 1})`;
@@ -187,6 +215,38 @@ export function FloorSpaceCellDialog({
                         />
                     </div>
 
+                    {!isEditing && availableRacks && availableRacks.length > 0 && (
+                        <>
+                            <div className="relative">
+                                <div className="absolute inset-0 flex items-center">
+                                    <span className="w-full border-t" />
+                                </div>
+                                <div className="relative flex justify-center text-xs uppercase">
+                                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label>Place a rack at this position</Label>
+                                <Select
+                                    value={selectedRackId ?? ""}
+                                    onValueChange={(v) => setSelectedRackId(v || null)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a rack to place here..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableRacks.map((rack) => (
+                                            <SelectItem key={rack.id} value={rack.id}>
+                                                {rack.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </>
+                    )}
+
                     {error && (
                         <p className="text-sm text-destructive">{error}</p>
                     )}
@@ -216,12 +276,17 @@ export function FloorSpaceCellDialog({
                     >
                         Cancel
                     </Button>
-                    <Button onClick={handleSave} disabled={saving || deleting}>
+                    <Button
+                        onClick={selectedRackId ? handlePlaceRack : handleSave}
+                        disabled={saving || deleting}
+                    >
                         {saving ? (
                             <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                 Saving...
                             </>
+                        ) : selectedRackId ? (
+                            "Place Rack Here"
                         ) : isEditing ? (
                             "Save Changes"
                         ) : (

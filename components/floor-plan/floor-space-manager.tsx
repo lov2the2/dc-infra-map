@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { FloorSpaceConfigForm } from "./floor-space-config-form";
 import { FloorSpaceGrid } from "./floor-space-grid";
 import { FloorSpaceCellDialog } from "./floor-space-cell-dialog";
@@ -19,6 +20,7 @@ interface FloorSpaceManagerProps {
     initialGridRows: number;
     initialCells: LocationFloorCell[];
     racks: RackPosition[];
+    onRackPositionUpdate?: (rackId: string, posX: number, posY: number) => Promise<void>;
 }
 
 export function FloorSpaceManager({
@@ -27,7 +29,9 @@ export function FloorSpaceManager({
     initialGridRows,
     initialCells,
     racks,
+    onRackPositionUpdate,
 }: FloorSpaceManagerProps) {
+    const router = useRouter();
     const [gridCols, setGridCols] = useState(initialGridCols);
     const [gridRows, setGridRows] = useState(initialGridRows);
     const [cells, setCells] = useState<LocationFloorCell[]>(initialCells);
@@ -36,6 +40,11 @@ export function FloorSpaceManager({
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedCell, setSelectedCell] = useState<LocationFloorCell | null>(null);
     const [createPosition, setCreatePosition] = useState<{ posX: number; posY: number } | null>(null);
+
+    const unplacedRacks = useMemo(
+        () => racks.filter((r) => r.posX === null || r.posY === null),
+        [racks],
+    );
 
     const handleConfigSaved = useCallback((cols: number, rows: number) => {
         setGridCols(cols);
@@ -52,6 +61,10 @@ export function FloorSpaceManager({
         }
         setDialogOpen(true);
     }, []);
+
+    const handleRackClick = useCallback((rack: RackPosition) => {
+        router.push(`/racks/${rack.id}`);
+    }, [router]);
 
     const handleCellSaved = useCallback((savedCell: LocationFloorCell) => {
         setCells((prev) => {
@@ -86,6 +99,7 @@ export function FloorSpaceManager({
                 cells={cells}
                 racks={racks}
                 onCellClick={handleCellClick}
+                onRackClick={handleRackClick}
             />
 
             <FloorSpaceCellDialog
@@ -96,6 +110,8 @@ export function FloorSpaceManager({
                 createPosition={createPosition}
                 onSaved={handleCellSaved}
                 onDeleted={handleCellDeleted}
+                availableRacks={unplacedRacks}
+                onRackPositionUpdate={onRackPositionUpdate}
             />
         </div>
     );

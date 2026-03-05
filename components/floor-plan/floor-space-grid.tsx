@@ -17,6 +17,7 @@ interface FloorSpaceGridProps {
     cells: LocationFloorCell[];
     racks?: RackPosition[];
     onCellClick: (posX: number, posY: number, cell: LocationFloorCell | null) => void;
+    onRackClick?: (rack: RackPosition) => void;
 }
 
 export function FloorSpaceGrid({
@@ -25,6 +26,7 @@ export function FloorSpaceGrid({
     cells,
     racks = [],
     onCellClick,
+    onRackClick,
 }: FloorSpaceGridProps) {
     // Build a lookup map: "posX,posY" -> cell
     const cellMap = useMemo(() => {
@@ -85,7 +87,13 @@ export function FloorSpaceGrid({
                                           ? `Empty cell at column ${colIdx + 1}, row ${rowIdx + 1}`
                                           : `${label} — ${isUnavailable ? "unavailable" : "available"}`
                                 }
-                                onClick={() => onCellClick(colIdx, rowIdx, cell)}
+                                onClick={() => {
+                                    if (rack) {
+                                        onRackClick?.(rack);
+                                    } else {
+                                        onCellClick(colIdx, rowIdx, cell);
+                                    }
+                                }}
                                 className={cn(
                                     "h-10 w-10 rounded text-xs font-medium border transition-colors",
                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
