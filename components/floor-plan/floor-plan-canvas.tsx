@@ -23,11 +23,13 @@ interface RackPosition {
 interface FloorPlanCanvasProps {
     racks: RackPosition[];
     onPositionChange: (rackId: string, posX: number, posY: number) => Promise<void>;
+    /** Grid columns — must match location.gridCols so 2D Map and Floor Spaces share the same coordinate space. */
+    gridCols?: number;
+    /** Grid rows — must match location.gridRows so 2D Map and Floor Spaces share the same coordinate space. */
+    gridRows?: number;
 }
 
 const CELL_SIZE = 60;
-const GRID_COLS = 20;
-const GRID_ROWS = 15;
 const INITIAL_ZOOM = 1;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 3;
@@ -48,7 +50,7 @@ function computeDefaultPositions(
     return result;
 }
 
-export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProps) {
+export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRows = 15 }: FloorPlanCanvasProps) {
     const [zoom, setZoom] = useState(INITIAL_ZOOM);
     const [pan, setPan] = useState({ x: 40, y: 40 });
     const [showGrid, setShowGrid] = useState(true);
@@ -140,14 +142,15 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
             const svgY = (e.clientY - svgRect.top - pan.y) / zoom;
             const rawX = (svgX - dragOffset.x) / CELL_SIZE;
             const rawY = (svgY - dragOffset.y) / CELL_SIZE;
-            const snappedX = Math.max(0, Math.round(rawX));
-            const snappedY = Math.max(0, Math.round(rawY));
+            // Clamp to grid bounds so positions always fit within Floor Spaces grid
+            const snappedX = Math.max(0, Math.min(gridCols - 1, Math.round(rawX)));
+            const snappedY = Math.max(0, Math.min(gridRows - 1, Math.round(rawY)));
             setDragOverrides((prev) => ({
                 ...prev,
                 [rack.id]: { x: snappedX, y: snappedY },
             }));
         },
-        [draggingId, pan, zoom, dragOffset],
+        [draggingId, pan, zoom, dragOffset, gridCols, gridRows],
     );
 
     const handleRackPointerUp = useCallback(
@@ -175,8 +178,8 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
         setSelectedRack(null);
     }, []);
 
-    const canvasWidth = GRID_COLS * CELL_SIZE;
-    const canvasHeight = GRID_ROWS * CELL_SIZE;
+    const canvasWidth = gridCols * CELL_SIZE;
+    const canvasHeight = gridRows * CELL_SIZE;
 
     const getUtilizationColor = (rack: RackPosition) => {
         const util = rack.usedU / rack.uHeight;
@@ -231,7 +234,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                         {/* Grid lines */}
                         {showGrid && (
                             <g stroke="#1e293b" strokeWidth={1 / zoom}>
-                                {Array.from({ length: GRID_COLS + 1 }, (_, i) => (
+                                {Array.from({ length: gridCols + 1 }, (_, i) => (
                                     <line
                                         key={`v${i}`}
                                         x1={i * CELL_SIZE}
@@ -240,7 +243,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                         y2={canvasHeight}
                                     />
                                 ))}
-                                {Array.from({ length: GRID_ROWS + 1 }, (_, i) => (
+                                {Array.from({ length: gridRows + 1 }, (_, i) => (
                                     <line
                                         key={`h${i}`}
                                         x1={0}

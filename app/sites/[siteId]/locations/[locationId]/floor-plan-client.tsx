@@ -33,19 +33,37 @@ export function FloorPlanClient({
     const [rackPositions, setRackPositions] = useState<RackWithCount[]>(racks);
 
     const handlePositionChange = async (rackId: string, posX: number, posY: number) => {
+        // Capture original for revert on failure
+        const original = rackPositions.find((r) => r.id === rackId);
+        const origPosX = original?.posX ?? null;
+        const origPosY = original?.posY ?? null;
+
+        // Optimistic update: immediately sync all three views
+        setRackPositions((prev) =>
+            prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
+        );
+
         try {
             const res = await fetch(`/api/racks/${rackId}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ posX, posY }),
             });
-            if (res.ok) {
+            if (!res.ok) {
+                // Revert on server failure
                 setRackPositions((prev) =>
-                    prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
+                    prev.map((r) =>
+                        r.id === rackId ? { ...r, posX: origPosX, posY: origPosY } : r,
+                    ),
                 );
             }
         } catch {
-            // silently ignore
+            // Revert on network error
+            setRackPositions((prev) =>
+                prev.map((r) =>
+                    r.id === rackId ? { ...r, posX: origPosX, posY: origPosY } : r,
+                ),
+            );
         }
     };
 
@@ -65,20 +83,24 @@ export function FloorPlanClient({
                     Floor Spaces
                 </TabsTrigger>
             </TabsList>
-            <TabsContent value="grid" className="mt-4">
+            {/* forceMount keeps components mounted when switching tabs,
+                preserving local state (e.g. dragOverrides in FloorPlanCanvas). */}
+            <TabsContent value="grid" className="mt-4" forceMount>
                 <FloorPlanGrid
                     racks={rackPositions}
                     siteId={siteId}
                     locationId={locationId}
                 />
             </TabsContent>
-            <TabsContent value="2d" className="mt-4">
+            <TabsContent value="2d" className="mt-4" forceMount>
                 <FloorPlanCanvas
                     racks={rackPositions}
                     onPositionChange={handlePositionChange}
+                    gridCols={gridCols}
+                    gridRows={gridRows}
                 />
             </TabsContent>
-            <TabsContent value="floor-spaces" className="mt-4">
+            <TabsContent value="floor-spaces" className="mt-4" forceMount>
                 <FloorSpaceManager
                     locationId={locationId}
                     initialGridCols={gridCols}
