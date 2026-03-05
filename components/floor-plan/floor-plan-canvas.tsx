@@ -23,13 +23,11 @@ interface RackPosition {
 interface FloorPlanCanvasProps {
     racks: RackPosition[];
     onPositionChange: (rackId: string, posX: number, posY: number) => Promise<void>;
-    /** Grid columns — must match location.gridCols so 2D Map and Floor Spaces share the same coordinate space. */
-    gridCols?: number;
-    /** Grid rows — must match location.gridRows so 2D Map and Floor Spaces share the same coordinate space. */
-    gridRows?: number;
 }
 
 const CELL_SIZE = 60;
+const GRID_COLS = 20;
+const GRID_ROWS = 15;
 const INITIAL_ZOOM = 1;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 3;
@@ -50,7 +48,7 @@ function computeDefaultPositions(
     return result;
 }
 
-export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRows = 15 }: FloorPlanCanvasProps) {
+export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProps) {
     const [zoom, setZoom] = useState(INITIAL_ZOOM);
     const [pan, setPan] = useState({ x: 40, y: 40 });
     const [showGrid, setShowGrid] = useState(true);
@@ -142,15 +140,14 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
             const svgY = (e.clientY - svgRect.top - pan.y) / zoom;
             const rawX = (svgX - dragOffset.x) / CELL_SIZE;
             const rawY = (svgY - dragOffset.y) / CELL_SIZE;
-            // Clamp to grid bounds so positions always fit within Floor Spaces grid
-            const snappedX = Math.max(0, Math.min(gridCols - 1, Math.round(rawX)));
-            const snappedY = Math.max(0, Math.min(gridRows - 1, Math.round(rawY)));
+            const snappedX = Math.max(0, Math.round(rawX));
+            const snappedY = Math.max(0, Math.round(rawY));
             setDragOverrides((prev) => ({
                 ...prev,
                 [rack.id]: { x: snappedX, y: snappedY },
             }));
         },
-        [draggingId, pan, zoom, dragOffset, gridCols, gridRows],
+        [draggingId, pan, zoom, dragOffset],
     );
 
     const handleRackPointerUp = useCallback(
@@ -178,8 +175,8 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
         setSelectedRack(null);
     }, []);
 
-    const canvasWidth = gridCols * CELL_SIZE;
-    const canvasHeight = gridRows * CELL_SIZE;
+    const canvasWidth = GRID_COLS * CELL_SIZE;
+    const canvasHeight = GRID_ROWS * CELL_SIZE;
 
     const getUtilizationColor = (rack: RackPosition) => {
         const util = rack.usedU / rack.uHeight;
@@ -234,7 +231,7 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                         {/* Grid lines */}
                         {showGrid && (
                             <g stroke="#1e293b" strokeWidth={1 / zoom}>
-                                {Array.from({ length: gridCols + 1 }, (_, i) => (
+                                {Array.from({ length: GRID_COLS + 1 }, (_, i) => (
                                     <line
                                         key={`v${i}`}
                                         x1={i * CELL_SIZE}
@@ -243,7 +240,7 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                                         y2={canvasHeight}
                                     />
                                 ))}
-                                {Array.from({ length: gridRows + 1 }, (_, i) => (
+                                {Array.from({ length: GRID_ROWS + 1 }, (_, i) => (
                                     <line
                                         key={`h${i}`}
                                         x1={0}
@@ -261,7 +258,6 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                             const rotation = rack.rotation ?? 0;
                             const isDragging = draggingId === rack.id;
                             const isSelected = selectedRack?.id === rack.id;
-                            const isUnplaced = rack.posX === null || rack.posY === null;
                             const utilization = Math.round(
                                 (rack.usedU / rack.uHeight) * 100,
                             );
@@ -278,7 +274,6 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                                     transform={`translate(${px}, ${py}) rotate(${rotation}, ${rw / 2}, ${rh / 2})`}
                                     style={{
                                         cursor: isDragging ? "grabbing" : "grab",
-                                        opacity: isUnplaced ? 0.5 : 1,
                                     }}
                                     onPointerDown={(e) =>
                                         handleRackPointerDown(e, rack)
@@ -304,22 +299,19 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                                         width={rw}
                                         height={rh}
                                         rx={4}
-                                        fill={isDragging ? "#312e81" : isUnplaced ? "#0f172a" : "#1e293b"}
+                                        fill={isDragging ? "#312e81" : "#1e293b"}
                                         stroke={
                                             isSelected
                                                 ? "#818cf8"
                                                 : isDragging
                                                   ? "#6366f1"
-                                                  : isUnplaced
-                                                    ? "#475569"
-                                                    : "#334155"
+                                                  : "#334155"
                                         }
                                         strokeWidth={
                                             isSelected || isDragging
                                                 ? 2 / zoom
                                                 : 1 / zoom
                                         }
-                                        strokeDasharray={isUnplaced && !isDragging ? `${6 / zoom} ${3 / zoom}` : undefined}
                                     />
                                     {/* Utilization bar */}
                                     <rect
@@ -364,20 +356,6 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                                     >
                                         {rack.uHeight}U
                                     </text>
-                                    {/* Unplaced label */}
-                                    {isUnplaced && (
-                                        <text
-                                            x={rw / 2}
-                                            y={rh / 2 + 20}
-                                            textAnchor="middle"
-                                            dominantBaseline="middle"
-                                            fontSize={Math.min(8, CELL_SIZE * 0.13)}
-                                            fill="#64748b"
-                                            style={{ userSelect: "none", pointerEvents: "none" }}
-                                        >
-                                            (unplaced)
-                                        </text>
-                                    )}
                                 </g>
                             );
                         })}
@@ -455,10 +433,6 @@ export function FloorPlanCanvas({ racks, onPositionChange, gridCols = 20, gridRo
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-1.5 rounded bg-red-500" />
                         <span>&gt;90%</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <div className="w-3 h-3 rounded border-2 border-dashed border-slate-500 opacity-50 bg-slate-900" />
-                        <span>Unplaced</span>
                     </div>
                 </div>
             </div>
