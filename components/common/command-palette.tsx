@@ -62,8 +62,14 @@ export function CommandPalette() {
             fetch("/api/tenants").then((r) => r.json()),
             fetch("/api/locations").then((r) => r.json()),
         ])
-            .then(([sites, racks, devices, tenants, locations]) => {
-                setResults({ sites, racks, devices, tenants, locations });
+            .then(([sitesJson, racksJson, devicesJson, tenantsJson, locationsJson]) => {
+                setResults({
+                    sites: sitesJson.data ?? [],
+                    racks: racksJson.data ?? [],
+                    devices: devicesJson.data ?? [],
+                    tenants: tenantsJson.data ?? [],
+                    locations: locationsJson.data ?? [],
+                });
             })
             .catch(() => {
                 // Silently handle fetch errors; show empty results
