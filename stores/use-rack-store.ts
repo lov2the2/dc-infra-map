@@ -17,6 +17,7 @@ interface RackState {
     moveDevice: (deviceId: string, newPosition: number) => Promise<void>;
     moveDeviceBetweenRacks: (deviceId: string, sourceRackId: string, targetRackId: string, newPosition: number) => Promise<void>;
     updateRackPosition: (rackId: string, posX: number, posY: number) => Promise<void>;
+    updateDevice: (deviceId: string, updates: Record<string, unknown>) => Promise<void>;
     setLoading: (loading: boolean) => void;
 }
 
@@ -139,6 +140,48 @@ export const useRackStore = create<RackState>()(
                 });
             } catch {
                 // silently ignore - position will be reloaded on next fetch
+            }
+        },
+        updateDevice: async (deviceId, updates) => {
+            // Optimistic update in racks array
+            set((state) => {
+                for (const rack of state.racks) {
+                    const device = rack.devices.find((d) => d.id === deviceId);
+                    if (device) {
+                        Object.assign(device, updates);
+                        break;
+                    }
+                }
+                // Also update activeRack if it contains this device
+                if (state.activeRack) {
+                    const device = state.activeRack.devices.find((d) => d.id === deviceId);
+                    if (device) Object.assign(device, updates);
+                }
+            });
+            const res = await fetch(`/api/devices/${deviceId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updates),
+            });
+            if (!res.ok) {
+                // Rollback: refetch the affected rack
+                const rack = get().racks.find((r) => r.devices.some((d) => d.id === deviceId));
+                if (rack) {
+                    try {
+                        const rackRes = await fetch(`/api/racks/${rack.id}`);
+                        if (rackRes.ok) {
+                            const rackData = await rackRes.json();
+                            set((state) => {
+                                const idx = state.racks.findIndex((r) => r.id === rack.id);
+                                if (idx !== -1) state.racks[idx] = rackData.data;
+                                if (state.activeRack?.id === rack.id) state.activeRack = rackData.data;
+                            });
+                        }
+                    } catch {
+                        // Rollback fetch failed silently
+                    }
+                }
+                throw new Error("Failed to update device");
             }
         },
         setLoading: (loading) => set((state) => { state.isLoading = loading; }),

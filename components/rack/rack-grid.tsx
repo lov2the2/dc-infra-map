@@ -12,9 +12,10 @@ function uPositionToGridRow(position: number, uHeight: number, rackHeight: numbe
 interface RackGridProps {
     rack: RackWithDevices;
     activeFace: "front" | "rear";
+    onDeviceClick?: (device: Device & { deviceType: DeviceType }) => void;
 }
 
-export function RackGrid({ rack, activeFace }: RackGridProps) {
+export function RackGrid({ rack, activeFace, onDeviceClick }: RackGridProps) {
     const rackHeight = rack.uHeight;
 
     const faceDevices = rack.devices.filter(
@@ -75,6 +76,7 @@ export function RackGrid({ rack, activeFace }: RackGridProps) {
                             startRow={startRow}
                             uHeight={device.deviceType.uHeight}
                             sourceRackId={rack.id}
+                            onEditClick={onDeviceClick}
                         />
                     );
                 })}

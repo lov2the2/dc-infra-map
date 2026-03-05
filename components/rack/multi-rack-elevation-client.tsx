@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
     DndContext,
     PointerSensor,
@@ -10,9 +10,10 @@ import {
     type DragStartEvent,
 } from "@dnd-kit/core";
 import { useRackStore } from "@/stores/use-rack-store";
-import type { RackWithDevices } from "@/types/entities";
+import type { RackWithDevices, Device, DeviceType } from "@/types/entities";
 import { RackGrid } from "./rack-grid";
 import { RackFaceToggle } from "./rack-face-toggle";
+import { DeviceEditDialog } from "./device-edit-dialog";
 
 interface Props {
     initialRacks: RackWithDevices[];
@@ -27,6 +28,14 @@ export function MultiRackElevationClient({ initialRacks }: Props) {
         setDragOverSlot,
         moveDeviceBetweenRacks,
     } = useRackStore();
+
+    const [editingDevice, setEditingDevice] = useState<(Device & { deviceType: DeviceType }) | null>(null);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+
+    const handleDeviceClick = (device: Device & { deviceType: DeviceType }) => {
+        setEditingDevice(device);
+        setEditDialogOpen(true);
+    };
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -100,11 +109,20 @@ export function MultiRackElevationClient({ initialRacks }: Props) {
                     {displayRacks.map((rack) => (
                         <div key={rack.id} className="flex-shrink-0 space-y-2">
                             <div className="text-sm font-semibold text-center">{rack.name}</div>
-                            <RackGrid rack={rack} activeFace={activeFace} />
+                            <RackGrid
+                                rack={rack}
+                                activeFace={activeFace}
+                                onDeviceClick={handleDeviceClick}
+                            />
                         </div>
                     ))}
                 </div>
             </DndContext>
+            <DeviceEditDialog
+                device={editingDevice}
+                open={editDialogOpen}
+                onOpenChange={setEditDialogOpen}
+            />
         </div>
     );
 }

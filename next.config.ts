@@ -6,7 +6,9 @@ const nextConfig: NextConfig = {
         const coreApiUrl = process.env.CORE_API_URL ?? "http://localhost:8081";
         const powerServiceUrl = process.env.POWER_SERVICE_URL ?? "http://localhost:8080";
         const netopsUrl = process.env.NETWORK_OPS_URL ?? "http://localhost:8082";
-        return [
+        // Use fallback so Next.js route handlers in app/api/ take priority over Go service proxying.
+        // This allows local dev without running Go services (route handlers use Drizzle directly).
+        const routes = [
             // Core API Service
             { source: "/api/sites/:path*", destination: `${coreApiUrl}/sites/:path*` },
             { source: "/api/sites", destination: `${coreApiUrl}/sites` },
@@ -56,6 +58,7 @@ const nextConfig: NextConfig = {
             { source: "/api/audit-logs", destination: `${netopsUrl}/audit-logs` },
             { source: "/api/import/:path*", destination: `${netopsUrl}/import/:path*` },
         ];
+        return { fallback: routes };
     },
 };
 
