@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FloorSpaceConfigForm } from "./floor-space-config-form";
 import { FloorSpaceGrid } from "./floor-space-grid";
 import { FloorSpaceCellDialog } from "./floor-space-cell-dialog";
+import { Badge } from "@/components/ui/badge";
 import type { LocationFloorCell } from "@/types/entities";
 
 interface RackPosition {
@@ -92,6 +93,24 @@ export function FloorSpaceManager({
                 initialGridRows={gridRows}
                 onConfigSaved={handleConfigSaved}
             />
+
+            {unplacedRacks.length > 0 && (
+                <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">
+                        Unplaced Racks ({unplacedRacks.length})
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                        {unplacedRacks.map((rack) => (
+                            <Badge key={rack.id} variant="outline" className="text-xs">
+                                {rack.name}
+                            </Badge>
+                        ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        Click an empty cell below to place a rack at that position.
+                    </p>
+                </div>
+            )}
 
             <FloorSpaceGrid
                 gridCols={gridCols}

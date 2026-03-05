@@ -258,6 +258,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                             const rotation = rack.rotation ?? 0;
                             const isDragging = draggingId === rack.id;
                             const isSelected = selectedRack?.id === rack.id;
+                            const isUnplaced = rack.posX === null || rack.posY === null;
                             const utilization = Math.round(
                                 (rack.usedU / rack.uHeight) * 100,
                             );
@@ -274,6 +275,7 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                     transform={`translate(${px}, ${py}) rotate(${rotation}, ${rw / 2}, ${rh / 2})`}
                                     style={{
                                         cursor: isDragging ? "grabbing" : "grab",
+                                        opacity: isUnplaced ? 0.5 : 1,
                                     }}
                                     onPointerDown={(e) =>
                                         handleRackPointerDown(e, rack)
@@ -299,19 +301,22 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                         width={rw}
                                         height={rh}
                                         rx={4}
-                                        fill={isDragging ? "#312e81" : "#1e293b"}
+                                        fill={isDragging ? "#312e81" : isUnplaced ? "#0f172a" : "#1e293b"}
                                         stroke={
                                             isSelected
                                                 ? "#818cf8"
                                                 : isDragging
                                                   ? "#6366f1"
-                                                  : "#334155"
+                                                  : isUnplaced
+                                                    ? "#475569"
+                                                    : "#334155"
                                         }
                                         strokeWidth={
                                             isSelected || isDragging
                                                 ? 2 / zoom
                                                 : 1 / zoom
                                         }
+                                        strokeDasharray={isUnplaced && !isDragging ? `${6 / zoom} ${3 / zoom}` : undefined}
                                     />
                                     {/* Utilization bar */}
                                     <rect
@@ -356,6 +361,20 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                                     >
                                         {rack.uHeight}U
                                     </text>
+                                    {/* Unplaced label */}
+                                    {isUnplaced && (
+                                        <text
+                                            x={rw / 2}
+                                            y={rh / 2 + 20}
+                                            textAnchor="middle"
+                                            dominantBaseline="middle"
+                                            fontSize={Math.min(8, CELL_SIZE * 0.13)}
+                                            fill="#64748b"
+                                            style={{ userSelect: "none", pointerEvents: "none" }}
+                                        >
+                                            (unplaced)
+                                        </text>
+                                    )}
                                 </g>
                             );
                         })}
@@ -433,6 +452,10 @@ export function FloorPlanCanvas({ racks, onPositionChange }: FloorPlanCanvasProp
                     <div className="flex items-center gap-1">
                         <div className="w-3 h-1.5 rounded bg-red-500" />
                         <span>&gt;90%</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded border-2 border-dashed border-slate-500 opacity-50 bg-slate-900" />
+                        <span>Unplaced</span>
                     </div>
                 </div>
             </div>
