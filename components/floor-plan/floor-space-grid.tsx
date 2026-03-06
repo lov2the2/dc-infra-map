@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import type { LocationFloorCell } from "@/types/entities";
 
@@ -18,6 +18,7 @@ interface FloorSpaceGridProps {
     racks?: RackPosition[];
     onCellClick: (posX: number, posY: number, cell: LocationFloorCell | null) => void;
     onRackClick?: (rack: RackPosition) => void;
+    onRackDrop?: (rackId: string, posX: number, posY: number) => Promise<void>;
 }
 
 export function FloorSpaceGrid({
@@ -27,7 +28,12 @@ export function FloorSpaceGrid({
     racks = [],
     onCellClick,
     onRackClick,
+    onRackDrop,
 }: FloorSpaceGridProps) {
+    const [draggingRackId, setDraggingRackId] = useState<string | null>(null);
+    const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+    const [savingRackId, setSavingRackId] = useState<string | null>(null);
+
     // Build a lookup map: "posX,posY" -> cell
     const cellMap = useMemo(() => {
         const map = new Map<string, LocationFloorCell>();
@@ -47,6 +53,43 @@ export function FloorSpaceGrid({
         }
         return map;
     }, [racks]);
+
+    const handleRackDragStart = useCallback((e: React.DragEvent<HTMLButtonElement>, rack: RackPosition) => {
+        setDraggingRackId(rack.id);
+        e.dataTransfer.setData("text/plain", rack.id);
+        e.dataTransfer.effectAllowed = "move";
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+        setDraggingRackId(null);
+        setDragOverKey(null);
+    }, []);
+
+    const handleCellDragOver = useCallback((e: React.DragEvent<HTMLButtonElement>, key: string, targetRack: RackPosition | null) => {
+        if (!draggingRackId || targetRack) return; // Cannot drop on occupied rack cell
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        setDragOverKey(key);
+    }, [draggingRackId]);
+
+    const handleCellDragLeave = useCallback(() => {
+        setDragOverKey(null);
+    }, []);
+
+    const handleCellDrop = useCallback(async (e: React.DragEvent<HTMLButtonElement>, posX: number, posY: number, targetRack: RackPosition | null) => {
+        e.preventDefault();
+        if (targetRack) return; // Cannot drop on occupied rack cell
+        const rackId = e.dataTransfer.getData("text/plain");
+        if (!rackId || !onRackDrop) return;
+        setDragOverKey(null);
+        setDraggingRackId(null);
+        setSavingRackId(rackId);
+        try {
+            await onRackDrop(rackId, posX, posY);
+        } finally {
+            setSavingRackId(null);
+        }
+    }, [onRackDrop]);
 
     const totalCells = gridCols * gridRows;
 
@@ -70,53 +113,84 @@ export function FloorSpaceGrid({
             >
                 {Array.from({ length: gridRows }, (_, rowIdx) =>
                     Array.from({ length: gridCols }, (_, colIdx) => {
-                        const cell = cellMap.get(`${colIdx},${rowIdx}`) ?? null;
-                        const rack = rackMap.get(`${colIdx},${rowIdx}`) ?? null;
+                        const key = `${colIdx},${rowIdx}`;
+                        const cell = cellMap.get(key) ?? null;
+                        const rack = rackMap.get(key) ?? null;
                         const isEmpty = cell === null && rack === null;
                         const isUnavailable = cell?.isUnavailable === true;
+                        const isDragOver = dragOverKey === key;
+                        const isSaving = rack !== null && savingRackId === rack.id;
                         const label = rack?.name ?? cell?.name ?? `C${colIdx + 1}R${rowIdx + 1}`;
 
+                        if (rack) {
+                            // Rack cell: draggable, click navigates to rack
+                            return (
+                                <button
+                                    key={`${colIdx}-${rowIdx}`}
+                                    role="gridcell"
+                                    draggable={!!onRackDrop}
+                                    onDragStart={(e) => handleRackDragStart(e, rack)}
+                                    onDragEnd={handleDragEnd}
+                                    onClick={() => onRackClick?.(rack)}
+                                    className={cn(
+                                        "h-10 w-10 rounded text-xs font-medium border transition-colors",
+                                        "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                                        "bg-blue-100 border-blue-400 text-blue-800",
+                                        "dark:bg-blue-900/40 dark:border-blue-500 dark:text-blue-300",
+                                        draggingRackId === rack.id
+                                            ? "opacity-40 cursor-grabbing"
+                                            : onRackDrop
+                                              ? "hover:bg-blue-200 dark:hover:bg-blue-900/60 cursor-grab"
+                                              : "hover:bg-blue-200 dark:hover:bg-blue-900/60",
+                                    )}
+                                    title={`Rack: ${rack.name} (Col ${colIdx + 1}, Row ${rowIdx + 1})${onRackDrop ? " — drag to move" : ""}`}
+                                    aria-label={`Rack: ${rack.name} at column ${colIdx + 1}, row ${rowIdx + 1}`}
+                                >
+                                    <span className="truncate block px-0.5 leading-tight">
+                                        {isSaving ? "⟳" : label}
+                                    </span>
+                                </button>
+                            );
+                        }
+
+                        // Empty or floor-space cell: drop target + click to configure
                         return (
                             <button
                                 key={`${colIdx}-${rowIdx}`}
                                 role="gridcell"
                                 aria-label={
-                                    rack
-                                        ? `Rack: ${rack.name} at column ${colIdx + 1}, row ${rowIdx + 1}`
-                                        : isEmpty
-                                          ? `Empty cell at column ${colIdx + 1}, row ${rowIdx + 1}`
-                                          : `${label} — ${isUnavailable ? "unavailable" : "available"}`
+                                    isEmpty
+                                        ? `Empty cell at column ${colIdx + 1}, row ${rowIdx + 1}`
+                                        : `${label} — ${isUnavailable ? "unavailable" : "available"}`
                                 }
                                 onClick={() => {
-                                    if (rack) {
-                                        onRackClick?.(rack);
-                                    } else {
+                                    if (!draggingRackId) {
                                         onCellClick(colIdx, rowIdx, cell);
                                     }
                                 }}
+                                onDragOver={(e) => handleCellDragOver(e, key, null)}
+                                onDragLeave={handleCellDragLeave}
+                                onDrop={(e) => handleCellDrop(e, colIdx, rowIdx, null)}
                                 className={cn(
                                     "h-10 w-10 rounded text-xs font-medium border transition-colors",
                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    rack && [
-                                        "bg-blue-100 border-blue-400",
-                                        "hover:bg-blue-200",
-                                        "text-blue-800",
-                                        "dark:bg-blue-900/40 dark:border-blue-500 dark:text-blue-300",
-                                        "dark:hover:bg-blue-900/60",
+                                    isDragOver && [
+                                        "bg-indigo-100 border-indigo-500 border-2 text-indigo-800",
+                                        "dark:bg-indigo-900/40 dark:border-indigo-400 dark:text-indigo-300",
                                     ],
-                                    !rack && isEmpty && [
+                                    !isDragOver && isEmpty && [
                                         "bg-muted border-border",
                                         "hover:bg-muted/80 hover:border-muted-foreground/40",
                                         "text-muted-foreground",
                                     ],
-                                    !rack && !isEmpty && !isUnavailable && [
+                                    !isDragOver && !isEmpty && !isUnavailable && [
                                         "bg-green-100 border-green-400",
                                         "hover:bg-green-200",
                                         "text-green-800",
                                         "dark:bg-green-900/40 dark:border-green-600 dark:text-green-300",
                                         "dark:hover:bg-green-900/60",
                                     ],
-                                    !rack && !isEmpty && isUnavailable && [
+                                    !isDragOver && !isEmpty && isUnavailable && [
                                         "bg-red-100 border-red-400",
                                         "hover:bg-red-200",
                                         "text-red-800",
@@ -125,15 +199,15 @@ export function FloorSpaceGrid({
                                     ],
                                 )}
                                 title={
-                                    rack
-                                        ? `Rack: ${rack.name} (Col ${colIdx + 1}, Row ${rowIdx + 1})`
+                                    isDragOver
+                                        ? `Drop rack here (Col ${colIdx + 1}, Row ${rowIdx + 1})`
                                         : isEmpty
                                           ? `Click to create floor space at Col ${colIdx + 1}, Row ${rowIdx + 1}`
                                           : `${label}${isUnavailable ? " (unavailable)" : ""}`
                                 }
                             >
                                 <span className="truncate block px-0.5 leading-tight">
-                                    {isEmpty ? "+" : label}
+                                    {isDragOver ? "→" : isEmpty ? "+" : label}
                                 </span>
                             </button>
                         );
@@ -142,10 +216,10 @@ export function FloorSpaceGrid({
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3.5 w-3.5 rounded border border-border bg-muted" />
-                    Empty (click to create)
+                    Empty (click to configure)
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3.5 w-3.5 rounded border border-green-400 bg-green-100 dark:bg-green-900/40 dark:border-green-600" />
@@ -157,7 +231,7 @@ export function FloorSpaceGrid({
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3.5 w-3.5 rounded border border-blue-400 bg-blue-100 dark:bg-blue-900/40 dark:border-blue-500" />
-                    Rack
+                    Rack {onRackDrop ? "(drag to move)" : ""}
                 </div>
             </div>
         </div>

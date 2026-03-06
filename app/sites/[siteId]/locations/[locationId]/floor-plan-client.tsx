@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, Map, Grid3x3 } from "lucide-react";
+import { LayoutGrid, Grid3x3 } from "lucide-react";
 import { FloorPlanGrid } from "@/components/floor-plan/floor-plan-grid";
-import { FloorPlanCanvas } from "@/components/floor-plan/floor-plan-canvas";
 import { FloorSpaceManager } from "@/components/floor-plan/floor-space-manager";
 import type { Rack, LocationFloorCell } from "@/types/entities";
 
@@ -26,20 +25,22 @@ export function FloorPlanClient({
     racks,
     siteId,
     locationId,
-    gridCols,
-    gridRows,
-    floorCells,
+    gridCols: initialGridCols,
+    gridRows: initialGridRows,
+    floorCells: initialFloorCells,
 }: FloorPlanClientProps) {
     const [rackPositions, setRackPositions] = useState<RackWithCount[]>(racks);
     const [selectedRackId, setSelectedRackId] = useState<string | null>(null);
+    const [floorCells, setFloorCells] = useState<LocationFloorCell[]>(initialFloorCells);
+    const [gridCols, setGridCols] = useState(initialGridCols);
+    const [gridRows, setGridRows] = useState(initialGridRows);
 
     const handlePositionChange = async (rackId: string, posX: number, posY: number) => {
-        // Optimistic update: reflect new position immediately in Grid View and 2D Map
+        // Optimistic update: reflect new position immediately in all views
         setRackPositions((prev) =>
             prev.map((r) => (r.id === rackId ? { ...r, posX, posY } : r)),
         );
         try {
-            // Dedicated position route uses Drizzle ORM — works without Go Core API
             const res = await fetch(`/api/racks/${rackId}/position`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
@@ -53,6 +54,15 @@ export function FloorPlanClient({
         }
     };
 
+    const handleCellsChange = (updater: (prev: LocationFloorCell[]) => LocationFloorCell[]) => {
+        setFloorCells(updater);
+    };
+
+    const handleGridSizeChange = (cols: number, rows: number) => {
+        setGridCols(cols);
+        setGridRows(rows);
+    };
+
     return (
         <Tabs defaultValue="grid">
             <TabsList>
@@ -60,13 +70,9 @@ export function FloorPlanClient({
                     <LayoutGrid className="h-4 w-4" />
                     Grid View
                 </TabsTrigger>
-                <TabsTrigger value="2d" className="gap-2">
-                    <Map className="h-4 w-4" />
-                    2D Map
-                </TabsTrigger>
-                <TabsTrigger value="floor-spaces" className="gap-2">
+                <TabsTrigger value="floor-map" className="gap-2">
                     <Grid3x3 className="h-4 w-4" />
-                    Floor Spaces
+                    Floor Map
                 </TabsTrigger>
             </TabsList>
             <TabsContent value="grid" className="mt-4">
@@ -78,22 +84,16 @@ export function FloorPlanClient({
                     onSelectRack={setSelectedRackId}
                 />
             </TabsContent>
-            <TabsContent value="2d" className="mt-4">
-                <FloorPlanCanvas
-                    racks={rackPositions}
-                    onPositionChange={handlePositionChange}
-                    selectedRackId={selectedRackId}
-                    onRackSelect={setSelectedRackId}
-                />
-            </TabsContent>
-            <TabsContent value="floor-spaces" className="mt-4">
+            <TabsContent value="floor-map" className="mt-4">
                 <FloorSpaceManager
                     locationId={locationId}
-                    initialGridCols={gridCols}
-                    initialGridRows={gridRows}
-                    initialCells={floorCells}
+                    gridCols={gridCols}
+                    gridRows={gridRows}
+                    cells={floorCells}
                     racks={rackPositions}
                     onRackPositionUpdate={handlePositionChange}
+                    onCellsChange={handleCellsChange}
+                    onGridSizeChange={handleGridSizeChange}
                 />
             </TabsContent>
         </Tabs>

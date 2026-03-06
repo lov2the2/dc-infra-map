@@ -16,25 +16,27 @@ interface RackPosition {
 
 interface FloorSpaceManagerProps {
     locationId: string;
-    initialGridCols: number;
-    initialGridRows: number;
-    initialCells: LocationFloorCell[];
+    // Controlled props — state owned by FloorPlanClient so it persists across tab switches
+    gridCols: number;
+    gridRows: number;
+    cells: LocationFloorCell[];
     racks: RackPosition[];
     onRackPositionUpdate?: (rackId: string, posX: number, posY: number) => Promise<void>;
+    onCellsChange?: (updater: (prev: LocationFloorCell[]) => LocationFloorCell[]) => void;
+    onGridSizeChange?: (cols: number, rows: number) => void;
 }
 
 export function FloorSpaceManager({
     locationId,
-    initialGridCols,
-    initialGridRows,
-    initialCells,
+    gridCols,
+    gridRows,
+    cells,
     racks,
     onRackPositionUpdate,
+    onCellsChange,
+    onGridSizeChange,
 }: FloorSpaceManagerProps) {
     const router = useRouter();
-    const [gridCols, setGridCols] = useState(initialGridCols);
-    const [gridRows, setGridRows] = useState(initialGridRows);
-    const [cells, setCells] = useState<LocationFloorCell[]>(initialCells);
 
     // Dialog state
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -47,9 +49,8 @@ export function FloorSpaceManager({
     );
 
     const handleConfigSaved = useCallback((cols: number, rows: number) => {
-        setGridCols(cols);
-        setGridRows(rows);
-    }, []);
+        onGridSizeChange?.(cols, rows);
+    }, [onGridSizeChange]);
 
     const handleCellClick = useCallback((posX: number, posY: number, cell: LocationFloorCell | null) => {
         if (cell) {
@@ -67,22 +68,20 @@ export function FloorSpaceManager({
     }, [router]);
 
     const handleCellSaved = useCallback((savedCell: LocationFloorCell) => {
-        setCells((prev) => {
+        onCellsChange?.((prev) => {
             const idx = prev.findIndex((c) => c.id === savedCell.id);
             if (idx >= 0) {
-                // Update existing
                 const next = [...prev];
                 next[idx] = savedCell;
                 return next;
             }
-            // Add new
             return [...prev, savedCell];
         });
-    }, []);
+    }, [onCellsChange]);
 
     const handleCellDeleted = useCallback((cellId: string) => {
-        setCells((prev) => prev.filter((c) => c.id !== cellId));
-    }, []);
+        onCellsChange?.((prev) => prev.filter((c) => c.id !== cellId));
+    }, [onCellsChange]);
 
     return (
         <div className="space-y-6">
@@ -100,6 +99,7 @@ export function FloorSpaceManager({
                 racks={racks}
                 onCellClick={handleCellClick}
                 onRackClick={handleRackClick}
+                onRackDrop={onRackPositionUpdate}
             />
 
             <FloorSpaceCellDialog
