@@ -7,6 +7,7 @@ import { eq, isNull } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
 import { StatusBadge } from "@/components/common/status-badge";
 import { SiteActions } from "@/components/sites/site-actions";
+import { LocationActions } from "@/components/locations/location-actions";
 import {
     Card,
     CardContent,
@@ -14,7 +15,8 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Layers, ChevronRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Layers, ChevronRight, Plus } from "lucide-react";
 
 export default async function SiteDetailPage({
     params,
@@ -124,7 +126,15 @@ export default async function SiteDetailPage({
 
             {/* Locations list */}
             <div className="space-y-3">
-                <h2 className="text-xl font-semibold">Locations</h2>
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold">Locations</h2>
+                    <Button asChild size="sm">
+                        <Link href={`/sites/${siteId}/locations/new`}>
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Location
+                        </Link>
+                    </Button>
+                </div>
                 {site.locations.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
@@ -135,31 +145,33 @@ export default async function SiteDetailPage({
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {site.locations.map((location) => (
-                            <Link
-                                key={location.id}
-                                href={`/sites/${siteId}/locations/${location.id}`}
-                            >
-                                <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
-                                    <CardHeader className="pb-2">
-                                        <div className="flex items-center justify-between">
-                                            <CardTitle className="text-base line-clamp-1">
-                                                {location.name}
-                                            </CardTitle>
-                                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                                        </div>
-                                        {location.description && (
-                                            <CardDescription className="line-clamp-2">
-                                                {location.description}
-                                            </CardDescription>
-                                        )}
-                                    </CardHeader>
-                                    <CardContent>
-                                        <p className="text-xs text-muted-foreground">
-                                            View floor plan
-                                        </p>
-                                    </CardContent>
-                                </Card>
-                            </Link>
+                            <div key={location.id} className="relative group">
+                                <Link href={`/sites/${siteId}/locations/${location.id}`}>
+                                    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+                                        <CardHeader className="pb-2">
+                                            <div className="flex items-center justify-between">
+                                                <CardTitle className="text-base line-clamp-1">
+                                                    {location.name}
+                                                </CardTitle>
+                                                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                            </div>
+                                            {location.description && (
+                                                <CardDescription className="line-clamp-2">
+                                                    {location.description}
+                                                </CardDescription>
+                                            )}
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-xs text-muted-foreground">
+                                                View floor plan
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                    <LocationActions locationId={location.id} siteId={siteId} />
+                                </div>
+                            </div>
                         ))}
                     </div>
                 )}

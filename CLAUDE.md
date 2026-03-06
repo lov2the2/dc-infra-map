@@ -111,6 +111,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
+- `components/locations/` — Location management components (location-form, location-actions)
 - `components/floor-plan/` — Floor plan visualization with rack selection and responsive views:
   - `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; handles Grid View (FloorPlanGrid) and Floor Map (FloorSpaceManager) tabs; propagates `handlePositionChange` and `onCellSelect` to child components
   - `floor-plan-grid.tsx` — Horizontal scrollable rack card row (responsive layout); user-configurable racks-per-view setting (localStorage: `dcim:floor-plan:racks-per-view`, default 4); settings bar position toggle (localStorage: `dcim:floor-plan:settings-pos`); selected rack smooth-scrolls to center
@@ -142,7 +143,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 **API routes**: Next.js BFF proxies to Go microservices via `next.config.ts` rewrites. All proxied requests flow through `proxy.ts` which injects the `x-internal-secret` header. The `app/api/` directory only contains Next.js-native route handlers listed below; all other `/api/*` endpoints are handled entirely by Go microservices via rewrites (no `route.ts` files in Next.js).
 
-**Next.js route handlers** (files in `app/api/`):
+**Next.js route handlers** (files in `app/api/`, using Drizzle ORM directly):
 
 - `/api/auth/[...nextauth]` — NextAuth authentication (login/logout/session)
 - `/api/auth/register` — User self-registration (creates viewer role account with bcrypt password hashing)
@@ -150,6 +151,10 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
+- `/api/sites` — GET list + POST create (Drizzle ORM)
+- `/api/sites/[siteId]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/locations` — GET list (supports `?siteId=` filter) + POST create (Drizzle ORM)
+- `/api/locations/[locationId]` — GET + PATCH + DELETE (Drizzle ORM)
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
@@ -178,7 +183,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/sites/[siteId]` (site detail with location CRUD), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 
