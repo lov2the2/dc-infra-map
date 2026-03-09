@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/db";
-import { sites, locations } from "@/db/schema";
-import { eq, isNull } from "drizzle-orm";
+import { sites, locations, racks, locationFloorCells } from "@/db/schema";
+import { eq, isNull, isNotNull, and, inArray, count, sql } from "drizzle-orm";
 import { PageHeader } from "@/components/common/page-header";
 import { StatusBadge } from "@/components/common/status-badge";
 import { SiteActions } from "@/components/sites/site-actions";
@@ -45,6 +45,54 @@ export default async function SiteDetailPage({
     if (!site) {
         notFound();
     }
+
+    const locationIds = site.locations.map((l) => l.id);
+
+    // Query placed rack counts per location
+    const placedRackRows =
+        locationIds.length > 0
+            ? await db
+                  .select({
+                      locationId: racks.locationId,
+                      placedCount: count(),
+                  })
+                  .from(racks)
+                  .where(
+                      and(
+                          isNotNull(racks.posX),
+                          isNotNull(racks.posY),
+                          isNull(racks.deletedAt),
+                          inArray(racks.locationId, locationIds),
+                      ),
+                  )
+                  .groupBy(racks.locationId)
+            : [];
+
+    // Query unavailable cell counts per location
+    const unavailableCellRows =
+        locationIds.length > 0
+            ? await db
+                  .select({
+                      locationId: locationFloorCells.locationId,
+                      unavailableCount: count(),
+                  })
+                  .from(locationFloorCells)
+                  .where(
+                      and(
+                          inArray(locationFloorCells.locationId, locationIds),
+                          sql`${locationFloorCells.isUnavailable} = true`,
+                      ),
+                  )
+                  .groupBy(locationFloorCells.locationId)
+            : [];
+
+    // Build lookup maps
+    const placedRackMap = new Map<string, number>(
+        placedRackRows.map((r) => [r.locationId, r.placedCount]),
+    );
+    const unavailableCellMap = new Map<string, number>(
+        unavailableCellRows.map((r) => [r.locationId, r.unavailableCount]),
+    );
 
     return (
         <div className="container py-8 space-y-6">
@@ -144,35 +192,50 @@ export default async function SiteDetailPage({
                     </Card>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {site.locations.map((location) => (
-                            <div key={location.id} className="relative group">
-                                <Link href={`/sites/${siteId}/locations/${location.id}`}>
-                                    <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
-                                        <CardHeader className="pb-2">
-                                            <div className="flex items-center justify-between">
-                                                <CardTitle className="text-base line-clamp-1">
-                                                    {location.name}
-                                                </CardTitle>
-                                                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-                                            </div>
-                                            {location.description && (
-                                                <CardDescription className="line-clamp-2">
-                                                    {location.description}
-                                                </CardDescription>
-                                            )}
-                                        </CardHeader>
-                                        <CardContent>
-                                            <p className="text-xs text-muted-foreground">
-                                                View floor plan
-                                            </p>
-                                        </CardContent>
-                                    </Card>
-                                </Link>
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                                    <LocationActions locationId={location.id} siteId={siteId} />
+                        {site.locations.map((location) => {
+                            const placedRacks = placedRackMap.get(location.id) ?? 0;
+                            const unavailableCells = unavailableCellMap.get(location.id) ?? 0;
+                            const totalSlots =
+                                location.gridCols * location.gridRows;
+                            const totalAvailable = totalSlots - unavailableCells;
+                            const availableSlots = totalAvailable - placedRacks;
+
+                            return (
+                                <div key={location.id} className="relative group">
+                                    <Link href={`/sites/${siteId}/locations/${location.id}`}>
+                                        <Card className="h-full hover:shadow-md transition-shadow cursor-pointer group">
+                                            <CardHeader className="pb-2">
+                                                <div className="flex items-center justify-between">
+                                                    <CardTitle className="text-base line-clamp-1">
+                                                        {location.name}
+                                                    </CardTitle>
+                                                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                                                </div>
+                                                {location.description && (
+                                                    <CardDescription className="line-clamp-2">
+                                                        {location.description}
+                                                    </CardDescription>
+                                                )}
+                                            </CardHeader>
+                                            <CardContent>
+                                                <div className="space-y-1">
+                                                    <div className="flex items-baseline gap-1">
+                                                        <span className="text-lg font-semibold">{placedRacks}</span>
+                                                        <span className="text-xs text-muted-foreground">/ {totalAvailable} slots</span>
+                                                    </div>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {placedRacks} racks placed · {availableSlots} available · {unavailableCells} unavailable · total {totalSlots}
+                                                    </p>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    </Link>
+                                    <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                                        <LocationActions locationId={location.id} siteId={siteId} />
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

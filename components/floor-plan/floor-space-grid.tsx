@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import type { LocationFloorCell } from "@/types/entities";
 
@@ -19,6 +19,9 @@ interface FloorSpaceGridProps {
     onCellClick: (posX: number, posY: number, cell: LocationFloorCell | null) => void;
     onRackClick?: (rack: RackPosition) => void;
     onRackDrop?: (rackId: string, posX: number, posY: number) => Promise<void>;
+    selectionMode?: boolean;
+    selectedKeys?: Set<string>;
+    onSelectionChange?: (keys: Set<string>) => void;
 }
 
 export function FloorSpaceGrid({
@@ -29,10 +32,19 @@ export function FloorSpaceGrid({
     onCellClick,
     onRackClick,
     onRackDrop,
+    selectionMode = false,
+    selectedKeys = new Set(),
+    onSelectionChange,
 }: FloorSpaceGridProps) {
     const [draggingRackId, setDraggingRackId] = useState<string | null>(null);
     const [dragOverKey, setDragOverKey] = useState<string | null>(null);
     const [savingRackId, setSavingRackId] = useState<string | null>(null);
+
+    // Range selection state
+    const [isSelecting, setIsSelecting] = useState(false);
+    const [selectionStart, setSelectionStart] = useState<{ posX: number; posY: number } | null>(null);
+    const [selectionEnd, setSelectionEnd] = useState<{ posX: number; posY: number } | null>(null);
+    const gridRef = useRef<HTMLDivElement>(null);
 
     // Build a lookup map: "posX,posY" -> cell
     const cellMap = useMemo(() => {
@@ -53,6 +65,59 @@ export function FloorSpaceGrid({
         }
         return map;
     }, [racks]);
+
+    // Compute current rectangular selection keys while dragging
+    const activeSelectionKeys = useMemo(() => {
+        if (!isSelecting || !selectionStart || !selectionEnd) return null;
+        const minX = Math.min(selectionStart.posX, selectionEnd.posX);
+        const maxX = Math.max(selectionStart.posX, selectionEnd.posX);
+        const minY = Math.min(selectionStart.posY, selectionEnd.posY);
+        const maxY = Math.max(selectionStart.posY, selectionEnd.posY);
+        const keys = new Set<string>();
+        for (let y = minY; y <= maxY; y++) {
+            for (let x = minX; x <= maxX; x++) {
+                keys.add(`${x},${y}`);
+            }
+        }
+        return keys;
+    }, [isSelecting, selectionStart, selectionEnd]);
+
+    // Handle global mouseup to finalize selection even if released outside grid
+    useEffect(() => {
+        if (!selectionMode) return;
+        const handleMouseUp = () => {
+            if (isSelecting && selectionStart && selectionEnd) {
+                const minX = Math.min(selectionStart.posX, selectionEnd.posX);
+                const maxX = Math.max(selectionStart.posX, selectionEnd.posX);
+                const minY = Math.min(selectionStart.posY, selectionEnd.posY);
+                const maxY = Math.max(selectionStart.posY, selectionEnd.posY);
+                const keys = new Set<string>();
+                for (let y = minY; y <= maxY; y++) {
+                    for (let x = minX; x <= maxX; x++) {
+                        keys.add(`${x},${y}`);
+                    }
+                }
+                onSelectionChange?.(keys);
+            }
+            setIsSelecting(false);
+            setSelectionStart(null);
+            setSelectionEnd(null);
+        };
+        document.addEventListener("mouseup", handleMouseUp);
+        return () => document.removeEventListener("mouseup", handleMouseUp);
+    }, [selectionMode, isSelecting, selectionStart, selectionEnd, onSelectionChange]);
+
+    const handleCellMouseDown = useCallback((posX: number, posY: number) => {
+        if (!selectionMode) return;
+        setIsSelecting(true);
+        setSelectionStart({ posX, posY });
+        setSelectionEnd({ posX, posY });
+    }, [selectionMode]);
+
+    const handleCellMouseEnter = useCallback((posX: number, posY: number) => {
+        if (!selectionMode || !isSelecting) return;
+        setSelectionEnd({ posX, posY });
+    }, [selectionMode, isSelecting]);
 
     const handleRackDragStart = useCallback((e: React.DragEvent<HTMLButtonElement>, rack: RackPosition) => {
         setDraggingRackId(rack.id);
@@ -104,7 +169,8 @@ export function FloorSpaceGrid({
     return (
         <div className="overflow-auto">
             <div
-                className="grid gap-1 w-fit"
+                ref={gridRef}
+                className={cn("grid gap-1 w-fit", selectionMode && "select-none")}
                 style={{
                     gridTemplateColumns: `repeat(${gridCols}, minmax(40px, 1fr))`,
                 }}
@@ -121,6 +187,9 @@ export function FloorSpaceGrid({
                         const isDragOver = dragOverKey === key;
                         const isSaving = rack !== null && savingRackId === rack.id;
                         const label = rack?.name ?? cell?.name ?? `C${colIdx + 1}R${rowIdx + 1}`;
+                        const isSelected =
+                            selectionMode &&
+                            (activeSelectionKeys?.has(key) ?? selectedKeys.has(key));
 
                         if (rack) {
                             // Rack cell: draggable, click navigates to rack
@@ -128,22 +197,32 @@ export function FloorSpaceGrid({
                                 <button
                                     key={`${colIdx}-${rowIdx}`}
                                     role="gridcell"
-                                    draggable={!!onRackDrop}
-                                    onDragStart={(e) => handleRackDragStart(e, rack)}
-                                    onDragEnd={handleDragEnd}
-                                    onClick={() => onRackClick?.(rack)}
+                                    draggable={!selectionMode && !!onRackDrop}
+                                    onDragStart={!selectionMode ? (e) => handleRackDragStart(e, rack) : undefined}
+                                    onDragEnd={!selectionMode ? handleDragEnd : undefined}
+                                    onClick={!selectionMode ? () => onRackClick?.(rack) : undefined}
+                                    onMouseDown={() => handleCellMouseDown(colIdx, rowIdx)}
+                                    onMouseEnter={() => handleCellMouseEnter(colIdx, rowIdx)}
                                     className={cn(
                                         "h-10 w-10 rounded text-xs font-medium border transition-colors",
                                         "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                                         "bg-blue-100 border-blue-400 text-blue-800",
                                         "dark:bg-blue-900/40 dark:border-blue-500 dark:text-blue-300",
-                                        draggingRackId === rack.id
-                                            ? "opacity-40 cursor-grabbing"
-                                            : onRackDrop
-                                              ? "hover:bg-blue-200 dark:hover:bg-blue-900/60 cursor-grab"
-                                              : "hover:bg-blue-200 dark:hover:bg-blue-900/60",
+                                        !selectionMode && (
+                                            draggingRackId === rack.id
+                                                ? "opacity-40 cursor-grabbing"
+                                                : onRackDrop
+                                                  ? "hover:bg-blue-200 dark:hover:bg-blue-900/60 cursor-grab"
+                                                  : "hover:bg-blue-200 dark:hover:bg-blue-900/60"
+                                        ),
+                                        selectionMode && "cursor-crosshair hover:bg-blue-200 dark:hover:bg-blue-900/60",
+                                        isSelected && "ring-2 ring-indigo-500 ring-offset-1",
                                     )}
-                                    title={`Rack: ${rack.name} (Col ${colIdx + 1}, Row ${rowIdx + 1})${onRackDrop ? " — drag to move" : ""}`}
+                                    title={
+                                        selectionMode
+                                            ? `Rack: ${rack.name} (Col ${colIdx + 1}, Row ${rowIdx + 1})`
+                                            : `Rack: ${rack.name} (Col ${colIdx + 1}, Row ${rowIdx + 1})${onRackDrop ? " — drag to move" : ""}`
+                                    }
                                     aria-label={`Rack: ${rack.name} at column ${colIdx + 1}, row ${rowIdx + 1}`}
                                 >
                                     <span className="truncate block px-0.5 leading-tight">
@@ -164,26 +243,26 @@ export function FloorSpaceGrid({
                                         : `${label} — ${isUnavailable ? "unavailable" : "available"}`
                                 }
                                 onClick={() => {
+                                    if (selectionMode) return;
                                     if (!draggingRackId) {
                                         onCellClick(colIdx, rowIdx, cell);
                                     }
                                 }}
-                                onDragOver={(e) => handleCellDragOver(e, key, null)}
-                                onDragLeave={handleCellDragLeave}
-                                onDrop={(e) => handleCellDrop(e, colIdx, rowIdx, null)}
+                                onMouseDown={() => handleCellMouseDown(colIdx, rowIdx)}
+                                onMouseEnter={() => handleCellMouseEnter(colIdx, rowIdx)}
+                                onDragOver={!selectionMode ? (e) => handleCellDragOver(e, key, null) : undefined}
+                                onDragLeave={!selectionMode ? handleCellDragLeave : undefined}
+                                onDrop={!selectionMode ? (e) => handleCellDrop(e, colIdx, rowIdx, null) : undefined}
                                 className={cn(
                                     "h-10 w-10 rounded text-xs font-medium border transition-colors",
                                     "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                                    isDragOver && [
+                                    selectionMode && "cursor-crosshair",
+                                    !selectionMode && isDragOver && [
                                         "bg-indigo-100 border-indigo-500 border-2 text-indigo-800",
                                         "dark:bg-indigo-900/40 dark:border-indigo-400 dark:text-indigo-300",
                                     ],
-                                    !isDragOver && isEmpty && [
-                                        "bg-muted border-border",
-                                        "hover:bg-muted/80 hover:border-muted-foreground/40",
-                                        "text-muted-foreground",
-                                    ],
-                                    !isDragOver && !isEmpty && !isUnavailable && [
+                                    // Empty and available cells share the same green styling
+                                    !isDragOver && (isEmpty || (!isEmpty && !isUnavailable)) && [
                                         "bg-green-100 border-green-400",
                                         "hover:bg-green-200",
                                         "text-green-800",
@@ -197,9 +276,10 @@ export function FloorSpaceGrid({
                                         "dark:bg-red-900/40 dark:border-red-600 dark:text-red-300",
                                         "dark:hover:bg-red-900/60",
                                     ],
+                                    isSelected && "ring-2 ring-indigo-500 ring-offset-1",
                                 )}
                                 title={
-                                    isDragOver
+                                    !selectionMode && isDragOver
                                         ? `Drop rack here (Col ${colIdx + 1}, Row ${rowIdx + 1})`
                                         : isEmpty
                                           ? `Click to create floor space at Col ${colIdx + 1}, Row ${rowIdx + 1}`
@@ -207,7 +287,7 @@ export function FloorSpaceGrid({
                                 }
                             >
                                 <span className="truncate block px-0.5 leading-tight">
-                                    {isDragOver ? "→" : isEmpty ? "+" : label}
+                                    {!selectionMode && isDragOver ? "→" : isEmpty ? "" : label}
                                 </span>
                             </button>
                         );
@@ -218,12 +298,8 @@ export function FloorSpaceGrid({
             {/* Legend */}
             <div className="flex items-center gap-4 mt-4 text-xs text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1.5">
-                    <span className="inline-block h-3.5 w-3.5 rounded border border-border bg-muted" />
-                    Empty (click to configure)
-                </div>
-                <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3.5 w-3.5 rounded border border-green-400 bg-green-100 dark:bg-green-900/40 dark:border-green-600" />
-                    Available
+                    Available (click to configure)
                 </div>
                 <div className="flex items-center gap-1.5">
                     <span className="inline-block h-3.5 w-3.5 rounded border border-red-400 bg-red-100 dark:bg-red-900/40 dark:border-red-600" />

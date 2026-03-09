@@ -43,6 +43,7 @@ export function FloorPlanGrid({
     useEffect(() => {
         const savedCols = localStorage.getItem(LS_COLUMNS);
         const parsed = parseInt(savedCols ?? "", 10);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         if (!isNaN(parsed) && parsed >= 1 && parsed <= 20) setColumns(parsed);
 
         const savedPos = localStorage.getItem(LS_SETTINGS_POS);
