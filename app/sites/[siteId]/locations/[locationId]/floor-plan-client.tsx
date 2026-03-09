@@ -82,6 +82,7 @@ export function FloorPlanClient({
                     locationId={locationId}
                     selectedRackId={selectedRackId}
                     onSelectRack={setSelectedRackId}
+                    onPositionChange={handlePositionChange}
                 />
             </TabsContent>
             <TabsContent value="floor-map" className="mt-4">

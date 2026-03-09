@@ -25,12 +25,14 @@ interface FloorPlanGridProps {
     locationId: string;
     selectedRackId?: string | null;
     onSelectRack?: (rackId: string | null) => void;
+    onPositionChange?: (rackId: string, posX: number, posY: number) => void;
 }
 
 export function FloorPlanGrid({
     racks,
     selectedRackId,
     onSelectRack,
+    onPositionChange,
 }: FloorPlanGridProps) {
     // Always start with server-safe defaults to avoid hydration mismatches.
     // localStorage values are applied after mount via useEffect.
@@ -165,6 +167,7 @@ export function FloorPlanGrid({
                             usedU={rack.usedU}
                             isSelected={selectedRackId === rack.id}
                             onSelect={() => onSelectRack?.(rack.id)}
+                            onPositionChange={onPositionChange}
                         />
                     </div>
                 ))}
