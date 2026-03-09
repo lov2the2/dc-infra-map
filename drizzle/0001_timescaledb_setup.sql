@@ -15,6 +15,12 @@
 -- Enable TimescaleDB extension
 CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE;
 
+-- TimescaleDB requires the partitioning column (recorded_at) to be part of
+-- any unique index or primary key. Drop the existing PK and recreate it as
+-- a composite (id, recorded_at) so hypertable conversion can proceed.
+ALTER TABLE power_readings DROP CONSTRAINT IF EXISTS power_readings_pkey;
+ALTER TABLE power_readings ADD PRIMARY KEY (id, recorded_at);
+
 -- Convert power_readings to a hypertable partitioned by recorded_at
 -- chunk_time_interval: 1 week (suitable for IoT/monitoring data)
 SELECT create_hypertable(

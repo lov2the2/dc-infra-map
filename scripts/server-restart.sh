@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# server-restart.sh — Restart the Next.js development server
+# server-restart.sh — Restart Docker Postgres + Next.js development server
 
 set -euo pipefail
 
@@ -14,13 +14,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 info() { echo -e "${GREEN}[server-restart]${NC} $*"; }
 
 # ── Stop ──────────────────────────────────────────────────────────────────────
-info "Stopping development server..."
+info "Stopping server and database..."
 bash "${SCRIPT_DIR}/server-stop.sh"
 
-# ── Brief pause to let OS release the port ───────────────────────────────────
+# ── Brief pause ───────────────────────────────────────────────────────────────
 info "Waiting 1 second before restarting..."
 sleep 1
 
 # ── Start ─────────────────────────────────────────────────────────────────────
-info "Starting development server..."
+info "Starting server and database..."
 bash "${SCRIPT_DIR}/server-start.sh"
