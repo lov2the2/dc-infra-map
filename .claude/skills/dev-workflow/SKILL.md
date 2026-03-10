@@ -1,6 +1,6 @@
 ---
 name: dev-workflow
-description: "전체 개발 사이클 자동화: 개발 → 테스트 → 문서 → 커밋"
+description: "전체 개발 사이클 자동화: 브랜치 → 개발 → 테스트 → 문서 → 커밋 → PR"
 allowed-tools:
   [
     'Read',
@@ -16,6 +16,10 @@ allowed-tools:
     'Bash(git diff:*)',
     'Bash(git log:*)',
     'Bash(git push:*)',
+    'Bash(git checkout:*)',
+    'Bash(git branch:*)',
+    'Bash(gh pr:*)',
+    'Bash(gh auth:*)',
     'Bash(curl:*)',
     'Glob',
     'Grep',
@@ -41,6 +45,17 @@ Complete feature development cycle with automated agent orchestration. Supports 
 /dev-workflow --resume                       # Resume from checkpoint after rate limit interrupt
 ```
 
+## Branch Naming Convention
+
+| Type | Pattern | Example |
+| ---- | ------- | ------- |
+| Feature | `feat/<kebab-desc>` | `feat/floor-plan-drag-drop` |
+| Bug fix | `fix/<kebab-desc>` | `fix/rack-card-display` |
+| Docs | `docs/<kebab-desc>` | `docs/update-roadmap` |
+| Chore | `chore/<kebab-desc>` | `chore/docker-setup` |
+
+Derive the branch name from the commit type prefix in the feature description.
+
 ## Execution Modes
 
 ### Solo Mode (default)
@@ -61,6 +76,16 @@ Parallel teammate spawning for faster execution. Use when:
 Detect team mode via `--team` flag in the user's invocation argument.
 
 ## Solo Mode Workflow
+
+### Stage 0: Feature Branch
+
+Create a feature branch before any development:
+
+```bash
+git checkout -b feat/<kebab-desc>
+```
+
+Save branch name to checkpoint immediately.
 
 ### Stage 1: Development
 
@@ -86,12 +111,12 @@ Use `docs-refiner` agent to update:
 - README.md (Korean) - user-facing changes
 - CLAUDE.md (English) - architecture/technical changes
 
-### Stage 4: Git Commit
+### Stage 4: Commit & PR
 
-Execute `/commit` skill:
-
-- Conventional commit format with emoji
-- Semantic versioning
+1. Execute `/commit` skill — conventional commit with emoji
+2. Push feature branch: `git push -u origin <branch-name>`
+3. Create PR: `gh pr create` with Summary + Test plan body
+4. Output PR URL to user
 
 ## Team Mode Workflow
 
@@ -100,6 +125,9 @@ Lead (you) orchestrates teammates:
 
 [Lock] touch /tmp/claude-dev-workflow.lock  (suppress intermediate notifications)
 
+Phase 0 - Branch:
+  └─ Lead creates feature branch
+
 Phase 1 - Development:
   └─ Teammate: app-developer (owns all source files)
 
@@ -107,8 +135,8 @@ Phase 2 - Verification (after Phase 1 completes):
   ├─ Teammate: software-tester (read-only verification)
   └─ Teammate: docs-refiner (owns *.md)
 
-Phase 3 - Commit:
-  └─ Lead synthesizes results -> /commit
+Phase 3 - Commit & PR:
+  └─ Lead synthesizes results -> /commit -> push -> gh pr create
 
 [Unlock] rm -f /tmp/claude-dev-workflow.lock  (re-enable notifications)
 ```
@@ -119,10 +147,20 @@ Team mode generates multiple intermediate notifications (teammate idle, phase tr
 that can confuse the user. A lock file gates the Notification hook:
 
 - **Create lock** at workflow start: `touch /tmp/claude-dev-workflow.lock`
-- **Remove lock** after Phase 3 commit (or on error): `rm -f /tmp/claude-dev-workflow.lock`
+- **Remove lock** after Phase 3 PR creation (or on error): `rm -f /tmp/claude-dev-workflow.lock`
 - While lock exists, `.claude/hooks/notification-hook.sh` suppresses OS notifications
 - Stale locks (>2 hours) are auto-cleaned by the hook script
 - Solo mode does NOT use the lock (notifications fire normally)
+
+### Phase 0: Feature Branch
+
+Create feature branch before spawning any agent:
+
+```bash
+git checkout -b feat/<kebab-desc>
+```
+
+Write checkpoint with branch name: `phase: "branch_created"`
 
 ### Phase 1: Development
 
@@ -168,14 +206,33 @@ After Phase 1 completes, spawn in parallel:
 After Phase 2 (software-tester + docs-refiner) completes, write checkpoint:
 `phase: "verification_done"`
 
-### Phase 3: Synthesize & Commit
+### Phase 3: Synthesize, Commit & PR
 
 1. Collect all deliverables from teammates
 2. Check for any blocking issues from software-tester
 3. If all clear, write checkpoint: `phase: "documentation_done"`, then execute `/commit` skill
-4. **Remove notification lock**: `rm -f /tmp/claude-dev-workflow.lock`
-5. **Remove checkpoint**: `rm -f /tmp/dcim-workflow-checkpoint.json`
-6. If issues found, **remove lock** and report to user (checkpoint remains for manual resume)
+4. Push feature branch: `git push -u origin <branch-name>`
+5. Create PR with `gh pr create`:
+
+```bash
+gh pr create --title "<commit title>" --body "$(cat <<'EOF'
+## Summary
+- <bullet points from feature description>
+
+## Test plan
+- [ ] npm run build passes
+- [ ] npm run lint passes
+- [ ] <manual test steps>
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+EOF
+)"
+```
+
+6. Output PR URL to user
+7. **Remove notification lock**: `rm -f /tmp/claude-dev-workflow.lock`
+8. **Remove checkpoint**: `rm -f /tmp/dcim-workflow-checkpoint.json`
+9. If issues found, **remove lock** and report to user (checkpoint remains for manual resume)
 
 ## Checkpoint Protocol
 
@@ -188,6 +245,7 @@ After Phase 2 (software-tester + docs-refiner) completes, write checkpoint:
   "phase": "development_done",
   "feature": "<original feature description>",
   "mode": "solo|team",
+  "branch": "feat/<kebab-desc>",
   "files_modified": ["app/foo/page.tsx", "components/foo/bar.tsx"],
   "timestamp": "2026-02-20T10:30:00Z"
 }
@@ -197,6 +255,7 @@ After Phase 2 (software-tester + docs-refiner) completes, write checkpoint:
 
 | Event | `phase` value written |
 | ----- | --------------------- |
+| Feature branch created | `"branch_created"` |
 | Phase 1 complete + gate passed | `"development_done"` |
 | Phase 2 complete | `"verification_done"` |
 | Pre-commit (Phase 3) | `"documentation_done"` |
@@ -209,6 +268,7 @@ echo '{
   "phase": "development_done",
   "feature": "<feature>",
   "mode": "solo",
+  "branch": "feat/<kebab-desc>",
   "files_modified": ["<file1>", "<file2>"],
   "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
 }' > /tmp/dcim-workflow-checkpoint.json
@@ -221,21 +281,23 @@ When invoked as `/dev-workflow --resume`:
 1. Read `/tmp/dcim-workflow-checkpoint.json`
 2. If file does not exist: "No checkpoint found. 처음부터 시작합니다." → ask for feature description
 3. If file exists: report the checkpoint state in Korean, then continue from the next phase:
-   - `"development_done"` → skip Phase 1, go to Phase 2 Verification Gate check, then Phase 2
-   - `"verification_done"` → skip Phases 1–2, go to Phase 3 Commit
-   - `"documentation_done"` → go directly to `/commit`
-4. Note: checkpoint does NOT conflict with the lock file (`/tmp/claude-dev-workflow.lock`)
+   - `"branch_created"` → skip Stage 0, restore branch from checkpoint, go to Phase 1
+   - `"development_done"` → restore branch, skip Phase 1, go to Phase 2 Verification Gate check, then Phase 2
+   - `"verification_done"` → restore branch, skip Phases 1–2, go to Phase 3 Commit & PR
+   - `"documentation_done"` → restore branch, go directly to `/commit` then push + PR
+4. Always restore `branch` from checkpoint and run `git checkout <branch>` before continuing
+5. Note: checkpoint does NOT conflict with the lock file (`/tmp/claude-dev-workflow.lock`)
    — they serve different purposes (checkpoint = resume state, lock = notification suppression)
 
 ## Usage Examples
 
 ```text
 # Solo mode (default)
-/dev-workflow "데이터센터 맵 컴포넌트 구현"
-/dev-workflow "사이트 헤더에 검색 기능 추가"
+/dev-workflow "feat: 데이터센터 맵 컴포넌트 구현"
+/dev-workflow "fix: 사이트 헤더 검색 버그 수정"
 
 # Team mode (parallel execution)
-/dev-workflow --team "데이터센터 인프라 대시보드 전체 구현"
+/dev-workflow --team "feat: 데이터센터 인프라 대시보드 전체 구현"
 
 # Resume after rate limit interrupt
 /dev-workflow --resume
@@ -245,17 +307,19 @@ When invoked as `/dev-workflow --resume`:
 
 1. Parse the user's feature request and detect flags (`--team`, `--resume`)
 2. If `--resume`: Follow Checkpoint Protocol resume flow (see above)
-3. If `--team`: Follow Team Mode Workflow (parallel phases)
-4. If solo: Follow Solo Mode Workflow (sequential stages)
-5. Write checkpoint at each phase boundary
-6. Report progress after each stage/phase completion
-7. If any stage fails, stop and report the error (remove lock, keep checkpoint for resume)
-8. Ask for confirmation before final commit
+3. Otherwise: **Always create a feature branch (Stage 0) before any development**
+4. If `--team`: Follow Team Mode Workflow (parallel phases)
+5. If solo: Follow Solo Mode Workflow (sequential stages)
+6. Write checkpoint at each phase boundary (include `branch` field)
+7. Report progress after each stage/phase completion
+8. Final output must include the PR URL
+9. If any stage fails, stop and report the error (remove lock, keep checkpoint for resume)
 
 ## Error Handling
 
 - If build/lint fails -> Stop and report failing checks
 - If documentation update fails -> Continue but warn
 - If commit fails -> Report error, suggest manual resolution
+- If PR creation fails -> Report error with manual `gh pr create` command for user to run
 - If a teammate fails -> Report which agent failed, allow manual retry
 - **CRITICAL (Team Mode)**: Always `rm -f /tmp/claude-dev-workflow.lock` on ANY error exit to re-enable notifications
