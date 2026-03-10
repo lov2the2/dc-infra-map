@@ -179,7 +179,7 @@ Tenant management components (tenant-table, tenant-form, tenant-delete-button).
 Floor plan visualization with rack selection and responsive views:
 - `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; `handlePositionChange` updates state on PATCH success and propagates changes to all tabs
 - `floor-plan-grid.tsx` — Horizontal scrollable rack card row (responsive layout); user-configurable racks-per-view setting (localStorage: `dcim:floor-plan:racks-per-view`, default 4); settings bar position toggle (localStorage: `dcim:floor-plan:settings-pos`); selected rack smooth-scrolls to center
-- `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected
+- `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected; renders `EditPositionForm` sub-component for position editing with Enter key support
 - `floor-plan-canvas.tsx` — 2D SVG drag-and-drop visualization (useMemo-based derived state); includes "Saving..." badge during PATCH request; syncs cross-tab rack selection via `selectedRackId` prop
 - floor space management: `floor-space-manager.tsx` (3-tab UI with Grid View, 2D Map, Floor Spaces), `floor-space-config-form.tsx` (grid size configuration), `floor-space-grid.tsx` (cell visualization), `floor-space-cell-dialog.tsx` (context-aware placement dialog)
 
@@ -201,7 +201,7 @@ Cable management components (table, filters, form, status badge, trace view, ter
 
 ### `components/reports/`
 
-Reports page components (export-card, export-filters, import-dialog, import-preview, import-result, schedule-table, schedule-form).
+Reports page components (export-card, export-filters, import-dialog [sends CSV file via FormData with `file` field to `/api/bulk-import/*` endpoints], import-preview, import-result, schedule-table, schedule-form).
 
 ### `components/topology/`
 
@@ -294,6 +294,8 @@ Files in `app/api/`:
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
+- `/api/bulk-import/sites` — POST bulk import sites via CSV (accepts `multipart/form-data` with `file` field or JSON body with `csv` string for backward compatibility; `?confirm=true` to commit, `?confirm=false` for validation-only)
+- `/api/bulk-import/tenants` — POST bulk import tenants via CSV (same protocol as sites)
 
 ### Proxied to Go Microservices
 

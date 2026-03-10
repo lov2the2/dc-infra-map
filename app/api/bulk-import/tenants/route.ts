@@ -20,15 +20,31 @@ function parseCsv(csvText: string): Record<string, string>[] {
     });
 }
 
+// Extract CSV text from either multipart/form-data (file field) or JSON body
+// ({ csv: string }).  The import dialog sends multipart/form-data exclusively,
+// but we keep JSON support for backward compatibility with direct API calls.
+async function extractCsv(req: NextRequest): Promise<string | null> {
+    const contentType = req.headers.get("content-type") ?? "";
+    if (contentType.includes("multipart/form-data")) {
+        const formData = await req.formData().catch(() => null);
+        const file = formData?.get("file");
+        if (!file || !(file instanceof Blob)) return null;
+        return file.text();
+    }
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body.csv !== "string") return null;
+    return body.csv;
+}
+
 export const POST = withAuthOnly(async (req: NextRequest) => {
     const confirm = req.nextUrl.searchParams.get("confirm") === "true";
 
-    const body = await req.json().catch(() => null);
-    if (!body || typeof body.csv !== "string") {
+    const csvText = await extractCsv(req);
+    if (!csvText) {
         return NextResponse.json({ error: "CSV data required" }, { status: 400 });
     }
 
-    const rows = parseCsv(body.csv);
+    const rows = parseCsv(csvText);
     if (rows.length === 0) {
         return NextResponse.json({ error: "No data rows found in CSV" }, { status: 400 });
     }

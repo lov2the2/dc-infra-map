@@ -68,28 +68,67 @@ export function ImportDialog({
         URL.revokeObjectURL(url);
     }
 
+    // Build a FormData payload with the CSV file as a "file" field.
+    // All import endpoints (Go multipart handlers and Next.js bulk-import routes)
+    // accept multipart/form-data with a "file" field containing the CSV blob.
+    function buildFormData(file: File): FormData {
+        const formData = new FormData();
+        formData.append("file", new Blob([file], { type: "text/csv" }), file.name);
+        return formData;
+    }
+
+    // Normalise the raw JSON response from any import endpoint into a consistent
+    // shape.  Go handlers return a flat { imported, errors } object while Next.js
+    // bulk-import handlers wrap their payload in a "data" key.
+    function normaliseResponse(result: Record<string, unknown>): {
+        valid: Record<string, unknown>[];
+        errors: { row: number; field: string; message: string }[];
+        imported: number;
+    } {
+        // Next.js bulk-import format: { data: { valid?, errors?, imported? } }
+        const payload = (result.data ?? result) as Record<string, unknown>;
+        return {
+            valid: (payload.valid as Record<string, unknown>[]) ?? [],
+            errors: (payload.errors as { row: number; field: string; message: string }[]) ?? [],
+            imported: (payload.imported as number) ?? 0,
+        };
+    }
+
     async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
 
         setState("validating");
         try {
-            const csvText = await file.text();
+            // Do NOT set Content-Type manually — the browser sets it with the
+            // correct multipart boundary when FormData is used.
             const response = await fetch(importEndpoint, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ csv: csvText }),
+                body: buildFormData(file),
             });
             const result = await response.json();
 
             if (!response.ok) {
-                setErrors([{ row: 0, field: "", message: result.error ?? "Validation failed" }]);
+                setErrors([{ row: 0, field: "", message: (result.error as string) ?? "Validation failed" }]);
                 setState("preview");
                 return;
             }
 
-            setValidRows(result.data.valid ?? []);
-            setErrors(result.data.errors ?? []);
+            const normalised = normaliseResponse(result as Record<string, unknown>);
+
+            // Go import handlers (devices, cables) have no validate-only mode —
+            // they import immediately and return { imported, errors } with no
+            // "valid" preview rows.  In that case skip the preview step and
+            // go straight to "done" so the data is not imported a second time.
+            if (normalised.valid.length === 0 && (normalised.imported > 0 || normalised.errors.length > 0)) {
+                setImportedCount(normalised.imported);
+                setErrors(normalised.errors);
+                setState("done");
+                return;
+            }
+
+            setValidRows(normalised.valid);
+            setErrors(normalised.errors);
             setState("preview");
         } catch {
             setErrors([{ row: 0, field: "", message: "Failed to process file" }]);
@@ -100,29 +139,23 @@ export function ImportDialog({
     async function handleConfirmImport() {
         setState("importing");
         try {
-            const csvText = await readFileFromInput();
-            if (!csvText) return;
+            const file = fileInputRef.current?.files?.[0];
+            if (!file) return;
 
             const response = await fetch(`${importEndpoint}?confirm=true`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ csv: csvText }),
+                body: buildFormData(file),
             });
             const result = await response.json();
 
-            setImportedCount(result.data?.imported ?? 0);
-            setErrors(result.data?.errors ?? []);
+            const normalised = normaliseResponse(result as Record<string, unknown>);
+            setImportedCount(normalised.imported);
+            setErrors(normalised.errors);
             setState("done");
         } catch {
             setErrors([{ row: 0, field: "", message: "Import failed" }]);
             setState("done");
         }
-    }
-
-    async function readFileFromInput(): Promise<string | null> {
-        const file = fileInputRef.current?.files?.[0];
-        if (!file) return null;
-        return file.text();
     }
 
     return (
