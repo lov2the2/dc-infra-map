@@ -30,14 +30,14 @@ export function RackCard({ rack, deviceCount, usedU, isSelected, onSelect, onPos
     const [editY, setEditY] = useState<string>('');
 
     // Reset edit fields whenever this card becomes selected or position changes.
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (isSelected) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditX(rack.posX?.toString() ?? '');
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEditY(rack.posY?.toString() ?? '');
         }
     }, [isSelected, rack.posX, rack.posY]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     const handlePositionApply = () => {
         const x = parseInt(editX, 10);

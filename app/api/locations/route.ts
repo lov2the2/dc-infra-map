@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { eq, isNull } from "drizzle-orm";
+import { isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { locations } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse, handleApiError } from "@/lib/api";
+import { successResponse, validationErrorResponse, handleApiError } from "@/lib/api";
 import { withAuth } from "@/lib/auth/with-auth";
 import { locationCreateSchema } from "@/lib/validators/location";
 
