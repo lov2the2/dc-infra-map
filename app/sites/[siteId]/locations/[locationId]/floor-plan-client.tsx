@@ -54,6 +54,44 @@ export function FloorPlanClient({
         }
     };
 
+    const handlePositionSwap = async (rackAId: string, rackBId: string) => {
+        const rackA = rackPositions.find((r) => r.id === rackAId);
+        const rackB = rackPositions.find((r) => r.id === rackBId);
+        if (!rackA || !rackB) return;
+
+        const aPosX = rackA.posX;
+        const aPosY = rackA.posY;
+        const bPosX = rackB.posX;
+        const bPosY = rackB.posY;
+
+        // Optimistic update: swap positions in state immediately
+        setRackPositions((prev) =>
+            prev.map((r) => {
+                if (r.id === rackAId) return { ...r, posX: bPosX, posY: bPosY };
+                if (r.id === rackBId) return { ...r, posX: aPosX, posY: aPosY };
+                return r;
+            }),
+        );
+
+        // Persist both changes in parallel
+        await Promise.all([
+            bPosX !== null && bPosY !== null
+                ? fetch(`/api/racks/${rackAId}/position`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ posX: bPosX, posY: bPosY }),
+                  }).catch((err) => console.error("Failed to update rack A position:", err))
+                : Promise.resolve(),
+            aPosX !== null && aPosY !== null
+                ? fetch(`/api/racks/${rackBId}/position`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ posX: aPosX, posY: aPosY }),
+                  }).catch((err) => console.error("Failed to update rack B position:", err))
+                : Promise.resolve(),
+        ]);
+    };
+
     const handleCellsChange = (updater: (prev: LocationFloorCell[]) => LocationFloorCell[]) => {
         setFloorCells(updater);
     };
@@ -83,6 +121,7 @@ export function FloorPlanClient({
                     selectedRackId={selectedRackId}
                     onSelectRack={setSelectedRackId}
                     onPositionChange={handlePositionChange}
+                    onPositionSwap={handlePositionSwap}
                 />
             </TabsContent>
             <TabsContent value="floor-map" className="mt-4">
