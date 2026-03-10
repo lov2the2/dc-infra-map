@@ -61,7 +61,7 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                             name="siteId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Site</FormLabel>
+                                    <FormLabel>Site <span className="text-destructive">*</span></FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
@@ -86,7 +86,7 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                                 name="personnelName"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input placeholder="Hong Gildong" {...field} />
                                         </FormControl>
@@ -127,7 +127,7 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                                 name="accessType"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Access Type</FormLabel>
+                                        <FormLabel>Access Type <span className="text-destructive">*</span></FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger>

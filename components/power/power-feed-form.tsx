@@ -64,7 +64,7 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 name="panelId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Panel</FormLabel>
+                                        <FormLabel>Panel <span className="text-destructive">*</span></FormLabel>
                                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                                             <FormControl>
                                                 <SelectTrigger><SelectValue placeholder="Select panel" /></SelectTrigger>
@@ -106,7 +106,7 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl><Input placeholder="A-Feed Primary" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -138,7 +138,7 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 name="maxAmps"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Max Amps</FormLabel>
+                                        <FormLabel>Max Amps <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.1" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
                                         </FormControl>
@@ -151,7 +151,7 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 name="ratedKw"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Rated kW</FormLabel>
+                                        <FormLabel>Rated kW <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.1" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
                                         </FormControl>

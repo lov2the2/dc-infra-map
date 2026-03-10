@@ -125,7 +125,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -137,7 +137,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="password">
-                                Password {isEditing && "(leave blank to keep current)"}
+                                Password {!isEditing && <span className="text-destructive">*</span>}{isEditing && "(leave blank to keep current)"}
                             </Label>
                             <Input
                                 id="password"

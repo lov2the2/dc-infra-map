@@ -74,7 +74,7 @@ export function TenantForm({ tenant }: TenantFormProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input placeholder="Acme Corporation" {...field} />
                                     </FormControl>
@@ -87,7 +87,7 @@ export function TenantForm({ tenant }: TenantFormProps) {
                             name="slug"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Slug</FormLabel>
+                                    <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="acme-corporation"

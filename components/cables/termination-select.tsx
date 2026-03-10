@@ -65,9 +65,18 @@ export function TerminationSelect({
         return fetchedOptions;
     }, [apiUrl, fetchedForUrl, fetchedOptions]);
 
+    const labelParts = label.split(" *");
+    const hasAsterisk = label.endsWith(" *");
+
     return (
         <div className="space-y-2">
-            <label className="text-sm font-medium">{label}</label>
+            <label className="text-sm font-medium">
+                {hasAsterisk ? (
+                    <>{labelParts[0]} <span className="text-destructive">*</span></>
+                ) : (
+                    label
+                )}
+            </label>
             <div className="flex gap-2">
                 <Select value={typeValue} onValueChange={onTypeChange}>
                     <SelectTrigger className="w-40">

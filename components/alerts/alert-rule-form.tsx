@@ -135,7 +135,7 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Rule Name</Label>
+                        <Label htmlFor="name">Rule Name <span className="text-destructive">*</span></Label>
                         <Input
                             id="name"
                             value={form.name}
@@ -146,7 +146,7 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ruleType">Rule Type</Label>
+                        <Label htmlFor="ruleType">Rule Type <span className="text-destructive">*</span></Label>
                         <Select value={form.ruleType} onValueChange={(v) => handleRuleTypeChange(v as AlertRuleType)}>
                             <SelectTrigger id="ruleType">
                                 <SelectValue />
@@ -178,7 +178,7 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="thresholdValue">
-                                Threshold {form.ruleType === "warranty_expiry" ? "(days)" : "(%)"}
+                                Threshold {form.ruleType === "warranty_expiry" ? "(days)" : "(%)"} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="thresholdValue"

@@ -91,7 +91,7 @@ export function CableForm() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="grid gap-4 md:grid-cols-2">
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Label</label>
+                            <label className="text-sm font-medium">Label <span className="text-destructive">*</span></label>
                             <Input
                                 value={label}
                                 onChange={(e) => setLabel(e.target.value)}
@@ -100,7 +100,7 @@ export function CableForm() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Cable Type</label>
+                            <label className="text-sm font-medium">Cable Type <span className="text-destructive">*</span></label>
                             <Select value={cableType} onValueChange={setCableType}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Select type" />
@@ -144,7 +144,7 @@ export function CableForm() {
                     </div>
 
                     <TerminationSelect
-                        label="Termination A"
+                        label="Termination A *"
                         typeValue={termAType}
                         idValue={termAId}
                         onTypeChange={setTermAType}
@@ -152,7 +152,7 @@ export function CableForm() {
                     />
 
                     <TerminationSelect
-                        label="Termination B"
+                        label="Termination B *"
                         typeValue={termBType}
                         idValue={termBId}
                         onTypeChange={setTermBType}

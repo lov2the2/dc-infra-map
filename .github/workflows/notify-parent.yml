@@ -1,0 +1,17 @@
+name: Notify Parent Update
+
+on:
+  push:
+    branches: [ main, master ]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch to Parent
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
+          repository: ${{ github.repository_owner }}/Project
+          event-type: update-submodule
+          client-payload: '{"submodule": "Study/side-project/dc-infra-map"}'
