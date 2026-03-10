@@ -91,8 +91,9 @@ Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`).
 
 ### `lib/validators/`
 
-Zod validation schemas (device, rack, tenant, location, access, power, cable, site):
+Zod validation schemas (device, rack, tenant, location, access, power, cable, site, manufacturer):
 - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
+- `manufacturer.ts` — Manufacturer schema with duplicate name detection
 
 ### `lib/export/`
 
@@ -174,6 +175,10 @@ Device management components (device-table with bulk select/status-change/delete
 ### `components/tenants/`
 
 Tenant management components (tenant-table, tenant-form, tenant-delete-button).
+
+### `components/manufacturers/`
+
+Manufacturer management components (manufacturer-table, manufacturer-form with duplicate name validation).
 
 ### `components/floor-plan/`
 
@@ -295,6 +300,9 @@ Files in `app/api/`:
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
+- `/api/manufacturers` — GET list + POST create (Drizzle ORM)
+- `/api/manufacturers/[id]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/manufacturers/search?q=&excludeId=` — GET search manufacturers by similar name (excludeId for edit form duplicate check)
 - `/api/bulk-import/sites` — POST bulk import sites via CSV (accepts `multipart/form-data` with `file` field or JSON body with `csv` string for backward compatibility; `?confirm=true` to commit, `?confirm=false` for validation-only)
 - `/api/bulk-import/tenants` — POST bulk import tenants via CSV (same protocol as sites)
 
@@ -353,6 +361,10 @@ All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card
 - `/sites` (site management)
 - `/regions` (region management)
 - `/devices` (device management)
+- `/manufacturers` (manufacturer management)
+- `/manufacturers/new` (create manufacturer)
+- `/manufacturers/[id]` (manufacturer detail)
+- `/manufacturers/[id]/edit` (edit manufacturer)
 - `/tenants` (tenant management)
 - `/access` (access log management)
 - `/power` (power monitoring dashboard)

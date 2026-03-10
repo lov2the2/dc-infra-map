@@ -82,8 +82,9 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
 - `lib/auth/with-auth.ts` — `withAuth(resource, action, handler)` HOF for API route auth+RBAC boilerplate; `withAuthOnly(handler)` for auth-only routes
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
-- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site)
+- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site, manufacturer)
   - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
+  - `manufacturer.ts` — Manufacturer schema with duplicate name detection
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts) — **legacy**: used by tests, no longer serves API routes directly
 - `lib/data-formatters.ts` — Date/null/status formatting utilities (`formatDate`, `formatDateTime`, `formatNullable`, `formatStatus`, `formatUnit`)
 - `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
@@ -112,6 +113,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
 - `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with cascading select reset on parent change, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
+- `components/manufacturers/` — Manufacturer management components (manufacturer-table, manufacturer-form with duplicate name validation)
 - `components/locations/` — Location management components (location-form, location-actions)
 - `components/floor-plan/` — Floor plan visualization with rack selection and responsive views:
   - `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; handles Grid View (FloorPlanGrid) and Floor Map (FloorSpaceManager) tabs; propagates `handlePositionChange` to both FloorPlanGrid and FloorSpaceManager for synchronized position editing across views, and `onCellSelect` to FloorSpaceManager
@@ -159,6 +161,9 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
+- `/api/manufacturers` — GET list + POST create (Drizzle ORM)
+- `/api/manufacturers/[id]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/manufacturers/search?q=&excludeId=` — GET search manufacturers by similar name (excludeId for edit form duplicate check)
 - `/api/bulk-import/sites` — POST bulk import sites via CSV (accepts `multipart/form-data` with `file` field or JSON body with `csv` string for backward compatibility; `?confirm=true` to commit, `?confirm=false` for validation-only)
 - `/api/bulk-import/tenants` — POST bulk import tenants via CSV (same protocol as sites)
 
@@ -186,7 +191,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/sites/[siteId]` (site detail with location CRUD), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/sites/[siteId]` (site detail with location CRUD), `/regions` (region management), `/devices` (device management), `/manufacturers` (manufacturer management), `/manufacturers/new` (create manufacturer), `/manufacturers/[id]` (manufacturer detail), `/manufacturers/[id]/edit` (edit manufacturer), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 
