@@ -79,7 +79,7 @@ export default function AlertsPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Alerts"
-                description="Monitor and manage infrastructure alerts and notification channels."
+                description="이상 상태 감지 규칙, 경보 이력, 알림 채널을 설정합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Alerts" },

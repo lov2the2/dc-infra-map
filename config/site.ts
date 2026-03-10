@@ -15,7 +15,7 @@ export const NAV_LINKS: NavLink[] = [
     { label: "Regions", href: "/regions" },
     { label: "Devices", href: "/devices" },
     { label: "Tenants", href: "/tenants" },
-    { label: "Access", href: "/access" },
+    { label: "Access Logs", href: "/access" },
     { label: "Power", href: "/power" },
     { label: "Cables", href: "/cables" },
     { label: "Topology", href: "/topology" },
@@ -49,7 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
     {
         label: "Operations",
         items: [
-            { label: "Access", href: "/access" },
+            { label: "Access Logs", href: "/access" },
             { label: "Reports", href: "/reports" },
             { label: "Alerts", href: "/alerts" },
         ],

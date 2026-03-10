@@ -91,7 +91,7 @@ export default async function DashboardPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Dashboard"
-                description="Overview of your data center infrastructure"
+                description="데이터센터 전체 현황을 한눈에 확인합니다."
             />
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {stats.map((stat) => {
