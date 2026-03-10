@@ -170,7 +170,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input {...field} placeholder="e.g., web-server-01" />
                                         </FormControl>
@@ -209,7 +209,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
 
                             {/* Manufacturer (virtual field for cascading) */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">Manufacturer</label>
+                                <label className="text-sm font-medium">Manufacturer <span className="text-destructive">*</span></label>
                                 <Select
                                     value={selectedManufacturerId}
                                     onValueChange={(v) => {
@@ -235,7 +235,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                 name="deviceTypeId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Device Type</FormLabel>
+                                        <FormLabel>Device Type <span className="text-destructive">*</span></FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
                                             value={field.value}
@@ -254,7 +254,11 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        <FormMessage />
+                                        {selectedManufacturerId ? (
+                                            <FormMessage />
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground">Select a manufacturer first</p>
+                                        )}
                                     </FormItem>
                                 )}
                             />
@@ -352,6 +356,9 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {!selectedSiteId && (
+                                    <p className="text-xs text-muted-foreground">Select a site first</p>
+                                )}
                             </div>
 
                             <FormField

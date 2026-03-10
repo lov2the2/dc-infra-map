@@ -94,7 +94,7 @@ export function SiteForm({ site }: SiteFormProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input placeholder="Seoul Data Center" {...field} />
                                     </FormControl>
@@ -107,7 +107,7 @@ export function SiteForm({ site }: SiteFormProps) {
                             name="slug"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Slug</FormLabel>
+                                    <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="seoul-data-center"

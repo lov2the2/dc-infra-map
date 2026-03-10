@@ -74,7 +74,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                             name="siteId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Site</FormLabel>
+                                    <FormLabel>Site <span className="text-destructive">*</span></FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger><SelectValue placeholder="Select site" /></SelectTrigger>
@@ -95,7 +95,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl><Input placeholder="Main Panel A" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -106,7 +106,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="slug"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Slug</FormLabel>
+                                        <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                         <FormControl><Input placeholder="main-panel-a" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -130,7 +130,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="ratedCapacityKw"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Capacity (kW)</FormLabel>
+                                        <FormLabel>Capacity (kW) <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.1" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
                                         </FormControl>

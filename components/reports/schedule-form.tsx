@@ -137,7 +137,7 @@ export function ScheduleForm({
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="schedule-name">Name</Label>
+                        <Label htmlFor="schedule-name">Name <span className="text-destructive">*</span></Label>
                         <Input
                             id="schedule-name"
                             value={name}
@@ -148,7 +148,7 @@ export function ScheduleForm({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="report-type">Report Type</Label>
+                        <Label htmlFor="report-type">Report Type <span className="text-destructive">*</span></Label>
                         <Select
                             value={reportType}
                             onValueChange={(value) =>
@@ -183,7 +183,7 @@ export function ScheduleForm({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="cron-expression">Cron Expression</Label>
+                        <Label htmlFor="cron-expression">Cron Expression <span className="text-destructive">*</span></Label>
                         <Input
                             id="cron-expression"
                             value={cronExpression}
