@@ -161,6 +161,7 @@ Shared components (page-header, status-badge, confirm-dialog, data-table, export
 - `route-error.tsx` — Shared error boundary for route `error.tsx` files (props: `title`, `error`, `reset`)
 - `table-loading.tsx` — Shared table skeleton loading for table-based route `loading.tsx` files (props: `rows`, `columns`)
 - `status-badge-factory.tsx` — Factory for creating typed status badge components
+- `export-button.tsx` — Export functionality wrapper with format selection (xlsx/xml); displays error state when export fails
 
 ### `components/admin/`
 
@@ -168,7 +169,7 @@ Admin components (user-table, user-form, user-role-badge).
 
 ### `components/devices/`
 
-Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log).
+Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with cascading select reset on parent change, device-audit-log).
 
 ### `components/tenants/`
 

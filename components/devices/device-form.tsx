@@ -92,6 +92,8 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
             setManufacturers(mfr.data ?? []);
             setSites(sit.data ?? []);
             setTenants(ten.data ?? []);
+        }).catch(() => {
+            // Keep empty arrays on fetch failure — selects remain openable but empty
         });
     }, []);
 
@@ -210,7 +212,10 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                 <label className="text-sm font-medium">Manufacturer</label>
                                 <Select
                                     value={selectedManufacturerId}
-                                    onValueChange={setSelectedManufacturerId}
+                                    onValueChange={(v) => {
+                                        setSelectedManufacturerId(v);
+                                        form.setValue("deviceTypeId", "");
+                                    }}
                                 >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select manufacturer" />
@@ -233,11 +238,12 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                         <FormLabel>Device Type</FormLabel>
                                         <Select
                                             onValueChange={field.onChange}
-                                            defaultValue={field.value}
+                                            value={field.value}
+                                            disabled={!selectedManufacturerId}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
+                                                    <SelectValue placeholder={selectedManufacturerId ? "Select type" : "Select manufacturer first"} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -261,7 +267,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                         <FormLabel>Tenant</FormLabel>
                                         <Select
                                             onValueChange={(v) => field.onChange(v || null)}
-                                            defaultValue={field.value ?? ""}
+                                            value={field.value ?? ""}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
