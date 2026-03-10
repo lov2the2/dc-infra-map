@@ -36,7 +36,7 @@ export default async function SitesPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Sites"
-                description="Manage data center sites and facilities"
+                description="데이터센터 시설(빌딩/캠퍼스)을 등록하고 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/" },
                     { label: "Sites" },

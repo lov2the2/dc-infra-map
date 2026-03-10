@@ -33,6 +33,7 @@ export default async function AccessPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Access Management"
+                description="데이터센터 출입 이력과 장비 반출입 기록을 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Access" },

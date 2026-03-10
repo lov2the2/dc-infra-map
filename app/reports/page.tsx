@@ -18,7 +18,7 @@ export default async function ReportsPage() {
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Reports" },
                 ]}
-                description="Export data as Excel or XML, import from CSV, and manage scheduled reports."
+                description="인프라 현황 리포트를 내보내고 일정을 관리합니다."
             />
 
             <Tabs defaultValue="export">

@@ -51,6 +51,7 @@ export default function RegionsPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Regions"
+                description="여러 사이트를 묶는 지역/리전 단위를 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Regions" },
