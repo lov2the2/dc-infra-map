@@ -143,6 +143,7 @@ Power mock data generator for development.
 ### `components/ui/`
 
 shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`).
+- `searchable-select.tsx` — Popover+Command combobox for searchable dropdowns with keyboard navigation
 
 ### `components/layout/`
 
@@ -170,7 +171,7 @@ Admin components (user-table, user-form, user-role-badge).
 
 ### `components/devices/`
 
-Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with cascading select reset on parent change, device-audit-log).
+Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with SearchableSelect and quick-create buttons for Tenant/Site/Rack, quick-create-dialog wrapper, device-audit-log).
 
 ### `components/tenants/`
 
@@ -297,9 +298,11 @@ Files in `app/api/`:
 - `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
+- `/api/tenants` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
+- `/api/racks` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/manufacturers` — GET list + POST create (Drizzle ORM)
 - `/api/manufacturers/[id]` — GET + PATCH + DELETE (Drizzle ORM)
 - `/api/manufacturers/search?q=&excludeId=` — GET search manufacturers by similar name (excludeId for edit form duplicate check)

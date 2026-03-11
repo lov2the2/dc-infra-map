@@ -9,9 +9,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { powerFeedCreateSchema, type PowerFeedCreateInput } from "@/lib/validators/power";
 import type { PowerPanel, Rack, PowerFeed } from "@/types/entities";
@@ -65,16 +63,15 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Panel <span className="text-destructive">*</span></FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select panel" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {panels.map((p) => (
-                                                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <SearchableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                options={panels.map((p) => ({ value: p.id, label: p.name }))}
+                                                placeholder="Select panel"
+                                                searchPlaceholder="Search panel..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -85,16 +82,15 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Rack (optional)</FormLabel>
-                                        <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue placeholder="Select rack" /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {racks.map((r) => (
-                                                    <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <SearchableSelect
+                                                value={field.value ?? ""}
+                                                onValueChange={(v) => field.onChange(v || null)}
+                                                options={racks.map((r) => ({ value: r.id, label: r.name }))}
+                                                placeholder="Select rack"
+                                                searchPlaceholder="Search rack..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -118,15 +114,18 @@ export function PowerFeedForm({ panels, racks, feed }: PowerFeedFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Type</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="primary">Primary</SelectItem>
-                                                <SelectItem value="redundant">Redundant</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <SearchableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                options={[
+                                                    { value: "primary", label: "Primary" },
+                                                    { value: "redundant", label: "Redundant" },
+                                                ]}
+                                                placeholder="Select type"
+                                                searchPlaceholder="Search..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

@@ -101,7 +101,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `hooks/use-cascading-select.ts` — Dependent select data fetching hook
 - `hooks/use-api-mutation.ts` — Form submission API call wrapper hook
 - `hooks/use-delete-mutation.ts` — Delete API call wrapper hook
-- `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
+- `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`); includes `searchable-select.tsx` — Popover+Command combobox for searchable dropdowns with keyboard navigation
 - `components/layout/` — Site-wide layout components (header, footer, desktop-nav, mobile nav, user-nav); desktop-nav provides grouped navigation menus via shadcn NavigationMenu
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
@@ -111,7 +111,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
   - `status-badge-factory.tsx` — Factory for creating typed status badge components
   - `export-button.tsx` — Export functionality wrapper with format selection (xlsx/xml); displays error state when export fails
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
-- `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with cascading select reset on parent change, device-audit-log)
+- `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with SearchableSelect and quick-create buttons for Tenant/Site/Rack, quick-create-dialog wrapper, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
 - `components/manufacturers/` — Manufacturer management components (manufacturer-table, manufacturer-form with duplicate name validation)
 - `components/locations/` — Location management components (location-form, location-actions)
@@ -154,10 +154,12 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
+- `/api/tenants` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/sites` — GET list + POST create (Drizzle ORM)
 - `/api/sites/[siteId]` — GET + PATCH + DELETE (Drizzle ORM)
 - `/api/locations` — GET list (supports `?siteId=` filter) + POST create (Drizzle ORM)
 - `/api/locations/[locationId]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/racks` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell

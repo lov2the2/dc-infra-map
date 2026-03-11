@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { TerminationSelect } from "@/components/cables/termination-select";
 import { Plus } from "lucide-react";
 import { CABLE_TYPES, CABLE_STATUSES } from "@/types/cable";
@@ -101,29 +101,23 @@ export function CableForm() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Cable Type <span className="text-destructive">*</span></label>
-                            <Select value={cableType} onValueChange={setCableType}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {CABLE_TYPES.map((t) => (
-                                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                value={cableType}
+                                onValueChange={setCableType}
+                                options={CABLE_TYPES.map((t) => ({ value: t, label: t }))}
+                                placeholder="Select type"
+                                searchPlaceholder="Search cable type..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Status</label>
-                            <Select value={status} onValueChange={setStatus}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {CABLE_STATUSES.map((s) => (
-                                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                value={status}
+                                onValueChange={setStatus}
+                                options={CABLE_STATUSES.map((s) => ({ value: s, label: s }))}
+                                placeholder="Select status"
+                                searchPlaceholder="Search status..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Length (m)</label>

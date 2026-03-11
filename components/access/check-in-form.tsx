@@ -10,9 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { accessLogCreateSchema, type AccessLogCreateInput } from "@/lib/validators/access";
 import type { Site } from "@/types/entities";
@@ -62,20 +60,15 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Site <span className="text-destructive">*</span></FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select site" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {sites.map((site) => (
-                                                <SelectItem key={site.id} value={site.id}>
-                                                    {site.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            options={sites.map((s) => ({ value: s.id, label: s.name }))}
+                                            placeholder="Select site"
+                                            searchPlaceholder="Search site..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -128,20 +121,21 @@ export function CheckInForm({ sites }: CheckInFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Access Type <span className="text-destructive">*</span></FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="visit">Visit</SelectItem>
-                                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                <SelectItem value="delivery">Delivery</SelectItem>
-                                                <SelectItem value="emergency">Emergency</SelectItem>
-                                                <SelectItem value="tour">Tour</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <SearchableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                options={[
+                                                    { value: "visit", label: "Visit" },
+                                                    { value: "maintenance", label: "Maintenance" },
+                                                    { value: "delivery", label: "Delivery" },
+                                                    { value: "emergency", label: "Emergency" },
+                                                    { value: "tour", label: "Tour" },
+                                                ]}
+                                                placeholder="Select type"
+                                                searchPlaceholder="Search..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}
