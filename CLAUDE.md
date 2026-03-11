@@ -82,8 +82,9 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `lib/auth/rbac.ts` — RBAC permission matrix and check functions (`checkPermission`, `isAdmin`, `canWrite`, `canDelete`)
 - `lib/auth/with-auth.ts` — `withAuth(resource, action, handler)` HOF for API route auth+RBAC boilerplate; `withAuthOnly(handler)` for auth-only routes
 - `lib/audit.ts` — Centralized audit logging (`logAudit`, `logLoginEvent`, `logExportEvent`)
-- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site)
+- `lib/validators/` — Zod validation schemas (device, rack, tenant, location, access, power, cable, site, manufacturer)
   - `shared.ts` — Shared Zod schema primitives (slugSchema) used across validators
+  - `manufacturer.ts` — Manufacturer schema with duplicate name detection
 - `lib/export/` — Export/import utilities (excel.ts, xml.ts, csv-import.ts, csv-templates.ts) — **legacy**: used by tests, no longer serves API routes directly
 - `lib/data-formatters.ts` — Date/null/status formatting utilities (`formatDate`, `formatDateTime`, `formatNullable`, `formatStatus`, `formatUnit`)
 - `tests/lib/validators/` — Unit tests for Zod validators (device, rack, tenant, access, cable, location, power)
@@ -100,7 +101,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `hooks/use-cascading-select.ts` — Dependent select data fetching hook
 - `hooks/use-api-mutation.ts` — Form submission API call wrapper hook
 - `hooks/use-delete-mutation.ts` — Delete API call wrapper hook
-- `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`)
+- `components/ui/` — shadcn/ui primitives (install new ones with `npx shadcn@latest add <name> -y`); includes `searchable-select.tsx` — Popover+Command combobox for searchable dropdowns with keyboard navigation
 - `components/layout/` — Site-wide layout components (header, footer, desktop-nav, mobile nav, user-nav); desktop-nav provides grouped navigation menus via shadcn NavigationMenu
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
@@ -108,21 +109,23 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
   - `route-error.tsx` — Shared error boundary for route `error.tsx` files (props: `title`, `error`, `reset`)
   - `table-loading.tsx` — Shared table skeleton loading for table-based route `loading.tsx` files (props: `rows`, `columns`)
   - `status-badge-factory.tsx` — Factory for creating typed status badge components
+  - `export-button.tsx` — Export functionality wrapper with format selection (xlsx/xml); displays error state when export fails
 - `components/admin/` — Admin components (user-table, user-form, user-role-badge)
-- `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form, device-audit-log)
+- `components/devices/` — Device management components (device-table with bulk select/status-change/delete, device-filters, device-form with SearchableSelect and quick-create buttons for Tenant/Site/Rack, quick-create-dialog wrapper, device-audit-log)
 - `components/tenants/` — Tenant management components (tenant-table, tenant-form, tenant-delete-button)
+- `components/manufacturers/` — Manufacturer management components (manufacturer-table, manufacturer-form with duplicate name validation)
 - `components/locations/` — Location management components (location-form, location-actions)
 - `components/floor-plan/` — Floor plan visualization with rack selection and responsive views:
   - `floor-plan-client.tsx` — Server component wrapper; manages `selectedRackId` state and rack positions via `useState(racks)`; handles Grid View (FloorPlanGrid) and Floor Map (FloorSpaceManager) tabs; propagates `handlePositionChange` to both FloorPlanGrid and FloorSpaceManager for synchronized position editing across views, and `onCellSelect` to FloorSpaceManager
   - `floor-plan-grid.tsx` — Horizontal scrollable rack card row (responsive layout); user-configurable racks-per-view setting (localStorage: `dcim:floor-plan:racks-per-view`, default 4); settings bar position toggle (localStorage: `dcim:floor-plan:settings-pos`); selected rack smooth-scrolls to center; supports optional `onPositionChange` prop for in-grid rack position editing synchronized with Floor Map
-  - `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected; accepts optional `onPositionChange` callback — when provided and rack is selected, shows compact X/Y position editor with Apply (Check) button and Enter key support
+  - `rack-card.tsx` — Displays rack details with posX/posY coordinates; highlights selected state with ring border; "View Elevation →" link visible when selected; accepts optional `onPositionChange` callback — when provided and rack is selected, renders `EditPositionForm` sub-component (which initializes state from rack props and resets via `key` prop) with compact X/Y position editor, Apply (Check) button, and Enter key support to prevent lint warnings
   - `floor-plan-canvas.tsx` — **legacy** — 2D SVG drag-and-drop visualization (no longer used in active views; retained for reference only); was previously the Floor Map tab before integration into FloorSpaceManager
   - floor space management: `floor-space-manager.tsx` (2-tab UI: Grid View, Floor Map; controlled component with `cells`, `gridCols`, `gridRows` props), `floor-space-config-form.tsx` (grid size configuration), `floor-space-grid.tsx` (cell visualization with HTML5 drag-and-drop for rack repositioning), `floor-space-cell-dialog.tsx` (context-aware placement dialog)
 - `components/rack/` — Rack elevation components (rack-elevation-client, multi-rack-elevation-client, rack-face-toggle, rack-grid, rack-slot, device-block, rack-header); multi-rack-elevation-client provides a single DndContext for cross-rack drag-and-drop; rack-grid/rack-slot/device-block accept rackId props for multi-rack context
 - `components/access/` — Access management components (access-log-list, check-in-form, check-out-dialog, equipment-movement-list/form, movement-approval-dialog)
 - `components/power/` — Power monitoring components (power-dashboard, power-panel-list/form, power-feed-list/form, power-gauge, rack-power-grid, sse-connection-indicator)
 - `components/cables/` — Cable management components (table, filters, form, status badge, trace view, termination select, interface/port lists)
-- `components/reports/` — Reports page components (export-card, export-filters, import-dialog, import-preview, import-result, schedule-table, schedule-form)
+- `components/reports/` — Reports page components (export-card, export-filters, import-dialog [sends CSV file via FormData with `file` field to `/api/bulk-import/*` endpoints], import-preview, import-result, schedule-table, schedule-form)
 - `components/topology/` — Network topology visualization (accurate per-interface port utilization via cable terminations, patch panel tracing with front/rear port lookup and dashed-line rendering); device nodes are draggable with position persistence in localStorage; includes Auto Layout and Reset Layout buttons
 - `components/alerts/` — Alert components (severity-badge, alert-stats-card, alert-rules-table, alert-rule-form, alert-history-table, channel-config)
 
@@ -151,13 +154,20 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `/api/auth/reset-password` — Validate token and update user password
 - `/api/admin/users` — User management CRUD (admin only)
 - `/api/admin/users/[id]` — Single user GET/PATCH/DELETE (admin only)
+- `/api/tenants` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/sites` — GET list + POST create (Drizzle ORM)
 - `/api/sites/[siteId]` — GET + PATCH + DELETE (Drizzle ORM)
 - `/api/locations` — GET list (supports `?siteId=` filter) + POST create (Drizzle ORM)
 - `/api/locations/[locationId]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/racks` — GET list + POST create (Drizzle ORM; quick-create endpoint)
 - `/api/floor-cells/[locationId]` — GET floor space config + cells list, PUT grid size configuration
 - `/api/floor-cells/[locationId]/cells` — POST create floor cell
 - `/api/floor-cells/[locationId]/cells/[cellId]` — PATCH update floor cell, DELETE floor cell
+- `/api/manufacturers` — GET list + POST create (Drizzle ORM)
+- `/api/manufacturers/[id]` — GET + PATCH + DELETE (Drizzle ORM)
+- `/api/manufacturers/search?q=&excludeId=` — GET search manufacturers by similar name (excludeId for edit form duplicate check)
+- `/api/bulk-import/sites` — POST bulk import sites via CSV (accepts `multipart/form-data` with `file` field or JSON body with `csv` string for backward compatibility; `?confirm=true` to commit, `?confirm=false` for validation-only)
+- `/api/bulk-import/tenants` — POST bulk import tenants via CSV (same protocol as sites)
 
 **Proxied to Go microservices** (via `next.config.ts` rewrites, no Next.js route files):
 
@@ -183,7 +193,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 
 **Route UX boundaries**: All major route groups have `loading.tsx` (Skeleton-based) and `error.tsx` (Card with Try Again + Go Back) for streaming suspense and error recovery. All dynamic route segments have `not-found.tsx` for 404 handling.
 
-**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/sites/[siteId]` (site detail with location CRUD), `/regions` (region management), `/devices` (device management), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
+**Pages**: `/` (landing), `/(auth)/login` (authentication), `/(auth)/register` (user self-registration with viewer role), `/(auth)/forgot-password` (password recovery via email token), `/(auth)/reset-password` (password reset with URL token), `/dashboard` (overview), `/sites` (site management), `/sites/[siteId]` (site detail with location CRUD), `/regions` (region management), `/devices` (device management), `/manufacturers` (manufacturer management), `/manufacturers/new` (create manufacturer), `/manufacturers/[id]` (manufacturer detail), `/manufacturers/[id]/edit` (edit manufacturer), `/tenants` (tenant management), `/access` (access log management), `/power` (power monitoring dashboard), `/cables` (cable management), `/topology` (network topology), `/reports` (export/import reports), `/admin/users` (user management, admin only), `/alerts` (alert dashboard with Rules/History/Channels tabs), `/api-docs` (interactive API reference)
 
 **Path alias**: `@/*` maps to project root.
 

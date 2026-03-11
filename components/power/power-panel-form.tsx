@@ -10,9 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useApiMutation } from "@/hooks/use-api-mutation";
 import { powerPanelCreateSchema, type PowerPanelCreateInput } from "@/lib/validators/power";
 import { generateSlug } from "@/lib/utils";
@@ -74,17 +72,16 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                             name="siteId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Site</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger><SelectValue placeholder="Select site" /></SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {sites.map((s) => (
-                                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormLabel>Site <span className="text-destructive">*</span></FormLabel>
+                                    <FormControl>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            options={sites.map((s) => ({ value: s.id, label: s.name }))}
+                                            placeholder="Select site"
+                                            searchPlaceholder="Search site..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -95,7 +92,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="name"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Name</FormLabel>
+                                        <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                         <FormControl><Input placeholder="Main Panel A" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -106,7 +103,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="slug"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Slug</FormLabel>
+                                        <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                         <FormControl><Input placeholder="main-panel-a" {...field} /></FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -130,7 +127,7 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 name="ratedCapacityKw"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Capacity (kW)</FormLabel>
+                                        <FormLabel>Capacity (kW) <span className="text-destructive">*</span></FormLabel>
                                         <FormControl>
                                             <Input type="number" step="0.1" {...field} onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} />
                                         </FormControl>
@@ -157,15 +154,18 @@ export function PowerPanelForm({ sites, panel }: PowerPanelFormProps) {
                                 render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Phase</FormLabel>
-                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                            <FormControl>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                <SelectItem value="single">Single</SelectItem>
-                                                <SelectItem value="three">Three-Phase</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <FormControl>
+                                            <SearchableSelect
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                options={[
+                                                    { value: "single", label: "Single" },
+                                                    { value: "three", label: "Three-Phase" },
+                                                ]}
+                                                placeholder="Select phase"
+                                                searchPlaceholder="Search..."
+                                            />
+                                        </FormControl>
                                         <FormMessage />
                                     </FormItem>
                                 )}

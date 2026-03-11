@@ -16,13 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { siteCreateSchema, type SiteCreateInput } from "@/lib/validators/site";
 import { generateSlug } from "@/lib/utils";
 import type { Site } from "@/types/entities";
@@ -94,7 +88,7 @@ export function SiteForm({ site }: SiteFormProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input placeholder="Seoul Data Center" {...field} />
                                     </FormControl>
@@ -107,7 +101,7 @@ export function SiteForm({ site }: SiteFormProps) {
                             name="slug"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Slug</FormLabel>
+                                    <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="seoul-data-center"
@@ -124,23 +118,15 @@ export function SiteForm({ site }: SiteFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Status</FormLabel>
-                                    <Select
-                                        onValueChange={field.onChange}
-                                        defaultValue={field.value}
-                                    >
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select status" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {STATUS_OPTIONS.map((option) => (
-                                                <SelectItem key={option.value} value={option.value}>
-                                                    {option.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormControl>
+                                        <SearchableSelect
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            options={STATUS_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                                            placeholder="Select status"
+                                            searchPlaceholder="Search status..."
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}

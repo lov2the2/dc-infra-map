@@ -4,13 +4,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
     Dialog,
     DialogContent,
@@ -135,7 +129,7 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Rule Name</Label>
+                        <Label htmlFor="name">Rule Name <span className="text-destructive">*</span></Label>
                         <Input
                             id="name"
                             value={form.name}
@@ -146,39 +140,30 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="ruleType">Rule Type</Label>
-                        <Select value={form.ruleType} onValueChange={(v) => handleRuleTypeChange(v as AlertRuleType)}>
-                            <SelectTrigger id="ruleType">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {RULE_TYPES.map((t) => (
-                                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="ruleType">Rule Type <span className="text-destructive">*</span></Label>
+                        <SearchableSelect
+                            value={form.ruleType}
+                            onValueChange={(v) => handleRuleTypeChange(v as AlertRuleType)}
+                            options={RULE_TYPES}
+                            placeholder="Select rule type"
+                            searchPlaceholder="Search..."
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="conditionOperator">Operator</Label>
-                            <Select
+                            <SearchableSelect
                                 value={form.conditionOperator}
                                 onValueChange={(v) => setForm((prev) => ({ ...prev, conditionOperator: v as ConditionOperator }))}
-                            >
-                                <SelectTrigger id="conditionOperator">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {OPERATORS.map((op) => (
-                                        <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={OPERATORS}
+                                placeholder="Select operator"
+                                searchPlaceholder="Search..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="thresholdValue">
-                                Threshold {form.ruleType === "warranty_expiry" ? "(days)" : "(%)"}
+                                Threshold {form.ruleType === "warranty_expiry" ? "(days)" : "(%)"} <span className="text-destructive">*</span>
                             </Label>
                             <Input
                                 id="thresholdValue"
@@ -194,16 +179,13 @@ export function AlertRuleForm({ open, onOpenChange, rule, onSuccess }: AlertRule
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="severity">Severity</Label>
-                            <Select value={form.severity} onValueChange={(v) => setForm((prev) => ({ ...prev, severity: v as AlertSeverity }))}>
-                                <SelectTrigger id="severity">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {SEVERITIES.map((s) => (
-                                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                value={form.severity}
+                                onValueChange={(v) => setForm((prev) => ({ ...prev, severity: v as AlertSeverity }))}
+                                options={SEVERITIES}
+                                placeholder="Select severity"
+                                searchPlaceholder="Search..."
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cooldownMinutes">Cooldown (minutes)</Label>

@@ -77,7 +77,7 @@ export function LocationForm({ location, siteId }: LocationFormProps) {
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Name <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input placeholder="Floor 1 - Hall A" {...field} />
                                     </FormControl>
@@ -90,7 +90,7 @@ export function LocationForm({ location, siteId }: LocationFormProps) {
                             name="slug"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Slug</FormLabel>
+                                    <FormLabel>Slug <span className="text-destructive">*</span></FormLabel>
                                     <FormControl>
                                         <Input
                                             placeholder="floor-1-hall-a"

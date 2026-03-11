@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { Rack } from "@/types/entities";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,30 +19,66 @@ interface RackCardProps {
     onPositionChange?: (rackId: string, posX: number, posY: number) => void;
 }
 
+// Separate sub-component so state initializes fresh when rack position changes (via key prop)
+function EditPositionForm({ rack, onPositionChange }: { rack: Rack; onPositionChange: (rackId: string, posX: number, posY: number) => void }) {
+    const [editX, setEditX] = useState<string>(rack.posX?.toString() ?? '');
+    const [editY, setEditY] = useState<string>(rack.posY?.toString() ?? '');
+
+    const handlePositionApply = () => {
+        const x = parseInt(editX, 10);
+        const y = parseInt(editY, 10);
+        if (isNaN(x) || isNaN(y) || x < 0 || y < 0) return;
+        onPositionChange(rack.id, x, y);
+    };
+
+    return (
+        <div className="mt-2 pt-2 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-1.5">Floor Position</p>
+            <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">X</span>
+                    <Input
+                        type="number"
+                        min={0}
+                        value={editX}
+                        onChange={(e) => setEditX(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handlePositionApply(); }}
+                        className="h-6 w-14 text-xs px-1.5"
+                        placeholder={rack.posX?.toString() ?? '-'}
+                    />
+                </div>
+                <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">Y</span>
+                    <Input
+                        type="number"
+                        min={0}
+                        value={editY}
+                        onChange={(e) => setEditY(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') handlePositionApply(); }}
+                        className="h-6 w-14 text-xs px-1.5"
+                        placeholder={rack.posY?.toString() ?? '-'}
+                    />
+                </div>
+                <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={(e) => { e.stopPropagation(); handlePositionApply(); }}
+                    disabled={editX === '' || editY === ''}
+                >
+                    <Check className="h-3 w-3" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 export function RackCard({ rack, deviceCount, usedU, isSelected, onSelect, onPositionChange }: RackCardProps) {
     const utilization = Math.round((usedU / rack.uHeight) * 100);
     const posLabel =
         rack.posX !== null && rack.posY !== null
             ? `(${rack.posX}, ${rack.posY})`
             : "unplaced";
-
-    const [editX, setEditX] = useState<string>('');
-    const [editY, setEditY] = useState<string>('');
-
-    // Reset edit fields whenever this card becomes selected or position changes
-    useEffect(() => {
-        if (isSelected) {
-            setEditX(rack.posX?.toString() ?? '');
-            setEditY(rack.posY?.toString() ?? '');
-        }
-    }, [isSelected, rack.posX, rack.posY]);
-
-    const handlePositionApply = () => {
-        const x = parseInt(editX, 10);
-        const y = parseInt(editY, 10);
-        if (isNaN(x) || isNaN(y) || x < 0 || y < 0) return;
-        onPositionChange?.(rack.id, x, y);
-    };
 
     return (
         <Card
@@ -76,44 +112,11 @@ export function RackCard({ rack, deviceCount, usedU, isSelected, onSelect, onPos
                 {/* Position coordinates for 2D Map sync verification */}
                 <p className="text-[10px] text-muted-foreground">{posLabel}</p>
                 {isSelected && onPositionChange && (
-                    <div className="mt-2 pt-2 border-t border-border">
-                        <p className="text-xs text-muted-foreground mb-1.5">Floor Position</p>
-                        <div className="flex items-center gap-1.5">
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs text-muted-foreground">X</span>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={editX}
-                                    onChange={(e) => setEditX(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handlePositionApply(); }}
-                                    className="h-6 w-14 text-xs px-1.5"
-                                    placeholder={rack.posX?.toString() ?? '-'}
-                                />
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <span className="text-xs text-muted-foreground">Y</span>
-                                <Input
-                                    type="number"
-                                    min={0}
-                                    value={editY}
-                                    onChange={(e) => setEditY(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === 'Enter') handlePositionApply(); }}
-                                    className="h-6 w-14 text-xs px-1.5"
-                                    placeholder={rack.posY?.toString() ?? '-'}
-                                />
-                            </div>
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-6 w-6"
-                                onClick={(e) => { e.stopPropagation(); handlePositionApply(); }}
-                                disabled={editX === '' || editY === ''}
-                            >
-                                <Check className="h-3 w-3" />
-                            </Button>
-                        </div>
-                    </div>
+                    <EditPositionForm
+                        key={`${rack.posX}-${rack.posY}`}
+                        rack={rack}
+                        onPositionChange={onPositionChange}
+                    />
                 )}
                 {isSelected && (
                     <Button

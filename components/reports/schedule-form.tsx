@@ -11,13 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
@@ -137,7 +131,7 @@ export function ScheduleForm({
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="schedule-name">Name</Label>
+                        <Label htmlFor="schedule-name">Name <span className="text-destructive">*</span></Label>
                         <Input
                             id="schedule-name"
                             value={name}
@@ -148,42 +142,39 @@ export function ScheduleForm({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="report-type">Report Type</Label>
-                        <Select
+                        <Label htmlFor="report-type">Report Type <span className="text-destructive">*</span></Label>
+                        <SearchableSelect
                             value={reportType}
-                            onValueChange={(value) =>
-                                setReportType(value as ReportSchedule["reportType"])
-                            }
-                        >
-                            <SelectTrigger id="report-type">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="racks">Rack Layout</SelectItem>
-                                <SelectItem value="devices">Device Inventory</SelectItem>
-                                <SelectItem value="cables">Cable Table</SelectItem>
-                                <SelectItem value="power">Power Report</SelectItem>
-                                <SelectItem value="access">Access Logs</SelectItem>
-                            </SelectContent>
-                        </Select>
+                            onValueChange={(value) => setReportType(value as ReportSchedule["reportType"])}
+                            options={[
+                                { value: "racks", label: "Rack Layout" },
+                                { value: "devices", label: "Device Inventory" },
+                                { value: "cables", label: "Cable Table" },
+                                { value: "power", label: "Power Report" },
+                                { value: "access", label: "Access Logs" },
+                            ]}
+                            placeholder="Select report type"
+                            searchPlaceholder="Search..."
+                        />
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="frequency">Frequency</Label>
-                        <Select value={frequency} onValueChange={handleFrequencyChange}>
-                            <SelectTrigger id="frequency">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="daily">Daily</SelectItem>
-                                <SelectItem value="weekly">Weekly</SelectItem>
-                                <SelectItem value="monthly">Monthly</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                            value={frequency}
+                            onValueChange={(value) => handleFrequencyChange(value as ReportSchedule["frequency"])}
+                            options={[
+                                { value: "daily", label: "Daily" },
+                                { value: "weekly", label: "Weekly" },
+                                { value: "monthly", label: "Monthly" },
+                            ]}
+                            placeholder="Select frequency"
+                            searchPlaceholder="Search..."
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="cron-expression">Cron Expression</Label>
+                        <Label htmlFor="cron-expression">Cron Expression <span className="text-destructive">*</span></Label>
                         <Input
                             id="cron-expression"
                             value={cronExpression}

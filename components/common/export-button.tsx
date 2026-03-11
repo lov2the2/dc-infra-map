@@ -20,9 +20,11 @@ interface ExportButtonProps {
 
 export function ExportButton({ formats, baseEndpoint, currentFilters }: ExportButtonProps) {
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     async function handleExport(format: ExportFormat) {
         setLoading(true);
+        setError(null);
         try {
             const endpoint = format === "xml"
                 ? `/api/export/xml/${baseEndpoint.replace("/api/export/", "")}`
@@ -46,7 +48,7 @@ export function ExportButton({ formats, baseEndpoint, currentFilters }: ExportBu
             document.body.removeChild(a);
             URL.revokeObjectURL(downloadUrl);
         } catch {
-            // Error is visible via failed download
+            setError("Export failed. Please try again.");
         } finally {
             setLoading(false);
         }
@@ -54,26 +56,13 @@ export function ExportButton({ formats, baseEndpoint, currentFilters }: ExportBu
 
     if (formats.length === 1) {
         return (
-            <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleExport(formats[0])}
-                disabled={loading}
-            >
-                {loading ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                    <Download className="mr-2 h-4 w-4" />
-                )}
-                Export
-            </Button>
-        );
-    }
-
-    return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" disabled={loading}>
+            <div className="flex flex-col items-end gap-1">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleExport(formats[0])}
+                    disabled={loading}
+                >
                     {loading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -81,22 +70,45 @@ export function ExportButton({ formats, baseEndpoint, currentFilters }: ExportBu
                     )}
                     Export
                 </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-                {formats.map((format) => (
-                    <DropdownMenuItem
-                        key={format}
-                        onClick={() => handleExport(format)}
-                    >
-                        {format === "xlsx" ? (
-                            <FileSpreadsheet className="mr-2 h-4 w-4" />
+                {error && (
+                    <span className="text-xs text-destructive">{error}</span>
+                )}
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex flex-col items-end gap-1">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" disabled={loading}>
+                        {loading ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
-                            <FileCode className="mr-2 h-4 w-4" />
+                            <Download className="mr-2 h-4 w-4" />
                         )}
-                        {format.toUpperCase()}
-                    </DropdownMenuItem>
-                ))}
-            </DropdownMenuContent>
-        </DropdownMenu>
+                        Export
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    {formats.map((format) => (
+                        <DropdownMenuItem
+                            key={format}
+                            onClick={() => handleExport(format)}
+                        >
+                            {format === "xlsx" ? (
+                                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                            ) : (
+                                <FileCode className="mr-2 h-4 w-4" />
+                            )}
+                            {format.toUpperCase()}
+                        </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+            </DropdownMenu>
+            {error && (
+                <span className="text-xs text-destructive">{error}</span>
+            )}
+        </div>
     );
 }

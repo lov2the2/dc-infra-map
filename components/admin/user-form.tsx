@@ -12,13 +12,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 
 interface UserData {
     id: string;
@@ -125,7 +119,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
                             />
                         </div>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email</Label>
+                            <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -137,7 +131,7 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="password">
-                                Password {isEditing && "(leave blank to keep current)"}
+                                Password {!isEditing && <span className="text-destructive">*</span>}{isEditing && "(leave blank to keep current)"}
                             </Label>
                             <Input
                                 id="password"
@@ -150,18 +144,13 @@ export function UserForm({ open, onOpenChange, user, onSuccess }: UserFormProps)
                         </div>
                         <div className="grid gap-2">
                             <Label htmlFor="role">Role</Label>
-                            <Select value={role} onValueChange={setRole}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {ROLES.map((r) => (
-                                        <SelectItem key={r.value} value={r.value}>
-                                            {r.label}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                value={role}
+                                onValueChange={setRole}
+                                options={ROLES}
+                                placeholder="Select role"
+                                searchPlaceholder="Search role..."
+                            />
                         </div>
                         {error && (
                             <p className="text-sm text-destructive">{error}</p>
