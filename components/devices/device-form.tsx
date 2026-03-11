@@ -74,6 +74,7 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
     const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
     const [siteDialogOpen, setSiteDialogOpen] = useState(false);
     const [rackDialogOpen, setRackDialogOpen] = useState(false);
+    const [deviceTypeDialogOpen, setDeviceTypeDialogOpen] = useState(false);
 
     // Quick-create form state - Tenant
     const [newTenantName, setNewTenantName] = useState("");
@@ -89,6 +90,12 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
     const [newRackName, setNewRackName] = useState("");
     const [newRackHeight, setNewRackHeight] = useState(42);
     const [rackCreateError, setRackCreateError] = useState("");
+
+    // Quick-create form state - Device Type
+    const [newDeviceTypeModel, setNewDeviceTypeModel] = useState("");
+    const [newDeviceTypeSlug, setNewDeviceTypeSlug] = useState("");
+    const [newDeviceTypeUHeight, setNewDeviceTypeUHeight] = useState(1);
+    const [deviceTypeCreateError, setDeviceTypeCreateError] = useState("");
 
     const form = useForm<DeviceCreateInput>({
         resolver: zodResolver(deviceCreateSchema),
@@ -128,10 +135,19 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
         (manufacturerId: string) => `/api/device-types?manufacturerId=${manufacturerId}`,
         [],
     );
-    const { items: deviceTypes } = useCascadingSelect<DeviceType>(
+    const { items: fetchedDeviceTypes } = useCascadingSelect<DeviceType>(
         selectedManufacturerId,
         deviceTypeFetchUrl,
     );
+
+    // Extra device types added via quick-create within this session
+    const [extraDeviceTypes, setExtraDeviceTypes] = useState<DeviceType[]>([]);
+
+    // Merge fetched + quick-created device types (dedup by id)
+    const deviceTypes = useMemo(() => {
+        const ids = new Set(fetchedDeviceTypes.map((dt) => dt.id));
+        return [...fetchedDeviceTypes, ...extraDeviceTypes.filter((dt) => !ids.has(dt.id))];
+    }, [fetchedDeviceTypes, extraDeviceTypes]);
 
     // Cascading: site -> locations
     const locationFetchUrl = useCallback(
@@ -274,6 +290,48 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
         }
     };
 
+    // Quick-create: Device Type
+    const handleDeviceTypeModelChange = (value: string) => {
+        setNewDeviceTypeModel(value);
+        setNewDeviceTypeSlug(generateSlug(value));
+    };
+
+    const handleCreateDeviceType = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setDeviceTypeCreateError("");
+        if (!selectedManufacturerId) {
+            setDeviceTypeCreateError("Please select a manufacturer first");
+            return;
+        }
+        try {
+            const res = await fetch("/api/device-types", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    manufacturerId: selectedManufacturerId,
+                    model: newDeviceTypeModel,
+                    slug: newDeviceTypeSlug,
+                    uHeight: newDeviceTypeUHeight,
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                setDeviceTypeCreateError(data.error ?? "Failed to create device type");
+                return;
+            }
+            const data = await res.json();
+            const created = data.data;
+            setExtraDeviceTypes((prev) => [...prev, created]);
+            form.setValue("deviceTypeId", created.id);
+            setDeviceTypeDialogOpen(false);
+            setNewDeviceTypeModel("");
+            setNewDeviceTypeSlug("");
+            setNewDeviceTypeUHeight(1);
+        } catch {
+            setDeviceTypeCreateError("Failed to create device type");
+        }
+    };
+
     const onSubmit = async (data: DeviceCreateInput) => {
         setSubmitting(true);
         try {
@@ -383,14 +441,27 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                                         <FormItem>
                                             <FormLabel>Device Type <span className="text-destructive">*</span></FormLabel>
                                             <FormControl>
-                                                <SearchableSelect
-                                                    value={field.value}
-                                                    onValueChange={field.onChange}
-                                                    options={deviceTypeOptions}
-                                                    placeholder={selectedManufacturerId ? "Select type" : "Select manufacturer first"}
-                                                    searchPlaceholder="Search device type..."
-                                                    disabled={!selectedManufacturerId}
-                                                />
+                                                <div className="flex gap-2">
+                                                    <SearchableSelect
+                                                        value={field.value}
+                                                        onValueChange={field.onChange}
+                                                        options={deviceTypeOptions}
+                                                        placeholder={selectedManufacturerId ? "Select type" : "Select manufacturer first"}
+                                                        searchPlaceholder="Search device type..."
+                                                        disabled={!selectedManufacturerId}
+                                                        className="flex-1"
+                                                    />
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        title="Quick-create device type"
+                                                        disabled={!selectedManufacturerId}
+                                                        onClick={() => setDeviceTypeDialogOpen(true)}
+                                                    >
+                                                        <Plus className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </FormControl>
                                             {selectedManufacturerId ? (
                                                 <FormMessage />
@@ -800,6 +871,65 @@ export function DeviceForm({ device, defaultManufacturerId }: DeviceFormProps) {
                             Cancel
                         </Button>
                         <Button type="submit">Create Rack</Button>
+                    </div>
+                </form>
+            </QuickCreateDialog>
+
+            {/* Quick-Create: Device Type */}
+            <QuickCreateDialog
+                open={deviceTypeDialogOpen}
+                onOpenChange={setDeviceTypeDialogOpen}
+                title="Create Device Type"
+            >
+                <form onSubmit={handleCreateDeviceType} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="new-dt-manufacturer">Manufacturer</Label>
+                        <Input
+                            id="new-dt-manufacturer"
+                            value={manufacturers.find((m) => m.id === selectedManufacturerId)?.name ?? ""}
+                            disabled
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-dt-model">Model <span className="text-destructive">*</span></Label>
+                        <Input
+                            id="new-dt-model"
+                            value={newDeviceTypeModel}
+                            onChange={(e) => handleDeviceTypeModelChange(e.target.value)}
+                            placeholder="e.g., PowerEdge R750"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-dt-slug">Slug <span className="text-destructive">*</span></Label>
+                        <Input
+                            id="new-dt-slug"
+                            value={newDeviceTypeSlug}
+                            onChange={(e) => setNewDeviceTypeSlug(e.target.value)}
+                            placeholder="poweredge-r750"
+                            required
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="new-dt-uheight">Height (U) <span className="text-destructive">*</span></Label>
+                        <Input
+                            id="new-dt-uheight"
+                            type="number"
+                            min={1}
+                            max={100}
+                            value={newDeviceTypeUHeight}
+                            onChange={(e) => setNewDeviceTypeUHeight(parseInt(e.target.value) || 1)}
+                            required
+                        />
+                    </div>
+                    {deviceTypeCreateError && (
+                        <p className="text-sm text-destructive">{deviceTypeCreateError}</p>
+                    )}
+                    <div className="flex gap-3 justify-end">
+                        <Button type="button" variant="outline" onClick={() => setDeviceTypeDialogOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="submit">Create Device Type</Button>
                     </div>
                 </form>
             </QuickCreateDialog>
