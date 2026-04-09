@@ -33,6 +33,7 @@ export default async function CablesPage({
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Cables"
+                description="케이블 배선 현황과 패치 연결 정보를 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Cables" },

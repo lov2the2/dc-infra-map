@@ -6,7 +6,7 @@ export default function AdminUsersPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="User Management"
-                description="Manage user accounts and role assignments."
+                description="시스템 사용자 계정과 권한을 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Admin" },

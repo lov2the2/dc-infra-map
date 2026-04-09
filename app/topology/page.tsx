@@ -15,7 +15,7 @@ export default async function TopologyPage() {
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Topology" },
                 ]}
-                description="Visual overview of network connections between devices"
+                description="장비 간 네트워크 연결 구조를 시각적으로 확인합니다."
             />
             <TopologyDiagram />
         </div>

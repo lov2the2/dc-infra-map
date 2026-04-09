@@ -23,6 +23,7 @@ export default async function TenantsPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Tenants"
+                description="랙/장비를 사용하는 입주 고객(테넌트)을 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Tenants" },

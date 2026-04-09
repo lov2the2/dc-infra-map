@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { sites } from "@/db/schema";
-import { successResponse, errorResponse, validationErrorResponse, handleApiError } from "@/lib/api";
+import { successResponse, validationErrorResponse, handleApiError } from "@/lib/api";
 import { withAuth } from "@/lib/auth/with-auth";
 import { siteCreateSchema } from "@/lib/validators/site";
 

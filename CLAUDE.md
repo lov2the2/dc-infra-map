@@ -105,6 +105,7 @@ Currently in early development (starter kit scaffold). See [ROADMAP.md](./docs/R
 - `components/theme/` — Theme provider and toggle
 - `components/providers/` — Context providers (session-provider)
 - `components/common/` — Shared components (page-header, status-badge, confirm-dialog, data-table, export-button, audit-log-table, command-palette, route-error, table-loading, status-badge-factory)
+  - `page-header.tsx` — Page title and breadcrumb (props: `title`, `breadcrumbs`, `action`, `description` optional)
   - `route-error.tsx` — Shared error boundary for route `error.tsx` files (props: `title`, `error`, `reset`)
   - `table-loading.tsx` — Shared table skeleton loading for table-based route `loading.tsx` files (props: `rows`, `columns`)
   - `status-badge-factory.tsx` — Factory for creating typed status badge components

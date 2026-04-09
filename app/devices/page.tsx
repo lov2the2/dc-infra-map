@@ -45,6 +45,7 @@ export default async function DevicesPage({
                     <SiteFilterSync />
                     <PageHeader
                         title="Devices"
+                        description="서버, 스위치 등 모든 장비 자산을 관리합니다."
                         breadcrumbs={[
                             { label: "Dashboard", href: "/dashboard" },
                             { label: "Devices" },
@@ -95,6 +96,7 @@ export default async function DevicesPage({
             <SiteFilterSync />
             <PageHeader
                 title="Devices"
+                description="서버, 스위치 등 모든 장비 자산을 관리합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Devices" },

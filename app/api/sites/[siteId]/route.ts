@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { sites } from "@/db/schema";
 import { successResponse, errorResponse, validationErrorResponse, handleApiError, getRouteId } from "@/lib/api";

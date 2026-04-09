@@ -15,6 +15,7 @@ export default async function PowerPage() {
         <div className="container py-8 space-y-6">
             <PageHeader
                 title="Power Monitoring"
+                description="전원 패널, 피드, 실시간 전력 소비를 모니터링합니다."
                 breadcrumbs={[
                     { label: "Dashboard", href: "/dashboard" },
                     { label: "Power" },
